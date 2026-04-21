@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { 
   Product, ProductListItem, Category, Review,
@@ -27,6 +28,29 @@ export class ProductService {
   private apiUrl = `${environment.apiUrl}/products`;
   
   constructor(private http: HttpClient) {}
+
+  /** Reemplaza la base de la URL de medios por la configurada en el environment */
+  private resolveUrl(url: string | null): string | null {
+    if (!url) return null;
+    // Sustituye cualquier origen absoluto (http://localhost:8000, https://...) por mediaUrl
+    try {
+      const parsed = new URL(url);
+      return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
+    } catch {
+      return url; // ya es relativa, devolver tal cual
+    }
+  }
+
+  private normalizeListItem(item: ProductListItem): ProductListItem {
+    return { ...item, primary_image: this.resolveUrl(item.primary_image) };
+  }
+
+  private normalizeProduct(product: Product): Product {
+    return {
+      ...product,
+      images: product.images.map(img => ({ ...img, url: this.resolveUrl(img.url) ?? img.url })),
+    };
+  }
   
   /**
    * Get products with filters and pagination
@@ -45,7 +69,9 @@ export class ProductService {
     if (filters.sort_by) params = params.set('sort_by', filters.sort_by);
     if (filters.sort_order) params = params.set('sort_order', filters.sort_order);
     
-    return this.http.get<PaginatedResponse<ProductListItem>>(this.apiUrl, { params });
+    return this.http.get<PaginatedResponse<ProductListItem>>(this.apiUrl, { params }).pipe(
+      map(res => ({ ...res, results: res.results.map(i => this.normalizeListItem(i)) }))
+    );
   }
   
   /**
@@ -54,14 +80,16 @@ export class ProductService {
   getFeaturedProducts(limit: number = 4): Observable<ProductListItem[]> {
     return this.http.get<ProductListItem[]>(`${this.apiUrl}/featured`, {
       params: { limit: limit.toString() }
-    });
+    }).pipe(map(items => items.map(i => this.normalizeListItem(i))));
   }
   
   /**
    * Get product by slug
    */
   getProduct(slug: string): Observable<Product> {
-    return this.http.get<Product>(`${this.apiUrl}/${slug}`);
+    return this.http.get<Product>(`${this.apiUrl}/${slug}`).pipe(
+      map(p => this.normalizeProduct(p))
+    );
   }
   
   /**
