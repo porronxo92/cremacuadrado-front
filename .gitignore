@@ -1,0 +1,54 @@
+# ================================================
+# .gitignore — Cremacuadrado Frontend (Angular)
+# ================================================
+
+# ── SECRETS & ENVIRONMENT ─────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+# Ficheros de entorno con secretos reales (si los hay)
+# src/environments/environment.prod.ts  # descomenta si contiene API keys reales
+
+# ── DEPENDENCIAS ──────────────────────────────
+node_modules/
+
+# ── BUILD OUTPUT & CACHÉ ──────────────────────
+dist/
+.angular/
+build_output.txt
+
+# ── LOGS ──────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+logs/
+
+# ── COBERTURA DE TESTS ────────────────────────
+coverage/
+.nyc_output/
+
+# ── SISTEMA OPERATIVO ─────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── IDEs / EDITORES ───────────────────────────
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Mantener configuración compartida de VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# ── MISCELLANEOUS ─────────────────────────────
+*.orig
+*.bak
+*.tmp

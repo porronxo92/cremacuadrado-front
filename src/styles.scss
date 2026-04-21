@@ -1,0 +1,706 @@
+// =====================================================
+// Cremacuadrado — Sistema de Diseño Premium
+// =====================================================
+
+// Variables
+:root {
+  // === PALETA CROMÁTICA ===
+
+  // Estructurales
+  --color-bg: #F4F1E9;              // Crema Obrador — fondo principal
+  --color-bg-alt: #EDE9DD;          // Crema oscura — secciones alternativas
+  --color-brand: #7B1716;           // Granate Marca — identidad primaria
+  --color-brand-hover: #8E1C1B;     // Granate claro — hover sutil
+  --color-accent: #E6C15A;          // Amarillo Piedra — acento / texto sobre granate
+
+  // Líneas de producto
+  --color-pura: #A2BA1C;            // Línea PURA (verde)
+  --color-crunchy: #F5A542;         // Línea CRUNCHY (naranja)
+  --color-pistagreta: #50A3D2;      // Línea PISTAGRETA (azul)
+
+  // Texto
+  --color-text: #1A1208;            // Oscuro cálido — cuerpo principal
+  --color-text-light: #5A4F3E;      // Marrón medio
+  --color-text-muted: #8C7F6A;      // Apagado cálido
+  --color-text-on-brand: #E6C15A;   // Sobre fondo granate
+
+  // Bordes y superficies
+  --color-border: #D9D3C5;          // Borde crema suave
+  --color-surface: #EDE9DD;         // Superficie elevada
+
+  // Estado
+  --color-success: #4A7C1C;
+  --color-warning: #C88A1A;
+  --color-error: #A01C1C;
+  --color-info: #1A6A9E;
+
+  // === TIPOGRAFÍA ===
+  --font-title: 'Teko', sans-serif;       // H1, H2 — impacto
+  --font-narrative: 'Lora', serif;        // H3, texto largo, citas
+  --font-ui: 'Poppins', sans-serif;       // Nav, botones, formularios
+
+  --font-size-xs:   0.75rem;
+  --font-size-sm:   0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg:   1.125rem;
+  --font-size-xl:   1.25rem;
+  --font-size-2xl:  1.5rem;
+  --font-size-3xl:  2rem;
+  --font-size-4xl:  2.75rem;
+  --font-size-5xl:  3.75rem;
+
+  // === ESPACIADO ===
+  --spacing-xs:  0.25rem;
+  --spacing-sm:  0.5rem;
+  --spacing-md:  1rem;
+  --spacing-lg:  1.5rem;
+  --spacing-xl:  2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4.5rem;
+
+  // === BORDER RADIUS — formas rectas y definidas ===
+  --radius-sm:   0px;
+  --radius-md:   2px;
+  --radius-lg:   2px;
+  --radius-full: 2px;
+
+  // === SOMBRAS — cálidas y sutiles ===
+  --shadow-sm: 0 1px 3px 0 rgba(26, 18, 8, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(26, 18, 8, 0.10);
+  --shadow-lg: 0 12px 28px -4px rgba(26, 18, 8, 0.13);
+
+  // === LAYOUT ===
+  --container-max:     1280px;
+  --container-padding: 1.5rem;
+
+  // === TRANSICIONES ===
+  --transition-fast: 150ms ease;
+  --transition-base: 250ms ease;
+  --transition-slow: 400ms ease;
+}
+
+// Reset & Base
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-base);
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// === TIPOGRAFÍA ===
+
+// H1, H2 — Teko Bold, mayúsculas, tracking ajustado
+h1, h2 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-brand);
+}
+
+// H3 y abajo — Lora, más narrativo
+h3, h4, h5, h6 {
+  font-family: var(--font-narrative);
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text);
+}
+
+h1 { font-size: var(--font-size-5xl); }
+h2 { font-size: var(--font-size-4xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+p {
+  font-family: var(--font-narrative);
+  font-weight: 400;
+  line-height: 1.6;
+  margin-bottom: var(--spacing-md);
+}
+
+// Énfasis narrativo
+em, .text-italic {
+  font-family: var(--font-narrative);
+  font-style: italic;
+}
+
+a {
+  color: var(--color-brand);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--color-accent);
+  }
+}
+
+// Lists
+ul, ol {
+  font-family: var(--font-narrative);
+  padding-left: var(--spacing-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+// Images
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// Buttons (base reset)
+button {
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: inherit;
+  border: none;
+  background: none;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+}
+
+// === LAYOUT ===
+
+.container {
+  max-width: var(--container-max);
+  margin: 0 auto;
+  padding: 0 var(--container-padding);
+}
+
+// === UTILIDADES ===
+
+.text-center  { text-align: center; }
+.text-left    { text-align: left; }
+.text-right   { text-align: right; }
+
+.text-brand   { color: var(--color-brand); }
+.text-accent  { color: var(--color-accent); }
+.text-muted   { color: var(--color-text-muted); }
+.text-error   { color: var(--color-error); }
+.text-success { color: var(--color-success); }
+
+.font-title     { font-family: var(--font-title);     }
+.font-narrative { font-family: var(--font-narrative); }
+.font-ui        { font-family: var(--font-ui);        }
+
+.font-bold     { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium   { font-weight: 500; }
+.font-light    { font-weight: 300; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: var(--spacing-xs); }
+.mt-2 { margin-top: var(--spacing-sm); }
+.mt-3 { margin-top: var(--spacing-md); }
+.mt-4 { margin-top: var(--spacing-lg); }
+.mt-5 { margin-top: var(--spacing-xl); }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: var(--spacing-xs); }
+.mb-2 { margin-bottom: var(--spacing-sm); }
+.mb-3 { margin-bottom: var(--spacing-md); }
+.mb-4 { margin-bottom: var(--spacing-lg); }
+.mb-5 { margin-bottom: var(--spacing-xl); }
+
+.py-1 { padding-top: var(--spacing-xs);  padding-bottom: var(--spacing-xs); }
+.py-2 { padding-top: var(--spacing-sm);  padding-bottom: var(--spacing-sm); }
+.py-3 { padding-top: var(--spacing-md);  padding-bottom: var(--spacing-md); }
+.py-4 { padding-top: var(--spacing-lg);  padding-bottom: var(--spacing-lg); }
+.py-5 { padding-top: var(--spacing-xl);  padding-bottom: var(--spacing-xl); }
+.py-6 { padding-top: var(--spacing-2xl); padding-bottom: var(--spacing-2xl); }
+.py-7 { padding-top: var(--spacing-3xl); padding-bottom: var(--spacing-3xl); }
+
+// Flex
+.flex         { display: flex; }
+.flex-col     { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-center  { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.gap-1 { gap: var(--spacing-xs); }
+.gap-2 { gap: var(--spacing-sm); }
+.gap-3 { gap: var(--spacing-md); }
+.gap-4 { gap: var(--spacing-lg); }
+
+// Grid
+.grid        { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+// === BOTONES ===
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-xl);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-base);
+  text-decoration: none;
+  cursor: pointer;
+  border: 2px solid transparent;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Primario — Granate con texto Amarillo Piedra
+.btn-primary {
+  background-color: var(--color-brand);
+  color: var(--color-accent);
+  border-color: var(--color-brand);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-brand-hover);
+    color: #F0D17A;
+    border-color: var(--color-brand-hover);
+  }
+}
+
+// Secundario — fondo crema oscuro
+.btn-secondary {
+  background-color: var(--color-bg-alt);
+  color: var(--color-text);
+  border-color: var(--color-border);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-border);
+    color: var(--color-brand);
+  }
+}
+
+// Outline — borde granate
+.btn-outline {
+  background-color: transparent;
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-brand);
+    color: var(--color-accent);
+  }
+}
+
+// Ghost — transparente
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-text-light);
+
+  &:hover:not(:disabled) {
+    background-color: var(--color-bg-alt);
+    color: var(--color-brand);
+  }
+}
+
+// Accent — Amarillo Piedra
+.btn-accent {
+  background-color: var(--color-accent);
+  color: var(--color-brand);
+  border-color: var(--color-accent);
+
+  &:hover:not(:disabled) {
+    background-color: #D4A83E;
+    border-color: #D4A83E;
+  }
+}
+
+.btn-lg {
+  padding: var(--spacing-md) var(--spacing-2xl);
+  font-size: var(--font-size-base);
+}
+
+.btn-sm {
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-xs);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+// === FORMULARIOS ===
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-base);
+  font-weight: 300;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+
+  &::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  &:focus {
+    outline: none;
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px rgba(123, 23, 22, 0.08);
+  }
+
+  &.is-invalid {
+    border-color: var(--color-error);
+  }
+
+  &:disabled {
+    background-color: var(--color-bg-alt);
+    cursor: not-allowed;
+    color: var(--color-text-muted);
+  }
+}
+
+.form-error {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: 300;
+  color: var(--color-error);
+  margin-top: var(--spacing-xs);
+}
+
+.form-hint {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-sm);
+  font-weight: 300;
+  color: var(--color-text-muted);
+  margin-top: var(--spacing-xs);
+}
+
+// === TARJETAS ===
+.card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: box-shadow var(--transition-base);
+
+  &:hover {
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.card-body {
+  padding: var(--spacing-lg);
+}
+
+.card-header {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--color-border);
+  font-family: var(--font-ui);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+.card-footer {
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-alt);
+}
+
+// === BADGES ===
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-sm);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+// Líneas de producto
+.badge-pura {
+  background-color: rgba(162, 186, 28, 0.15);
+  color: #738F0D;
+}
+
+.badge-crunchy {
+  background-color: rgba(245, 165, 66, 0.15);
+  color: #C07010;
+}
+
+.badge-pistagreta {
+  background-color: rgba(80, 163, 210, 0.15);
+  color: #1A6A9E;
+}
+
+.badge-primary {
+  background-color: rgba(123, 23, 22, 0.1);
+  color: var(--color-brand);
+}
+
+.badge-success {
+  background-color: rgba(74, 124, 28, 0.1);
+  color: var(--color-success);
+}
+
+.badge-warning {
+  background-color: rgba(200, 138, 26, 0.1);
+  color: var(--color-warning);
+}
+
+.badge-error {
+  background-color: rgba(160, 28, 28, 0.1);
+  color: var(--color-error);
+}
+
+// === ALERTAS ===
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+  font-family: var(--font-ui);
+  font-weight: 300;
+  border-left: 3px solid transparent;
+}
+
+.alert-success {
+  background-color: rgba(74, 124, 28, 0.07);
+  color: var(--color-success);
+  border-left-color: var(--color-success);
+}
+
+.alert-error {
+  background-color: rgba(160, 28, 28, 0.07);
+  color: var(--color-error);
+  border-left-color: var(--color-error);
+}
+
+.alert-warning {
+  background-color: rgba(200, 138, 26, 0.07);
+  color: var(--color-warning);
+  border-left-color: var(--color-warning);
+}
+
+.alert-info {
+  background-color: rgba(26, 106, 158, 0.07);
+  color: var(--color-info);
+  border-left-color: var(--color-info);
+}
+
+// === SPINNER ===
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// === SKELETON ===
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--color-bg-alt) 25%,
+    var(--color-border) 50%,
+    var(--color-bg-alt) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// === ACCESIBILIDAD ===
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+// === PRECIOS ===
+.price {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--color-brand);
+}
+
+.price-original {
+  text-decoration: line-through;
+  color: var(--color-text-muted);
+  font-weight: 300;
+  font-size: var(--font-size-sm);
+}
+
+// === STOCK ===
+.stock-badge {
+  font-family: var(--font-ui);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.stock-in {
+  background-color: rgba(74, 124, 28, 0.1);
+  color: var(--color-success);
+}
+
+.stock-low {
+  background-color: rgba(200, 138, 26, 0.1);
+  color: var(--color-warning);
+}
+
+.stock-out {
+  background-color: rgba(160, 28, 28, 0.1);
+  color: var(--color-error);
+}
+
+// === SECCIONES ===
+.section-alt {
+  background-color: var(--color-bg-alt);
+}
+
+.section-brand {
+  background-color: var(--color-brand);
+  color: var(--color-text-on-brand);
+
+  h1, h2 {
+    color: var(--color-accent);
+  }
+
+  h3, h4, h5, h6, p {
+    color: rgba(244, 241, 233, 0.9);
+  }
+}
+
+// Divisor decorativo
+.divider {
+  width: 3rem;
+  height: 2px;
+  background-color: var(--color-accent);
+  margin: var(--spacing-md) 0 var(--spacing-lg);
+}
+
+.divider-center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// === IMAGEN CON OVERLAY ===
+.img-overlay {
+  position: relative;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(26, 18, 8, 0.1) 0%,
+      rgba(26, 18, 8, 0.55) 100%
+    );
+  }
+
+  .img-overlay__content {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: var(--spacing-xl);
+    color: #F4F1E9;
+  }
+}
+
+
+.stock-low {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.stock-out {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
