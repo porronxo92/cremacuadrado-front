@@ -70,7 +70,7 @@ export class ProductService {
     if (filters.sort_order) params = params.set('sort_order', filters.sort_order);
     
     return this.http.get<PaginatedResponse<ProductListItem>>(this.apiUrl, { params }).pipe(
-      map(res => ({ ...res, results: res.results.map(i => this.normalizeListItem(i)) }))
+      map(res => ({ ...res, items: res.items.map((i: ProductListItem) => this.normalizeListItem(i)) }))
     );
   }
   
