@@ -16,6 +16,7 @@ export interface Product {
   is_low_stock: boolean;
   category: Category | null;
   images: ProductImage[];
+  audio_url: string | null;
   nutrition: ProductNutrition | null;
   average_rating: number | null;
   review_count: number;

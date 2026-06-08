@@ -118,7 +118,7 @@ import { RouterModule } from '@angular/router';
               <section class="section" id="cookies">
                 <h2><span class="section__num">07</span> Cookies</h2>
                 <p>CREMACUADRADO SL utiliza cookies con el objetivo de optimizar y personalizar la navegación por el sitio web.</p>
-                <a routerLink="/pages/cookies" class="link-card">
+                <a routerLink="/cookies" class="link-card">
                   <span>Consulta nuestra Política de Cookies</span>
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </a>

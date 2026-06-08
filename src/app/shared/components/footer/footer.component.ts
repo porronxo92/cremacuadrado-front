@@ -23,10 +23,10 @@ import { RouterModule } from '@angular/router';
           <div class="footer__section">
             <h3 class="footer__title">Enlaces</h3>
             <nav class="footer__nav">
-              <a routerLink="/catalog">Tienda</a>
-              <a routerLink="/blog">Blog</a>
-              <a routerLink="/pages/sobre-nosotros">Sobre nosotros</a>
-              <a routerLink="/pages/envios">Envíos</a>
+              <a routerLink="/tienda">Tienda</a>
+              <a routerLink="/el-archivo">Blog</a>
+              <a routerLink="/nuestro-metodo">Sobre nosotros</a>
+              <a routerLink="/devoluciones">Envíos</a>
             </nav>
           </div>
           
@@ -34,9 +34,9 @@ import { RouterModule } from '@angular/router';
           <div class="footer__section">
             <h3 class="footer__title">Legal</h3>
             <nav class="footer__nav">
-              <a routerLink="/pages/politica-privacidad">Política de privacidad</a>
-              <a routerLink="/pages/condiciones">Condiciones de uso</a>
-              <a routerLink="/pages/cookies">Política de cookies</a>
+              <a routerLink="/privacidad">Política de privacidad</a>
+              <a routerLink="/condiciones-venta">Condiciones de uso</a>
+              <a routerLink="/cookies">Política de cookies</a>
             </nav>
           </div>
           

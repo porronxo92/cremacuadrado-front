@@ -82,7 +82,7 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="form-group">
             <label class="checkbox">
               <input type="checkbox" formControlName="acceptTerms">
-              <span>Acepto los <a routerLink="/pages/condiciones" target="_blank">términos y condiciones</a> y la <a routerLink="/pages/politica-privacidad" target="_blank">política de privacidad</a></span>
+              <span>Acepto los <a routerLink="/condiciones-venta" target="_blank">términos y condiciones</a> y la <a routerLink="/privacidad" target="_blank">política de privacidad</a></span>
             </label>
             @if (registerForm.get('acceptTerms')?.hasError('requiredTrue') && registerForm.get('acceptTerms')?.touched) {
               <span class="error-text">Debes aceptar los términos y condiciones</span>

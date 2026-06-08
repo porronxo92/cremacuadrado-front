@@ -216,7 +216,7 @@ interface Store {
                 <textarea id="c-message" [(ngModel)]="customerForm.message" name="c-message" rows="5" placeholder="Cuéntanos en qué podemos ayudarte…" required></textarea>
               </div>
               <div class="pdv-form__footer">
-                <p class="pdv-form__privacy">Al enviar este formulario aceptas nuestra <a routerLink="/pages/politica-privacidad">política de privacidad</a>.</p>
+                <p class="pdv-form__privacy">Al enviar este formulario aceptas nuestra <a routerLink="/privacidad">política de privacidad</a>.</p>
                 <button type="submit" class="btn btn--brand" [disabled]="submitting()">
                   @if (submitting()) {
                     <span class="spinner"></span> Enviando…
@@ -279,7 +279,7 @@ interface Store {
                 <textarea id="b-message" [(ngModel)]="businessForm.message" name="b-message" rows="4" placeholder="Describe brevemente tu tienda, clientes habituales, volumen estimado…"></textarea>
               </div>
               <div class="pdv-form__footer">
-                <p class="pdv-form__privacy">Al enviar este formulario aceptas nuestra <a routerLink="/pages/politica-privacidad">política de privacidad</a>.</p>
+                <p class="pdv-form__privacy">Al enviar este formulario aceptas nuestra <a routerLink="/privacidad">política de privacidad</a>.</p>
                 <button type="submit" class="btn btn--brand" [disabled]="submitting()">
                   @if (submitting()) {
                     <span class="spinner"></span> Enviando…

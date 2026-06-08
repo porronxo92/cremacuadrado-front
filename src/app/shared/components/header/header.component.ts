@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
+import { MiniCartService } from '../../../core/services/mini-cart.service';
 
 @Component({
   selector: 'app-header',
@@ -32,7 +33,7 @@ import { CartService } from '../../../core/services/cart.service';
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
               <div class="nav-item__dropdown">
-                <a routerLink="/catalog" [queryParams]="{category: 'pura'}" class="dropdown-item" (click)="closeAll()">
+                <a routerLink="/tienda" [queryParams]="{category: 'pura'}" class="dropdown-item" (click)="closeAll()">
                   <div class="dropdown-item__icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/><path d="M8 12s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
                   </div>
@@ -41,7 +42,7 @@ import { CartService } from '../../../core/services/cart.service';
                     <span>Consciente · Fitness · Ético</span>
                   </div>
                 </a>
-                <a routerLink="/catalog" [queryParams]="{category: 'crunchy'}" class="dropdown-item" (click)="closeAll()">
+                <a routerLink="/tienda" [queryParams]="{category: 'crunchy'}" class="dropdown-item" (click)="closeAll()">
                   <div class="dropdown-item__icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
                   </div>
@@ -51,17 +52,17 @@ import { CartService } from '../../../core/services/cart.service';
                   </div>
                 </a>
                 <div class="dropdown-divider"></div>
-                <a routerLink="/catalog" class="dropdown-item dropdown-item--all" (click)="closeAll()">
+                <a routerLink="/tienda" class="dropdown-item dropdown-item--all" (click)="closeAll()">
                   Ver toda la tienda
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                 </a>
               </div>
             </div>
 
-            <a routerLink="/pages/nuestro-proceso" routerLinkActive="active" class="nav-item__link">Nuestro Proceso</a>
-            <a routerLink="/pages/puntos-de-venta" routerLinkActive="active" class="nav-item__link">Puntos de Venta</a>
-            <a routerLink="/pages/profesionales" routerLinkActive="active" class="nav-item__link">Profesionales</a>
-            <a routerLink="/blog" routerLinkActive="active" class="nav-item__link">Recetario</a>
+            <a routerLink="/nuestro-metodo" routerLinkActive="active" class="nav-item__link">Nuestro Método</a>
+            <a routerLink="/puntos-de-venta" routerLinkActive="active" class="nav-item__link">Puntos de Venta</a>
+            <a routerLink="/para-tiendas" routerLinkActive="active" class="nav-item__link">Profesionales</a>
+            <a routerLink="/el-archivo" routerLinkActive="active" class="nav-item__link">Recetario</a>
 
           </nav>
 
@@ -69,7 +70,7 @@ import { CartService } from '../../../core/services/cart.service';
           <div class="header__actions">
 
             <!-- Cart -->
-            <a routerLink="/cart" class="header__icon-btn" title="Carrito">
+            <button class="header__icon-btn" (click)="miniCartService.toggle()" title="Carrito" aria-label="Abrir carrito">
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
                 <path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
@@ -77,7 +78,7 @@ import { CartService } from '../../../core/services/cart.service';
               @if (cartService.itemCount() > 0) {
                 <span class="header__badge">{{ cartService.itemCount() }}</span>
               }
-            </a>
+            </button>
 
             <!-- User / Mi Cuenta -->
             @if (authService.isAuthenticated()) {
@@ -134,23 +135,23 @@ import { CartService } from '../../../core/services/cart.service';
               </button>
               @if (showShopMobile) {
                 <div class="mobile-menu__sub">
-                  <a routerLink="/catalog" [queryParams]="{category: 'pura'}" (click)="closeAll()">
+                  <a routerLink="/tienda" [queryParams]="{category: 'pura'}" (click)="closeAll()">
                     <span>Crema Pura 100%</span>
                     <small>Consciente · Fitness · Ético</small>
                   </a>
-                  <a routerLink="/catalog" [queryParams]="{category: 'crunchy'}" (click)="closeAll()">
+                  <a routerLink="/tienda" [queryParams]="{category: 'crunchy'}" (click)="closeAll()">
                     <span>Crema Crunchy</span>
                     <small>Sibarita · Familias</small>
                   </a>
-                  <a routerLink="/catalog" (click)="closeAll()">Ver toda la tienda →</a>
+                  <a routerLink="/tienda" (click)="closeAll()">Ver toda la tienda →</a>
                 </div>
               }
             </div>
 
-            <a routerLink="/pages/nuestro-proceso" routerLinkActive="active" (click)="closeAll()">Nuestro Proceso</a>
-            <a routerLink="/pages/puntos-de-venta" routerLinkActive="active" (click)="closeAll()">Puntos de Venta</a>
-            <a routerLink="/pages/profesionales" routerLinkActive="active" (click)="closeAll()">Profesionales</a>
-            <a routerLink="/blog" routerLinkActive="active" (click)="closeAll()">Recetario</a>
+            <a routerLink="/nuestro-metodo" routerLinkActive="active" (click)="closeAll()">Nuestro Método</a>
+            <a routerLink="/puntos-de-venta" routerLinkActive="active" (click)="closeAll()">Puntos de Venta</a>
+            <a routerLink="/para-tiendas" routerLinkActive="active" (click)="closeAll()">Profesionales</a>
+            <a routerLink="/el-archivo" routerLinkActive="active" (click)="closeAll()">Recetario</a>
 
             <hr>
 
@@ -682,13 +683,14 @@ import { CartService } from '../../../core/services/cart.service';
 export class HeaderComponent {
   authService = inject(AuthService);
   cartService = inject(CartService);
+  miniCartService = inject(MiniCartService);
 
   showUserMenu = false;
   showMobileMenu = false;
   showShopMobile = false;
 
   isShopActive(): boolean {
-    return window.location.pathname.startsWith('/catalog');
+    return window.location.pathname.startsWith('/tienda');
   }
 
   toggleUserMenu(): void {

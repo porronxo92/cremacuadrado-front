@@ -80,7 +80,7 @@ import { Order } from '../../../core/models';
           
           <div class="success-actions">
             <a routerLink="/account/orders" class="btn btn--primary">Ver mis pedidos</a>
-            <a routerLink="/catalog" class="btn btn--secondary">Seguir comprando</a>
+            <a routerLink="/tienda" class="btn btn--secondary">Seguir comprando</a>
           </div>
         </div>
       </div>

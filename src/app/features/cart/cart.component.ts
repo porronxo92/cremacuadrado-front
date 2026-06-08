@@ -27,7 +27,7 @@ import { CartService } from '../../core/services/cart.service';
             </svg>
             <h2>Tu carrito está vacío</h2>
             <p>¡Añade algunos productos deliciosos!</p>
-            <a routerLink="/catalog" class="btn btn--primary">Ver productos</a>
+            <a routerLink="/tienda" class="btn btn--primary">Ver productos</a>
           </div>
         } @else {
           <div class="cart-layout">
@@ -41,7 +41,7 @@ import { CartService } from '../../core/services/cart.service';
                   
                   <div class="cart-item__info">
                     <h3>
-                      <a [routerLink]="['/catalog', item.product_slug]">{{ item.product_name }}</a>
+                      <a [routerLink]="['/tienda', item.product_slug]">{{ item.product_name }}</a>
                     </h3>
                     <p class="cart-item__price">{{ item.product_price | currency:'EUR' }}</p>
                   </div>
@@ -149,7 +149,7 @@ import { CartService } from '../../core/services/cart.service';
                 Proceder al pago
               </a>
               
-              <a routerLink="/catalog" class="continue-shopping">
+              <a routerLink="/tienda" class="continue-shopping">
                 ← Continuar comprando
               </a>
             </div>

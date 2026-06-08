@@ -79,7 +79,7 @@ interface TimelineEvent {
           <h2>Descubre el sabor del pistacho manchego</h2>
           <div class="about-cta__divider"></div>
           <p>Nuestra crema de pistacho 100% natural te espera</p>
-          <a routerLink="/catalog" class="btn btn--cta">Ver productos</a>
+          <a routerLink="/tienda" class="btn btn--cta">Ver productos</a>
         </div>
       </section>
     </div>

@@ -57,7 +57,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
             <div class="blog-grid">
               @for (post of posts(); track post.id) {
                 <article class="blog-card">
-                  <a [routerLink]="['/blog', post.slug]" class="blog-card__image">
+                  <a [routerLink]="['/el-archivo', post.slug]" class="blog-card__image">
                     @if (post.featured_image_url) {
                       <img [src]="post.featured_image_url" [alt]="post.title">
                     } @else {
@@ -78,7 +78,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
                       </div>
                     }
                     <h2>
-                      <a [routerLink]="['/blog', post.slug]">{{ post.title }}</a>
+                      <a [routerLink]="['/el-archivo', post.slug]">{{ post.title }}</a>
                     </h2>
                     @if (post.excerpt) {
                       <p class="blog-card__excerpt">{{ post.excerpt }}</p>
@@ -87,7 +87,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
                       @if (post.published_at) {
                         <span class="date">{{ post.published_at | date:'d MMM yyyy':'':'es' }}</span>
                       }
-                      <a [routerLink]="['/blog', post.slug]" class="read-more">Leer más</a>
+                      <a [routerLink]="['/el-archivo', post.slug]" class="read-more">Leer más</a>
                     </div>
                   </div>
                 </article>

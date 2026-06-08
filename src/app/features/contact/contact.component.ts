@@ -169,7 +169,7 @@ interface FaqItem {
                       <input type="checkbox" name="privacy" [(ngModel)]="formData.privacy" required #privacyField="ngModel">
                       <span class="checkbox-text">
                         He leído y acepto la
-                        <a routerLink="/pages/politica-privacidad">Política de Privacidad</a> *
+                        <a routerLink="/privacidad">Política de Privacidad</a> *
                       </span>
                     </label>
                   </div>

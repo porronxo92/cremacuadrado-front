@@ -18,7 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
         @if (cartService.itemCount() === 0) {
           <div class="empty-cart">
             <p>Tu carrito está vacío</p>
-            <a routerLink="/catalog" class="btn btn--primary">Ver productos</a>
+            <a routerLink="/tienda" class="btn btn--primary">Ver productos</a>
           </div>
         } @else {
           <div class="checkout-layout">
@@ -243,8 +243,8 @@ import { AuthService } from '../../core/services/auth.service';
               
               <p class="terms-notice">
                 Al realizar el pedido, aceptas nuestros
-                <a routerLink="/pages/condiciones">Términos y condiciones</a> y
-                <a routerLink="/pages/politica-privacidad">Política de privacidad</a>.
+                <a routerLink="/condiciones-venta">Términos y condiciones</a> y
+                <a routerLink="/privacidad">Política de privacidad</a>.
               </p>
             </div>
           </div>
@@ -704,7 +704,7 @@ export class CheckoutComponent implements OnInit {
       next: (order) => {
         this.processing.set(false);
         this.cartService.clearCart();
-        this.router.navigate(['/checkout/success'], { 
+        this.router.navigate(['/gracias'], {
           queryParams: { orderId: order.id }
         });
       },

@@ -28,7 +28,7 @@ import { Order, OrderListItem } from '../../../core/models';
           </svg>
           <h2>No tienes pedidos aún</h2>
           <p>Cuando realices tu primera compra, aparecerá aquí.</p>
-          <a routerLink="/catalog" class="btn btn--primary">Explorar productos</a>
+          <a routerLink="/tienda" class="btn btn--primary">Explorar productos</a>
         </div>
       } @else {
         <div class="orders-list">

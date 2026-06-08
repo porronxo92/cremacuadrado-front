@@ -140,14 +140,14 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
           <div class="not-found">
             <h2>Artículo no encontrado</h2>
             <p>El artículo que buscas no existe o ha sido eliminado.</p>
-            <a routerLink="/blog" class="btn btn--primary">Volver al blog</a>
+            <a routerLink="/el-archivo" class="btn btn--primary">Volver al blog</a>
           </div>
         } @else {
           <!-- Breadcrumb -->
           <nav class="breadcrumb">
             <a routerLink="/">Inicio</a>
             <span>/</span>
-            <a routerLink="/blog">Blog</a>
+            <a routerLink="/el-archivo">Blog</a>
             <span>/</span>
             <span>{{ post()!.title }}</span>
           </nav>
@@ -185,7 +185,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
 
             <!-- Footer -->
             <footer class="article__footer">
-              <a routerLink="/blog" class="back-link">
+              <a routerLink="/el-archivo" class="back-link">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="19" y1="12" x2="5" y2="12"></line>
                   <polyline points="12 19 5 12 12 5"></polyline>
@@ -196,7 +196,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
               <div class="cta-box">
                 <h3>¿Te ha gustado este artículo?</h3>
                 <p>Descubre nuestra crema de pistacho 100% natural</p>
-                <a routerLink="/catalog" class="btn btn--primary">Ver productos</a>
+                <a routerLink="/tienda" class="btn btn--primary">Ver productos</a>
               </div>
             </footer>
           </article>

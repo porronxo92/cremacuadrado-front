@@ -44,7 +44,7 @@ import { Order, OrderListItem } from '../../../core/models';
               </svg>
               <span>Direcciones</span>
             </a>
-            <a routerLink="/catalog" class="quick-link">
+            <a routerLink="/tienda" class="quick-link">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="9" cy="21" r="1"></circle>
                 <circle cx="20" cy="21" r="1"></circle>
@@ -67,7 +67,7 @@ import { Order, OrderListItem } from '../../../core/models';
           } @else if (recentOrders().length === 0) {
             <div class="empty-state">
               <p>No tienes pedidos aún</p>
-              <a routerLink="/catalog" class="btn btn--primary">Explorar productos</a>
+              <a routerLink="/tienda" class="btn btn--primary">Explorar productos</a>
             </div>
           } @else {
             <div class="orders-list">

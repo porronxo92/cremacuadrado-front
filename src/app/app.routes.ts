@@ -10,85 +10,91 @@ export const routes: Routes = [
     loadComponent: () => import('./features/home/home.component').then(m => m.HomeComponent),
   },
 
-  // About / Nosotros
+  // Nuestro Método
   {
-    path: 'nosotros',
-    redirectTo: 'pages/sobre-nosotros',
-    pathMatch: 'full',
-  },
-  {
-    path: 'pages/sobre-nosotros',
+    path: 'nuestro-metodo',
     loadComponent: () => import('./features/about/about.component').then(m => m.AboutComponent),
   },
 
   // Contact
   {
     path: 'contacto',
-    redirectTo: 'pages/contacto',
-    pathMatch: 'full',
-  },
-  {
-    path: 'pages/contacto',
     loadComponent: () => import('./features/contact/contact.component').then(m => m.ContactComponent),
   },
 
-  // Legal / Info pages
+  // Legal pages
   {
-    path: 'pages/politica-privacidad',
+    path: 'privacidad',
     loadComponent: () => import('./features/pages/privacy/privacy.component').then(m => m.PrivacyPageComponent),
   },
   {
-    path: 'pages/condiciones',
+    path: 'condiciones-venta',
     loadComponent: () => import('./features/pages/conditions/conditions.component').then(m => m.ConditionsPageComponent),
   },
   {
-    path: 'pages/cookies',
+    path: 'cookies',
     loadComponent: () => import('./features/pages/cookies/cookies.component').then(m => m.CookiesPageComponent),
   },
   {
-    path: 'pages/envios',
+    path: 'devoluciones',
     loadComponent: () => import('./features/pages/shipping/shipping.component').then(m => m.ShippingPageComponent),
   },
   {
-    path: 'pages/puntos-de-venta',
+    path: 'puntos-de-venta',
     loadComponent: () => import('./features/pages/puntos-de-venta/puntos-de-venta.component').then(m => m.PuntosDeVentaComponent),
   },
 
   // Blog
   {
-    path: 'blog',
+    path: 'el-archivo',
     loadComponent: () => import('./features/blog/blog-list/blog-list.component').then(m => m.BlogListComponent),
   },
   {
-    path: 'blog/:slug',
+    path: 'el-archivo/:slug',
     loadComponent: () => import('./features/blog/blog-detail/blog-detail.component').then(m => m.BlogDetailComponent),
   },
 
-  // Catalog
+  // Tienda (catálogo)
   {
-    path: 'catalog',
+    path: 'tienda',
     loadComponent: () => import('./features/catalog/product-list/product-list.component').then(m => m.ProductListComponent),
   },
   {
-    path: 'catalog/:slug',
+    path: 'tienda/:slug',
     loadComponent: () => import('./features/catalog/product-detail/product-detail.component').then(m => m.ProductDetailComponent),
   },
-  
-  // Cart
+
+  // Carrito
   {
-    path: 'cart',
+    path: 'carrito',
     loadComponent: () => import('./features/cart/cart.component').then(m => m.CartComponent),
   },
-  
+
   // Checkout
   {
     path: 'checkout',
     loadComponent: () => import('./features/checkout/checkout.component').then(m => m.CheckoutComponent),
   },
   {
-    path: 'checkout/success',
+    path: 'gracias',
     loadComponent: () => import('./features/checkout/checkout-success/checkout-success.component').then(m => m.CheckoutSuccessComponent),
   },
+
+  // Redirecciones de compatibilidad (rutas antiguas en inglés)
+  { path: 'catalog', redirectTo: '/tienda', pathMatch: 'full' },
+  { path: 'catalog/:slug', redirectTo: '/tienda/:slug', pathMatch: 'full' },
+  { path: 'cart', redirectTo: '/carrito', pathMatch: 'full' },
+  { path: 'blog', redirectTo: '/el-archivo', pathMatch: 'full' },
+  { path: 'blog/:slug', redirectTo: '/el-archivo/:slug', pathMatch: 'full' },
+  { path: 'checkout/success', redirectTo: '/gracias', pathMatch: 'full' },
+  { path: 'pages/sobre-nosotros', redirectTo: '/nuestro-metodo', pathMatch: 'full' },
+  { path: 'nosotros', redirectTo: '/nuestro-metodo', pathMatch: 'full' },
+  { path: 'pages/contacto', redirectTo: '/contacto', pathMatch: 'full' },
+  { path: 'pages/politica-privacidad', redirectTo: '/privacidad', pathMatch: 'full' },
+  { path: 'pages/condiciones', redirectTo: '/condiciones-venta', pathMatch: 'full' },
+  { path: 'pages/cookies', redirectTo: '/cookies', pathMatch: 'full' },
+  { path: 'pages/envios', redirectTo: '/devoluciones', pathMatch: 'full' },
+  { path: 'pages/puntos-de-venta', redirectTo: '/puntos-de-venta', pathMatch: 'full' },
   
   // Auth
   {
