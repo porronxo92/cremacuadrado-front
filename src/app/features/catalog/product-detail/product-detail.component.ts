@@ -8,7 +8,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Product } from '../../../core/models';
+import { Product, ProductVariant } from '../../../core/models';
 import { FormatSelectorComponent, ProductFormat } from '../components/format-selector/format-selector.component';
 import { PriceDisplayComponent } from '../components/price-display/price-display.component';
 import { AudioPlayerComponent } from '../components/audio-player/audio-player.component';
@@ -27,12 +27,37 @@ const PLACEHOLDER_REVIEWS = [
   { name: 'Carlos M.', location: 'Valencia', text: 'Compré el kilo y fue la mejor decisión.',  rating: 5 },
 ];
 
-function buildFormats(basePrice: number): ProductFormat[] {
-  return [
-    { id: '100g', label: '100g', grams: 100,  price: basePrice,                        badge: 'Para probar', badgeColor: 'gray'   },
-    { id: '200g', label: '200g', grams: 200,  price: Math.round(basePrice * 1.515),     badge: 'Más popular', badgeColor: 'green'  },
-    { id: '1kg',  label: '1 kg', grams: 1000, price: Math.round(basePrice * 5.555),     badge: 'Mejor €/g',   badgeColor: 'yellow' },
-  ];
+function gramsFromFormat(format: string): number {
+  const normalized = format.trim().toLowerCase();
+  if (normalized.endsWith('kg')) return Math.round(parseFloat(normalized.replace('kg', '').trim()) * 1000);
+  if (normalized.endsWith('g')) return Math.round(parseFloat(normalized.replace('g', '').trim()));
+  return 100;
+}
+
+function formatToSelector(variant: ProductVariant): ProductFormat {
+  const normalized = variant.format.trim().toLowerCase();
+  let badge: ProductFormat['badge'];
+  let badgeColor: ProductFormat['badgeColor'];
+
+  if (normalized === '200g') {
+    badge = 'Más popular';
+    badgeColor = 'green';
+  } else if (normalized.includes('kg')) {
+    badge = 'Mejor €/g';
+    badgeColor = 'yellow';
+  } else {
+    badge = 'Para probar';
+    badgeColor = 'gray';
+  }
+
+  return {
+    id: variant.id,
+    label: variant.format,
+    grams: gramsFromFormat(variant.format),
+    price: Math.round(variant.price * 100),
+    badge,
+    badgeColor,
+  };
 }
 
 @Component({
@@ -155,6 +180,13 @@ function buildFormats(basePrice: number): ProductFormat[] {
                   [formats]="formats()"
                   [selected]="selectedFormat()"
                   (formatChange)="onFormatChange($event)" />
+
+                @if (selectedVariant()?.is_low_stock) {
+                  <p class="pd__stock pd__stock--low">Solo quedan {{ selectedVariant()!.stock }} unidades</p>
+                }
+                @if (selectedVariant() && !selectedVariant()!.is_in_stock) {
+                  <p class="pd__stock pd__stock--out">Agotado</p>
+                }
               </div>
             
 
@@ -189,18 +221,31 @@ function buildFormats(basePrice: number): ProductFormat[] {
                     </div>
                     @if (purchaseType() === 'once') {
                       <div class="pur-opt__body">
-                        <button
-                          class="pd__cta"
-                          (click)="addToCart()"
-                          [disabled]="!product()!.is_in_stock || addingToCart()">
-                          @if (addingToCart()) {
-                            <span class="pd__cta-spinner"></span>Añadiendo...
-                          } @else if (!product()!.is_in_stock) {
-                            Producto agotado
-                          } @else {
-                            Añadir al carrito
-                          }
-                        </button>
+                        <div class="pur-opt__qty-row">
+                          <div class="qty-stepper">
+                            <button class="qty-stepper__btn" type="button"
+                              (click)="quantity.set(quantity() - 1)"
+                              [disabled]="quantity() <= 1"
+                              aria-label="Reducir cantidad">−</button>
+                            <span class="qty-stepper__val" aria-live="polite" aria-label="Cantidad">{{ quantity() }}</span>
+                            <button class="qty-stepper__btn" type="button"
+                              (click)="quantity.set(quantity() + 1)"
+                              [disabled]="quantity() >= (selectedVariant()?.stock ?? 99)"
+                              aria-label="Aumentar cantidad">+</button>
+                          </div>
+                          <button
+                            class="pd__cta"
+                            (click)="addToCart()"
+                            [disabled]="!selectedVariant()?.is_in_stock || addingToCart()">
+                            @if (addingToCart()) {
+                              <span class="pd__cta-spinner"></span>Añadiendo...
+                            } @else if (!selectedVariant()?.is_in_stock) {
+                              Agotado
+                            } @else {
+                              Añadir al carrito
+                            }
+                          </button>
+                        </div>
                       </div>
                     }
                   </label>
@@ -367,8 +412,8 @@ function buildFormats(basePrice: number): ProductFormat[] {
           <div class="pd__sticky-name">{{ product()!.name }} · {{ selectedFormat()?.label }}</div>
           <div class="pd__sticky-price">{{ effectivePrice() / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</div>
         </div>
-        <button class="pd__sticky-cta" (click)="addToCart()" [disabled]="addingToCart()">
-          {{ addingToCart() ? '...' : 'Añadir al carrito' }}
+        <button class="pd__sticky-cta" (click)="addToCart()" [disabled]="addingToCart() || !selectedVariant()?.is_in_stock">
+          {{ addingToCart() ? '...' : (!selectedVariant()?.is_in_stock ? 'Agotado' : 'Añadir al carrito') }}
         </button>
       </div>
     }
@@ -499,6 +544,17 @@ function buildFormats(basePrice: number): ProductFormat[] {
       text-transform: uppercase; letter-spacing: .06em; color: $muted;
     }
 
+    .pd__stock {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    .pd__stock--low { color: #A46A00; }
+    .pd__stock--out { color: #9A1E1E; }
+
     // Step 1: stars
     .step-stars { display: flex; align-items: center; gap: 5px; }
     .stars-filled { color: $accent; font-size: .9rem; letter-spacing: 1px; }
@@ -607,6 +663,44 @@ function buildFormats(basePrice: number): ProductFormat[] {
 
     .pur-opt__body {
       padding: 0 12px 12px;
+    }
+
+    .pur-opt__qty-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .pd__cta { flex: 1; }
+    }
+
+    .qty-stepper {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1.5px solid $border;
+      border-radius: 20px;
+      overflow: hidden;
+      flex-shrink: 0;
+
+      &__btn {
+        width: 34px; height: 34px;
+        background: $bg; border: none;
+        font-family: 'Poppins', sans-serif;
+        font-size: 1rem; font-weight: 600; color: $brand;
+        cursor: pointer; transition: background 150ms, color 150ms;
+        display: flex; align-items: center; justify-content: center;
+        &:hover:not(:disabled) { background: $brand; color: $bg; }
+        &:disabled { opacity: .35; cursor: default; }
+      }
+
+      &__val {
+        min-width: 28px; text-align: center;
+        font-family: 'Poppins', sans-serif;
+        font-size: .85rem; font-weight: 600; color: $ink;
+        border-left: 1px solid $border;
+        border-right: 1px solid $border;
+        line-height: 34px;
+      }
     }
 
     .pur-opt__benefits {
@@ -789,6 +883,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   readonly showStickyBar = signal(false);
   readonly activeTab = signal<Tab>('producto');
   readonly purchaseType = signal<PurchaseType>('once');
+  readonly quantity = signal(1);
 
   readonly subPrice = computed(() => {
     const f = this.selectedFormat();
@@ -811,7 +906,14 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
 
   readonly formats = computed(() => {
     const p = this.product();
-    return p ? buildFormats(p.price) : [];
+    return (p?.variants ?? []).map(formatToSelector);
+  });
+
+  readonly selectedVariant = computed(() => {
+    const p = this.product();
+    const selected = this.selectedFormat();
+    if (!p || !selected) return null;
+    return (p.variants ?? []).find(v => v.id === selected.id) ?? null;
   });
 
   readonly firstImage = computed(() =>
@@ -845,7 +947,9 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       next: (product) => {
         this.product.set(product);
         this.selectedImage.set(null);
-        this.selectedFormat.set(buildFormats(product.price)[1]); // default: 200g
+        const variants = product.variants ?? [];
+        const defaultVariant = variants[1] ?? variants[0] ?? null;
+        this.selectedFormat.set(defaultVariant ? formatToSelector(defaultVariant) : null);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -854,6 +958,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
 
   onFormatChange(fmt: ProductFormat): void {
     this.selectedFormat.set(fmt);
+    this.quantity.set(1);
   }
 
   activateSubscription(): void {
@@ -874,11 +979,13 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
 
   addToCart(): void {
     const p = this.product();
-    if (!p) return;
+    const variant = this.selectedVariant();
+    if (!p || !variant || !variant.is_in_stock) return;
     this.addingToCart.set(true);
-    this.cartService.addItem(p.id, 1).subscribe({
+    this.cartService.addItem(variant.id, this.quantity()).subscribe({
       next: () => {
         this.addingToCart.set(false);
+        this.quantity.set(1);
         this.productService.invalidateCache(p.slug);
         this.miniCartService.open();
       },

@@ -67,10 +67,10 @@ export class CartService {
     ).subscribe();
   }
 
-  addItem(productId: number, quantity: number = 1): Observable<Cart> {
+  addItem(productVariantId: number, quantity: number = 1): Observable<Cart> {
     this.isLoadingSignal.set(true);
     return this.http.post<Cart>(`${this.apiUrl}/items`, {
-      product_id: productId,
+      product_variant_id: productVariantId,
       quantity
     }).pipe(
       tap(cart => {

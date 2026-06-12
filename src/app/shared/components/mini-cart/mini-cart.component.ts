@@ -75,7 +75,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                     [routerLink]="['/tienda', item.product_slug]"
                     class="mini-cart__item-name"
                     (click)="close()">
-                    {{ item.product_name }}
+                    {{ item.product_name }}{{ item.variant_format ? ' — ' + item.variant_format : '' }}
                   </a>
                   <div class="mini-cart__item-row">
                     <div class="mini-cart__qty" role="group" [attr.aria-label]="'Cantidad de ' + item.product_name">

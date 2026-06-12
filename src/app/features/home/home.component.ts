@@ -1,11 +1,11 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { MiniCartService } from '../../core/services/mini-cart.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ProductListItem } from '../../core/models';
+import { ProductListItem, ProductVariant } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
 import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-block.component';
 
@@ -46,7 +46,7 @@ const REVIEWS = [
                     [src]="product.primary_image || '/assets/images/placeholder.jpg'"
                     [alt]="product.name + ' — crema de pistacho manchego'"
                     loading="lazy">
-                  @if (product.compare_price && product.compare_price > product.price) {
+                  @if (product.compare_price && product.compare_price > defaultVariantPrice(product)) {
                     <span class="product-card__badge">Oferta</span>
                   }
                 </a>
@@ -54,7 +54,7 @@ const REVIEWS = [
                   <a [routerLink]="['/tienda', product.slug]" class="product-card__name">{{ product.name }}</a>
                   <p class="product-card__tagline">100% natural · sin aditivos</p>
                   <div class="product-card__footer">
-                    <span class="product-card__price">{{ product.price / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                    <span class="product-card__price">{{ defaultVariantPrice(product) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                     <button class="product-card__cta" (click)="addToCart(product)">
                       Añadir al carrito
                     </button>
@@ -605,6 +605,7 @@ export class HomeComponent implements OnInit {
   private cartService = inject(CartService);
   private miniCartService = inject(MiniCartService);
   private toastService = inject(ToastService);
+  private router = inject(Router);
 
   readonly featuredProducts = signal<ProductListItem[]>([]);
   readonly loadingProducts = signal(true);
@@ -620,8 +621,23 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  private defaultVariant(product: ProductListItem): ProductVariant | null {
+    return product.variants?.[1] ?? product.variants?.[0] ?? null;
+  }
+
+  defaultVariantPrice(product: ProductListItem): number {
+    return this.defaultVariant(product)?.price ?? 0;
+  }
+
   addToCart(product: ProductListItem): void {
-    this.cartService.addItem(product.id, 1).subscribe({
+    const variant = this.defaultVariant(product);
+    if (!variant) {
+      this.toastService.error('Selecciona un formato antes de añadir al carrito');
+      this.router.navigate(['/tienda', product.slug]);
+      return;
+    }
+
+    this.cartService.addItem(variant.id, 1).subscribe({
       next: () => this.miniCartService.open(),
       error: () => this.toastService.error('Error al añadir el producto'),
     });

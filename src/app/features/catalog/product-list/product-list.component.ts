@@ -2,18 +2,13 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
-import { ProductListItem } from '../../../core/models';
+import { ProductListItem, ProductVariant } from '../../../core/models';
 
-const PRODUCT_SLUGS = ['crema-pura', 'crema-crunchy'];
+const PRODUCT_SLUGS = ['crema-pistacho-pura', 'crema-pistacho-crunchy'];
 
 const TAGLINES: Record<string, string> = {
-  'crema-pura':   'Pistacho manchego tostado al natural, sin nada más',
-  'crema-crunchy': 'Con trozos crujientes de pistacho para los que quieren más',
-};
-
-const LINE_COLOR: Record<string, string> = {
-  'crema-pura':    '#A2BA1C',
-  'crema-crunchy': '#F5A542',
+  'crema-pistacho-pura': 'Pistacho manchego tostado al natural, sin nada más',
+  'crema-pistacho-crunchy': 'Con trozos crujientes de pistacho para los que quieren más',
 };
 
 @Component({
@@ -35,13 +30,16 @@ const LINE_COLOR: Record<string, string> = {
       } @else {
         <div class="tienda__grid">
           @for (p of products(); track p.id) {
-            <article class="prod-card" [style.--line]="lineColor(p.slug)">
+            <article class="prod-card" [style.--line]="p.badge_color || '#A2BA1C'">
               <a [routerLink]="['/tienda', p.slug]" class="prod-card__image-wrap">
                 <img
                   [src]="p.primary_image || '/assets/images/placeholder.jpg'"
                   [alt]="p.name"
                   class="prod-card__image"
                   loading="lazy">
+                <span class="prod-card__badge" [style.background]="p.badge_color || '#A2BA1C'">
+                  {{ selectedVariant(p)?.format || 'Formato' }}
+                </span>
                 <div class="prod-card__overlay">
                   <span class="prod-card__cta">Ver producto →</span>
                 </div>
@@ -51,9 +49,26 @@ const LINE_COLOR: Record<string, string> = {
                 <div class="prod-card__line-indicator"></div>
                 <h2 class="prod-card__name">{{ p.name | uppercase }}</h2>
                 <p class="prod-card__tagline">{{ tagline(p.slug) }}</p>
+
+                @if ((p.variants?.length || 0) > 0) {
+                  <div class="prod-card__formats" role="group" [attr.aria-label]="'Selecciona formato para ' + p.name">
+                    @for (variant of p.variants || []; track variant.id) {
+                      <button
+                        type="button"
+                        class="prod-card__format-btn"
+                        [class.is-active]="selectedVariantId(p) === variant.id"
+                        [class.is-disabled]="!variant.is_in_stock"
+                        [disabled]="!variant.is_in_stock"
+                        (click)="selectVariant(p, variant)">
+                        {{ variant.format }}
+                      </button>
+                    }
+                  </div>
+                }
+
                 <div class="prod-card__price-row">
-                  <span class="prod-card__price">{{ p.price / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
-                  <span class="prod-card__per100">desde 100g</span>
+                  <span class="prod-card__price">{{ (selectedVariant(p)?.price ?? 0) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                  <span class="prod-card__per100">{{ selectedVariant(p)?.format || 'Formato' }}</span>
                 </div>
                 <a [routerLink]="['/tienda', p.slug]" class="prod-card__btn">
                   Elegir formato
@@ -186,6 +201,21 @@ const LINE_COLOR: Record<string, string> = {
 
     .prod-card__image-wrap:hover .prod-card__overlay { opacity: 1; }
 
+    .prod-card__badge {
+      position: absolute;
+      top: 0.75rem;
+      left: 0.75rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #1C1A14;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.5rem;
+      border-radius: 20px;
+      z-index: 2;
+    }
+
     .prod-card__cta {
       font-family: 'Poppins', sans-serif;
       font-size: 0.85rem;
@@ -223,6 +253,37 @@ const LINE_COLOR: Record<string, string> = {
       color: $muted;
       margin: 0 0 1.5rem;
       line-height: 1.5;
+    }
+
+    .prod-card__formats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .prod-card__format-btn {
+      border: 1px solid $border;
+      border-radius: 20px;
+      background: $bg;
+      color: $ink;
+      padding: 0.35rem 0.4rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: border-color 150ms, background 150ms, color 150ms;
+
+      &.is-active {
+        border-color: $brand;
+        background: rgba(123, 23, 22, 0.08);
+        color: $brand;
+      }
+
+      &.is-disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+      }
     }
 
     .prod-card__price-row {
@@ -273,6 +334,7 @@ export class ProductListComponent implements OnInit {
 
   products = signal<ProductListItem[]>([]);
   loading = signal(true);
+  selectedVariants = signal<Record<number, number>>({});
 
   ngOnInit(): void {
     this.productService.getProducts({ page_size: 10 }).subscribe({
@@ -280,7 +342,15 @@ export class ProductListComponent implements OnInit {
         const ordered = PRODUCT_SLUGS
           .map(slug => response.items.find(p => p.slug === slug))
           .filter((p): p is ProductListItem => !!p);
-        this.products.set(ordered.length ? ordered : response.items.slice(0, 2));
+        const selectedProducts = ordered.length ? ordered : response.items.slice(0, 2);
+        this.products.set(selectedProducts);
+
+        const defaults: Record<number, number> = {};
+        for (const product of selectedProducts) {
+          const preferred = product.variants?.[1] ?? product.variants?.[0];
+          if (preferred) defaults[product.id] = preferred.id;
+        }
+        this.selectedVariants.set(defaults);
         this.loading.set(false);
       },
       error: () => {
@@ -293,7 +363,21 @@ export class ProductListComponent implements OnInit {
     return TAGLINES[slug] ?? '';
   }
 
-  lineColor(slug: string): string {
-    return LINE_COLOR[slug] ?? '#A2BA1C';
+  selectedVariantId(product: ProductListItem): number | null {
+    return this.selectedVariants()[product.id] ?? null;
+  }
+
+  selectedVariant(product: ProductListItem): ProductVariant | null {
+    const selectedId = this.selectedVariantId(product);
+    if (!selectedId) return product.variants?.[1] ?? product.variants?.[0] ?? null;
+    return product.variants?.find(v => v.id === selectedId) ?? product.variants?.[1] ?? product.variants?.[0] ?? null;
+  }
+
+  selectVariant(product: ProductListItem, variant: ProductVariant): void {
+    if (!variant.is_in_stock) return;
+    this.selectedVariants.update(current => ({
+      ...current,
+      [product.id]: variant.id,
+    }));
   }
 }

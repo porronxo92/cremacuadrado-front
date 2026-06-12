@@ -2,7 +2,7 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface ProductFormat {
-  id: string;
+  id: string | number;
   label: string;
   grams: number;
   price: number; // cents

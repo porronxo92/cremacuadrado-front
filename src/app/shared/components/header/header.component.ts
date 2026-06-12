@@ -33,7 +33,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                 <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
               <div class="nav-item__dropdown">
-                <a routerLink="/tienda" [queryParams]="{category: 'pura'}" class="dropdown-item" (click)="closeAll()">
+                <a routerLink="/tienda/crema-pistacho-pura" class="dropdown-item" (click)="closeAll()">
                   <div class="dropdown-item__icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/><path d="M8 12s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
                   </div>
@@ -42,7 +42,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                     <span>Consciente · Fitness · Ético</span>
                   </div>
                 </a>
-                <a routerLink="/tienda" [queryParams]="{category: 'crunchy'}" class="dropdown-item" (click)="closeAll()">
+                <a routerLink="/tienda/crema-pistacho-crunchy" class="dropdown-item" (click)="closeAll()">
                   <div class="dropdown-item__icon">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
                   </div>
@@ -135,11 +135,11 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
               </button>
               @if (showShopMobile) {
                 <div class="mobile-menu__sub">
-                  <a routerLink="/tienda" [queryParams]="{category: 'pura'}" (click)="closeAll()">
+                  <a routerLink="/tienda/crema-pistacho-pura" (click)="closeAll()">
                     <span>Crema Pura 100%</span>
                     <small>Consciente · Fitness · Ético</small>
                   </a>
-                  <a routerLink="/tienda" [queryParams]="{category: 'crunchy'}" (click)="closeAll()">
+                  <a routerLink="/tienda/crema-pistacho-crunchy" (click)="closeAll()">
                     <span>Crema Crunchy</span>
                     <small>Sibarita · Familias</small>
                   </a>

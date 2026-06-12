@@ -4,16 +4,18 @@ export interface Product {
   sku: string | null;
   slug: string;
   name: string;
+  badge_color?: string | null;
   short_description: string | null;
   description: string | null;
-  price: number;
+  price?: number;
   compare_price: number | null;
-  stock: number;
+  stock?: number;
   weight: number | null;
   is_active: boolean;
   is_featured: boolean;
   is_in_stock: boolean;
   is_low_stock: boolean;
+  variants?: ProductVariant[];
   category: Category | null;
   images: ProductImage[];
   audio_url: string | null;
@@ -29,16 +31,27 @@ export interface ProductListItem {
   sku: string | null;
   slug: string;
   name: string;
+  badge_color?: string | null;
   short_description: string | null;
-  price: number;
+  price?: number;
   compare_price: number | null;
   is_in_stock: boolean;
   is_low_stock: boolean;
   is_featured: boolean;
   primary_image: string | null;
+  variants?: ProductVariant[];
   category_slug: string | null;
   average_rating: number | null;
   review_count: number;
+}
+
+export interface ProductVariant {
+  id: number;
+  format: string;
+  price: number;
+  stock: number;
+  is_in_stock: boolean;
+  is_low_stock: boolean;
 }
 
 export interface Category {
@@ -142,11 +155,14 @@ export interface Cart {
 
 export interface CartItem {
   id: number;
-  product_id: number;
+  product_id?: number;
+  product_variant_id?: number;
   product_name: string;
+  variant_format?: string | null;
   product_slug: string;
   product_image: string | null;
-  product_price: number;
+  product_price?: number;
+  unit_price?: number;
   quantity: number;
   price_at_add: number;
   total: number;

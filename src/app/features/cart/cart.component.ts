@@ -41,9 +41,9 @@ import { CartService } from '../../core/services/cart.service';
                   
                   <div class="cart-item__info">
                     <h3>
-                      <a [routerLink]="['/tienda', item.product_slug]">{{ item.product_name }}</a>
+                      <a [routerLink]="['/tienda', item.product_slug]">{{ item.product_name }}{{ item.variant_format ? ' — ' + item.variant_format : '' }}</a>
                     </h3>
-                    <p class="cart-item__price">{{ item.product_price | currency:'EUR' }}</p>
+                    <p class="cart-item__price">{{ (item.unit_price ?? item.product_price ?? 0) | currency:'EUR' }}</p>
                   </div>
                   
                   <div class="cart-item__quantity">
