@@ -2,6 +2,7 @@ import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Cart, CartItem } from '../models';
 
@@ -32,6 +33,27 @@ export class CartService {
     this.syncFromServer();
   }
 
+  private resolveUrl(url: string | null): string | null {
+    if (!url) return null;
+    try {
+      const parsed = new URL(url);
+      // Replace any host (e.g. localhost:8000) with the configured mediaUrl
+      return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
+    } catch {
+      return url;
+    }
+  }
+
+  private normalizeCart(cart: Cart): Cart {
+    return {
+      ...cart,
+      items: cart.items.map(item => ({
+        ...item,
+        product_image: this.resolveUrl(item.product_image),
+      })),
+    };
+  }
+
   private restoreFromStorage(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     try {
@@ -44,6 +66,7 @@ export class CartService {
 
   private syncFromServer(): void {
     this.http.get<Cart>(this.apiUrl).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
@@ -55,6 +78,7 @@ export class CartService {
   loadCart(): void {
     this.isLoadingSignal.set(true);
     this.http.get<Cart>(this.apiUrl).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
@@ -73,6 +97,7 @@ export class CartService {
       product_variant_id: productVariantId,
       quantity
     }).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
@@ -88,6 +113,7 @@ export class CartService {
   updateItemQuantity(itemId: number, quantity: number): Observable<Cart> {
     this.isLoadingSignal.set(true);
     return this.http.put<Cart>(`${this.apiUrl}/items/${itemId}`, { quantity }).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
@@ -103,6 +129,7 @@ export class CartService {
   removeItem(itemId: number): Observable<Cart> {
     this.isLoadingSignal.set(true);
     return this.http.delete<Cart>(`${this.apiUrl}/items/${itemId}`).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
@@ -134,6 +161,7 @@ export class CartService {
   applyCoupon(code: string): Observable<Cart> {
     this.isLoadingSignal.set(true);
     return this.http.post<Cart>(`${this.apiUrl}/apply-coupon`, { code }).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
@@ -149,6 +177,7 @@ export class CartService {
   removeCoupon(): Observable<Cart> {
     this.isLoadingSignal.set(true);
     return this.http.delete<Cart>(`${this.apiUrl}/remove-coupon`).pipe(
+      map(cart => this.normalizeCart(cart)),
       tap(cart => {
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
