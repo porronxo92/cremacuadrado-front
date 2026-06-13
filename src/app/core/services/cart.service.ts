@@ -37,8 +37,15 @@ export class CartService {
   private getCartSessionHeader(): HttpHeaders {
     if (!isPlatformBrowser(this.platformId)) return new HttpHeaders();
     try {
-      const session = localStorage.getItem(CART_SESSION_KEY);
-      if (session) {
+      // 1. Prefer the value stored explicitly in localStorage
+      const stored = localStorage.getItem(CART_SESSION_KEY);
+      if (stored) return new HttpHeaders({ 'X-Cart-Session': stored });
+
+      // 2. Fall back: read the cart_session cookie set by the backend
+      const match = document.cookie.match(/(?:^|; )cart_session=([^;]+)/);
+      if (match) {
+        const session = decodeURIComponent(match[1]);
+        localStorage.setItem(CART_SESSION_KEY, session); // cache it
         return new HttpHeaders({ 'X-Cart-Session': session });
       }
     } catch {}
@@ -90,9 +97,13 @@ export class CartService {
     this.http.get<Cart>(this.apiUrl, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
       tap(response => {
         this.saveCartSession(response.headers);
-        const cart = this.normalizeCart(response.body!);
-        this.cartSignal.set(cart);
-        this.saveCartToStorage(cart);
+        const serverCart = this.normalizeCart(response.body!);
+        const localCart = this.cartSignal();
+        // Don't overwrite a non-empty local cart with an empty server response
+        // (happens when the backend doesn't recognise the session yet)
+        if (serverCart.item_count === 0 && (localCart?.item_count ?? 0) > 0) return;
+        this.cartSignal.set(serverCart);
+        this.saveCartToStorage(serverCart);
       }),
       catchError(() => of(null))
     ).subscribe();
