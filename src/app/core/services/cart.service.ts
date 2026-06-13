@@ -1,12 +1,13 @@
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, tap, catchError, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Cart, CartItem } from '../models';
 
 const CART_KEY = 'cc_cart';
+const CART_SESSION_KEY = 'cc_cart_session';
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +32,27 @@ export class CartService {
     this.restoreFromStorage();
     // 2. Silently sync with server in the background — does not block rendering
     this.syncFromServer();
+  }
+
+  private getCartSessionHeader(): HttpHeaders {
+    if (!isPlatformBrowser(this.platformId)) return new HttpHeaders();
+    try {
+      const session = localStorage.getItem(CART_SESSION_KEY);
+      if (session) {
+        return new HttpHeaders({ 'X-Cart-Session': session });
+      }
+    } catch {}
+    return new HttpHeaders();
+  }
+
+  private saveCartSession(headers: any): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    try {
+      const session = headers.get('X-Cart-Session');
+      if (session) {
+        localStorage.setItem(CART_SESSION_KEY, session);
+      }
+    } catch {}
   }
 
   private resolveUrl(url: string | null): string | null {
@@ -65,9 +87,10 @@ export class CartService {
   }
 
   private syncFromServer(): void {
-    this.http.get<Cart>(this.apiUrl).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    this.http.get<Cart>(this.apiUrl, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
       }),
@@ -77,9 +100,10 @@ export class CartService {
 
   loadCart(): void {
     this.isLoadingSignal.set(true);
-    this.http.get<Cart>(this.apiUrl).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    this.http.get<Cart>(this.apiUrl, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
         this.isLoadingSignal.set(false);
@@ -96,13 +120,15 @@ export class CartService {
     return this.http.post<Cart>(`${this.apiUrl}/items`, {
       product_variant_id: productVariantId,
       quantity
-    }).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    }, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
         this.isLoadingSignal.set(false);
       }),
+      map(response => this.normalizeCart(response.body!)),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -112,13 +138,15 @@ export class CartService {
 
   updateItemQuantity(itemId: number, quantity: number): Observable<Cart> {
     this.isLoadingSignal.set(true);
-    return this.http.put<Cart>(`${this.apiUrl}/items/${itemId}`, { quantity }).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    return this.http.put<Cart>(`${this.apiUrl}/items/${itemId}`, { quantity }, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
         this.isLoadingSignal.set(false);
       }),
+      map(response => this.normalizeCart(response.body!)),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -128,13 +156,15 @@ export class CartService {
 
   removeItem(itemId: number): Observable<Cart> {
     this.isLoadingSignal.set(true);
-    return this.http.delete<Cart>(`${this.apiUrl}/items/${itemId}`).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    return this.http.delete<Cart>(`${this.apiUrl}/items/${itemId}`, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
         this.isLoadingSignal.set(false);
       }),
+      map(response => this.normalizeCart(response.body!)),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -144,13 +174,18 @@ export class CartService {
 
   clearCart(): Observable<{ message: string }> {
     this.isLoadingSignal.set(true);
-    return this.http.delete<{ message: string }>(this.apiUrl).pipe(
-      tap(() => {
+    return this.http.delete<{ message: string }>(this.apiUrl, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap((response) => {
+        this.saveCartSession(response.headers);
         this.cartSignal.set(null);
-        if (isPlatformBrowser(this.platformId)) localStorage.removeItem(CART_KEY);
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.removeItem(CART_KEY);
+          localStorage.removeItem(CART_SESSION_KEY);
+        }
         this.isLoadingSignal.set(false);
         this.syncFromServer();
       }),
+      map(response => response.body!),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -160,13 +195,15 @@ export class CartService {
 
   applyCoupon(code: string): Observable<Cart> {
     this.isLoadingSignal.set(true);
-    return this.http.post<Cart>(`${this.apiUrl}/apply-coupon`, { code }).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    return this.http.post<Cart>(`${this.apiUrl}/apply-coupon`, { code }, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
         this.isLoadingSignal.set(false);
       }),
+      map(response => this.normalizeCart(response.body!)),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -176,13 +213,15 @@ export class CartService {
 
   removeCoupon(): Observable<Cart> {
     this.isLoadingSignal.set(true);
-    return this.http.delete<Cart>(`${this.apiUrl}/remove-coupon`).pipe(
-      map(cart => this.normalizeCart(cart)),
-      tap(cart => {
+    return this.http.delete<Cart>(`${this.apiUrl}/remove-coupon`, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      tap(response => {
+        this.saveCartSession(response.headers);
+        const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
         this.isLoadingSignal.set(false);
       }),
+      map(response => this.normalizeCart(response.body!)),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -192,7 +231,10 @@ export class CartService {
 
   resetCart(): void {
     this.cartSignal.set(null);
-    if (isPlatformBrowser(this.platformId)) localStorage.removeItem(CART_KEY);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem(CART_KEY);
+      localStorage.removeItem(CART_SESSION_KEY);
+    }
     this.syncFromServer();
   }
 
