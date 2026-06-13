@@ -64,9 +64,15 @@ export class CartService {
 
   private resolveUrl(url: string | null): string | null {
     if (!url) return null;
+
+    // If URL is relative (starts with /), prepend mediaUrl
+    if (url.startsWith('/')) {
+      return `${environment.mediaUrl}${url}`;
+    }
+
+    // If URL is absolute, replace the host with mediaUrl
     try {
       const parsed = new URL(url);
-      // Replace any host (e.g. localhost:8000) with the configured mediaUrl
       return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
     } catch {
       return url;
