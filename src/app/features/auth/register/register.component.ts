@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-register',
@@ -36,9 +37,9 @@ import { AuthService } from '../../../core/services/auth.service';
           
           <div class="form-group">
             <label for="email">Email</label>
-            <input 
-              type="email" 
-              id="email" 
+            <input
+              type="email"
+              id="email"
               formControlName="email"
               placeholder="tu@email.com"
               [class.error]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
@@ -48,6 +49,15 @@ import { AuthService } from '../../../core/services/auth.service';
             @if (registerForm.get('email')?.hasError('email') && registerForm.get('email')?.touched) {
               <span class="error-text">Email no válido</span>
             }
+          </div>
+
+          <div class="form-group">
+            <label for="phone">Teléfono <span class="optional">(opcional)</span></label>
+            <input
+              type="tel"
+              id="phone"
+              formControlName="phone"
+              placeholder="+34 600 000 000">
           </div>
           
           <div class="form-group">
@@ -96,14 +106,15 @@ import { AuthService } from '../../../core/services/auth.service';
           }
           
           <button type="submit" class="btn btn--primary btn--block" [disabled]="loading()">
-            @if (loading()) {
-              Creando cuenta...
-            } @else {
-              Crear cuenta
-            }
+            @if (loading()) { Creando cuenta... } @else { Crear cuenta }
           </button>
         </form>
-        
+
+        @if (googleEnabled) {
+          <div class="divider"><span>o regístrate con</span></div>
+          <div id="google-register-btn" class="google-btn-wrapper"></div>
+        }
+
         <div class="auth-footer">
           <p>¿Ya tienes cuenta? <a routerLink="/auth/login">Iniciar sesión</a></p>
         </div>
@@ -245,65 +256,117 @@ import { AuthService } from '../../../core/services/auth.service';
       }
     }
     
+    .optional { font-weight: 400; color: #999; font-size: 0.8rem; }
+
+    .divider {
+      display: flex; align-items: center; margin: 1.5rem 0 1rem; gap: 0.75rem;
+      &::before, &::after { content: ''; flex: 1; height: 1px; background: #ddd; }
+      span { color: #999; font-size: 0.85rem; white-space: nowrap; }
+    }
+
+    .google-btn-wrapper { display: flex; justify-content: center; margin-bottom: 0.5rem; }
+
     .auth-footer {
       margin-top: 1.5rem;
       text-align: center;
-      
+
       p {
         color: #666;
         font-size: 0.9rem;
-        
+
         a {
           color: #4a7c4e;
           font-weight: 600;
           text-decoration: none;
-          
-          &:hover {
-            text-decoration: underline;
-          }
+          &:hover { text-decoration: underline; }
         }
       }
     }
   `]
 })
-export class RegisterComponent {
+export class RegisterComponent implements AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
-  
+
   registerForm: FormGroup;
   loading = signal(false);
   error = signal<string | null>(null);
-  
+
+  readonly googleEnabled = !!environment.googleClientId;
+
   constructor() {
     this.registerForm = this.fb.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
+      phone: [''],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
       acceptTerms: [false, Validators.requiredTrue]
     }, { validators: this.passwordMatchValidator });
   }
-  
+
+  ngAfterViewInit(): void {
+    if (!this.googleEnabled) return;
+    const google = (window as any).google;
+    if (!google?.accounts?.id) return;
+
+    google.accounts.id.initialize({
+      client_id: environment.googleClientId,
+      callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('google-register-btn'),
+      { theme: 'outline', size: 'large', width: 340, text: 'signup_with' }
+    );
+  }
+
+  ngOnDestroy(): void {
+    const google = (window as any).google;
+    google?.accounts?.id?.cancel();
+  }
+
+  handleGoogleCredential(response: { credential: string }): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.authService.loginWithGoogle(response.credential).subscribe({
+      next: () => {
+        this.loading.set(false);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+        this.router.navigateByUrl(returnUrl);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.detail || 'Error al registrarse con Google');
+      },
+    });
+  }
+
   passwordMatchValidator(form: FormGroup) {
     const password = form.get('password')?.value;
     const confirmPassword = form.get('confirmPassword')?.value;
     return password === confirmPassword ? null : { passwordMismatch: true };
   }
-  
+
   onSubmit(): void {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
     }
-    
+
     this.loading.set(true);
     this.error.set(null);
-    
-    const { firstName, lastName, email, password } = this.registerForm.value;
-    
-    this.authService.register({ email, password, first_name: firstName, last_name: lastName }).subscribe({
+
+    const { firstName, lastName, email, phone, password } = this.registerForm.value;
+
+    this.authService.register({
+      email, password,
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone || undefined,
+    }).subscribe({
       next: () => {
         this.loading.set(false);
         this.router.navigate(['/']);

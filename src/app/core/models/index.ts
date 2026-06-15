@@ -52,6 +52,7 @@ export interface ProductVariant {
   stock: number;
   is_in_stock: boolean;
   is_low_stock: boolean;
+  images?: ProductImage[];
 }
 
 export interface Category {
@@ -249,6 +250,7 @@ export interface PaymentIntent {
   client_secret: string;
   amount: number;
   currency: string;
+  order_number: string;
 }
 
 // Blog interfaces

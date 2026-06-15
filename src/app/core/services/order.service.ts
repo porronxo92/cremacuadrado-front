@@ -82,12 +82,10 @@ export class OrderService {
   }
   
   /**
-   * Get user's orders with pagination
+   * Get user's orders (backend returns flat array, no server-side pagination)
    */
-  getOrders(page: number = 1, limit: number = 10): Observable<{items: OrderListItem[], pages: number}> {
-    return this.http.get<{items: OrderListItem[], pages: number}>(this.ordersUrl, {
-      params: { page: page.toString(), limit: limit.toString() }
-    });
+  getOrders(): Observable<OrderListItem[]> {
+    return this.http.get<OrderListItem[]>(this.ordersUrl);
   }
   
   /**
@@ -98,10 +96,24 @@ export class OrderService {
   }
   
   /**
-   * Get order by number
+   * Get order by number (authenticated users)
    */
   getOrder(orderNumber: string): Observable<Order> {
     return this.http.get<Order>(`${this.ordersUrl}/${orderNumber}`);
+  }
+
+  /**
+   * Get order confirmation after Stripe redirect.
+   * Works for guests and authenticated users.
+   * paymentIntentId is the Stripe PI id included in the redirect URL — acts as ownership proof.
+   */
+  getOrderConfirmation(orderNumber: string, paymentIntentId?: string): Observable<Order> {
+    const params: Record<string, string> = {};
+    if (paymentIntentId) params['payment_intent'] = paymentIntentId;
+    return this.http.get<Order>(
+      `${this.checkoutUrl}/confirmation/${orderNumber}`,
+      { params }
+    );
   }
   
   /**

@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-login',
@@ -82,6 +83,11 @@ import { AuthService } from '../../../core/services/auth.service';
           </button>
         </form>
         
+        @if (googleEnabled) {
+          <div class="divider"><span>o</span></div>
+          <div id="google-signin-btn" class="google-btn-wrapper"></div>
+        }
+
         <div class="auth-footer">
           <p>¿No tienes cuenta? <a routerLink="/auth/register">Crear cuenta</a></p>
         </div>
@@ -248,19 +254,39 @@ import { AuthService } from '../../../core/services/auth.service';
       }
     }
     
+    .divider {
+      display: flex;
+      align-items: center;
+      margin: 1.5rem 0 1rem;
+      gap: 0.75rem;
+      &::before, &::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: #ddd;
+      }
+      span { color: #999; font-size: 0.85rem; white-space: nowrap; }
+    }
+
+    .google-btn-wrapper {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 0.5rem;
+    }
+
     .auth-footer {
       margin-top: 1.5rem;
       text-align: center;
-      
+
       p {
         color: #666;
         font-size: 0.9rem;
-        
+
         a {
           color: #4a7c4e;
           font-weight: 600;
           text-decoration: none;
-          
+
           &:hover {
             text-decoration: underline;
           }
@@ -269,17 +295,19 @@ import { AuthService } from '../../../core/services/auth.service';
     }
   `]
 })
-export class LoginComponent {
+export class LoginComponent implements AfterViewInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
-  
+
   loginForm: FormGroup;
   loading = signal(false);
   error = signal<string | null>(null);
   showPassword = signal(false);
-  
+
+  readonly googleEnabled = !!environment.googleClientId;
+
   constructor() {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -287,18 +315,54 @@ export class LoginComponent {
       rememberMe: [false]
     });
   }
-  
+
+  ngAfterViewInit(): void {
+    if (!this.googleEnabled) return;
+    const google = (window as any).google;
+    if (!google?.accounts?.id) return;
+
+    google.accounts.id.initialize({
+      client_id: environment.googleClientId,
+      callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('google-signin-btn'),
+      { theme: 'outline', size: 'large', width: 340, text: 'signin_with' }
+    );
+  }
+
+  ngOnDestroy(): void {
+    const google = (window as any).google;
+    google?.accounts?.id?.cancel();
+  }
+
+  handleGoogleCredential(response: { credential: string }): void {
+    this.loading.set(true);
+    this.error.set(null);
+    this.authService.loginWithGoogle(response.credential).subscribe({
+      next: () => {
+        this.loading.set(false);
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/';
+        this.router.navigateByUrl(returnUrl);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.error.set(err?.error?.detail || 'Error al iniciar sesión con Google');
+      },
+    });
+  }
+
   onSubmit(): void {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
     }
-    
+
     this.loading.set(true);
     this.error.set(null);
-    
+
     const { email, password } = this.loginForm.value;
-    
+
     this.authService.login({ email, password }).subscribe({
       next: () => {
         this.loading.set(false);

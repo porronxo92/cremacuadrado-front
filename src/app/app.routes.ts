@@ -96,18 +96,27 @@ export const routes: Routes = [
   { path: 'pages/envios', redirectTo: '/devoluciones', pathMatch: 'full' },
   { path: 'pages/puntos-de-venta', redirectTo: '/puntos-de-venta', pathMatch: 'full' },
   
-  // Auth
+  // Auth — login/register behind guestGuard; forgot/reset accessible to all
   {
     path: 'auth',
-    canActivate: [guestGuard],
     children: [
       {
         path: 'login',
+        canActivate: [guestGuard],
         loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent),
       },
       {
         path: 'register',
+        canActivate: [guestGuard],
         loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent),
+      },
+      {
+        path: 'forgot-password',
+        loadComponent: () => import('./features/auth/forgot-password/forgot-password.component').then(m => m.ForgotPasswordComponent),
+      },
+      {
+        path: 'reset-password',
+        loadComponent: () => import('./features/auth/reset-password/reset-password.component').then(m => m.ResetPasswordComponent),
       },
       {
         path: '',

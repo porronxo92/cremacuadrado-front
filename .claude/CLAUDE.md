@@ -125,7 +125,9 @@ Hay redirects de compatibilidad para rutas antiguas en inglés (`/catalog`, `/ca
 
 Definidos en `src/app/core/models/index.ts`:
 
-- **`Product`** — id, slug, name, price, compare_price, stock, images, audio_url, nutrition, reviews
+- **`Product`** — id, slug, name, price, compare_price, stock, images (solo `variant_id=NULL`), audio_url, nutrition, reviews, variants
+- **`ProductVariant`** — id, format (100g/200g/1kg), price, stock, is_in_stock, is_low_stock, **`images?: ProductImage[]`** (imágenes específicas de esa variante para el carrusel)
+- **`ProductImage`** — id, url, alt_text, sort_order, is_primary
 - **`ProductListItem`** — versión resumida para listados
 - **`Cart`** — items, subtotal, coupon, discount, shipping_cost, total
 - **`CartItem`** — product_id, quantity, price_at_add, total
@@ -177,6 +179,54 @@ background: #E6C15A; color: #1C1A14; border-radius: 20px;
 
 ---
 
+## 🛍️ Galería de imágenes de producto (ficha de detalle)
+
+El componente `product-detail.component.ts` usa un computed `currentImages` que reacciona al formato/variante seleccionado:
+
+```typescript
+readonly currentImages = computed<ProductImage[]>(() => {
+  const variant = this.selectedVariant();
+  const p = this.product();
+  if (!p) return [];
+  const variantImgs = variant?.images ?? [];
+  return variantImgs.length > 0 ? variantImgs : (p.images ?? []);
+});
+```
+
+- Si la variante tiene imágenes propias → se muestran esas en el carrusel
+- Si no → fallback a las imágenes del producto (las de `variant_id=NULL`)
+- Al cambiar formato (`onFormatChange`) se resetea `selectedImage` y el scroll del carrusel vuelve al inicio
+
+---
+
+## 🛠️ Panel Admin de Productos (`/admin/products`)
+
+**Componente**: `features/admin/products/products.component.ts`
+
+### Funcionalidades
+
+1. **Tabla de productos** — thumbnail, nombre, precio, stock, categoría, estado, acciones
+2. **Variantes expandibles** — botón en cada fila despliega tabla de variantes (inline)
+3. **Modal editar variante** — campos: precio, precio anterior, stock, SKU, activo
+   - Muestra thumbnail de la imagen actual de la variante
+   - Botón "Cambiar imagen" abre file picker → sube inmediatamente a `/admin/upload-image` con `dest_path = "products/{productName}/{formatFolder}"`
+   - El formato se mapea a carpeta: `100g`→`100gr`, `200g`→`200gr`, `1kg`→`1000gr`
+   - La URL subida se envía en el campo `image_url` al guardar la variante
+4. **Modal editar/crear producto** — grid visual de imágenes:
+   - Tiles 72×72 con thumbnail + botón × para eliminar
+   - Botón "Añadir imagen" → file picker → sube y añade al array
+   - El array de URLs se envía al backend como `images[]`
+
+### Signals clave
+```typescript
+variantImagePreview = signal<string | null>(null);  // URL recién subida
+variantUploadingImage = signal(false);
+productImageUrls = signal<string[]>([]);             // URLs de imágenes del producto
+productUploadingImage = signal(false);
+```
+
+---
+
 ## 🐛 Troubleshooting
 
 ### CORS en desarrollo
@@ -187,6 +237,11 @@ El interceptor `authInterceptor` adjunta el `Bearer` token en cada request. Si l
 
 ### Error 404 en Vercel
 `vercel.json` tiene el rewrite `/* → index.html` para que el router de Angular funcione correctamente en producción.
+
+### Imágenes de variante no aparecen en el carrusel
+- Verificar en BBDD que `product_images.variant_id` apunta al ID correcto de la variante
+- Verificar que el archivo existe en `backend/static/images/products/{nombre}/{carpeta}/`
+- La API devuelve `variants[].images[]` — revisar con `GET /api/v1/products/{slug}` en `/docs`
 
 ---
 

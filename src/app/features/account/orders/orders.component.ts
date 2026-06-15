@@ -215,9 +215,29 @@ import { Order, OrderListItem } from '../../../core/models';
         color: #155724;
       }
       
+      &.status--paid {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      &.status--pending_payment, &.status--payment_processing {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      &.status--payment_failed {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
       &.status--cancelled {
         background: #f8d7da;
         color: #721c24;
+      }
+
+      &.status--refunded {
+        background: #e2e3e5;
+        color: #383d41;
       }
     }
     
@@ -504,25 +524,25 @@ import { Order, OrderListItem } from '../../../core/models';
 export class AccountOrdersComponent implements OnInit {
   private orderService = inject(OrderService);
   private toastService = inject(ToastService);
-  
+
   orders = signal<OrderListItem[]>([]);
   loading = signal(true);
   currentPage = signal(1);
   totalPages = signal(1);
   selectedOrder = signal<Order | null>(null);
-  
+
   ngOnInit(): void {
-    this.loadOrders(1);
+    this.loadOrders();
   }
-  
-  loadOrders(page: number): void {
+
+  loadOrders(page: number = 1): void {
     this.loading.set(true);
     this.currentPage.set(page);
-    
-    this.orderService.getOrders(page, 10).subscribe({
-      next: (response) => {
-        this.orders.set(response.items);
-        this.totalPages.set(response.pages);
+
+    this.orderService.getOrders().subscribe({
+      next: (orders) => {
+        this.orders.set(orders);
+        this.totalPages.set(1);
         this.loading.set(false);
       },
       error: () => {
@@ -559,10 +579,15 @@ export class AccountOrdersComponent implements OnInit {
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       'pending': 'Pendiente',
-      'processing': 'Procesando',
+      'pending_payment': 'Pago pendiente',
+      'payment_processing': 'Procesando pago',
+      'payment_failed': 'Pago fallido',
+      'paid': 'Pagado',
+      'processing': 'Preparando',
       'shipped': 'Enviado',
       'delivered': 'Entregado',
-      'cancelled': 'Cancelado'
+      'cancelled': 'Cancelado',
+      'refunded': 'Reembolsado',
     };
     return labels[status] || status;
   }

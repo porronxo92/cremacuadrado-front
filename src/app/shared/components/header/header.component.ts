@@ -100,7 +100,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                       <a routerLink="/admin" (click)="closeUserMenu()">Panel Admin</a>
                     }
                     <hr>
-                    <button (click)="logout()">Cerrar sesiÃ³n</button>
+                    <button (click)="logout()">Cerrar sesión</button>
                   </div>
                 }
               </div>
@@ -161,9 +161,9 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
               @if (authService.isAdmin()) {
                 <a routerLink="/admin" (click)="closeAll()">Panel Admin</a>
               }
-              <button (click)="logout(); closeAll()">Cerrar sesiÃ³n</button>
+              <button (click)="logout(); closeAll()">Cerrar sesión</button>
             } @else {
-              <a routerLink="/auth/login" (click)="closeAll()">Iniciar sesiÃ³n</a>
+              <a routerLink="/auth/login" (click)="closeAll()">Iniciar sesión</a>
               <a routerLink="/auth/register" (click)="closeAll()">Crear cuenta</a>
             }
 

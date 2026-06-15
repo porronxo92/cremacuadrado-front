@@ -4,7 +4,22 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
-import { Category } from '../../../core/models';
+import { Category, ProductImage } from '../../../core/models';
+
+interface AdminVariant {
+  id: number;
+  sku: string | null;
+  format: string;
+  weight_grams: number;
+  price: number;
+  compare_price: number | null;
+  stock: number;
+  is_active: boolean;
+  is_in_stock: boolean;
+  is_low_stock: boolean;
+  sort_order: number;
+  images: ProductImage[];
+}
 
 // Admin-specific Product interface (matches API exactly)
 interface AdminProduct {
@@ -21,6 +36,7 @@ interface AdminProduct {
   is_featured: boolean;
   category: Category | null;
   images: { url: string }[];
+  variants: AdminVariant[];
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +94,13 @@ interface AdminProduct {
                     </span>
                   </td>
                   <td class="actions">
+                    <button class="btn btn--icon" (click)="toggleVariants(product.id)" title="Variantes"
+                      [class.active]="expandedProduct() === product.id">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                      </svg>
+                    </button>
                     <button class="btn btn--icon" (click)="editProduct(product)" title="Editar">
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -92,6 +115,61 @@ interface AdminProduct {
                     </button>
                   </td>
                 </tr>
+                @if (expandedProduct() === product.id && product.variants?.length) {
+                  <tr class="variants-row">
+                    <td colspan="7">
+                      <div class="variants-panel">
+                        <h4>Variantes de {{ product.name }}</h4>
+                        <table class="variants-table">
+                          <thead>
+                            <tr>
+                              <th>Imagen</th>
+                              <th>Formato</th>
+                              <th>SKU</th>
+                              <th>Precio</th>
+                              <th>Precio anterior</th>
+                              <th>Stock</th>
+                              <th>Estado</th>
+                              <th>Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            @for (v of product.variants; track v.id) {
+                              <tr>
+                                <td>
+                                  <img [src]="v.images?.at(0)?.url || '/assets/images/placeholder.jpg'"
+                                    [alt]="product.name + ' ' + v.format" class="product-thumb">
+                                </td>
+                                <td><strong>{{ v.format }}</strong></td>
+                                <td><small>{{ v.sku || '-' }}</small></td>
+                                <td>{{ v.price | currency:'EUR' }}</td>
+                                <td>
+                                  @if (v.compare_price) {
+                                    <small class="compare-price">{{ v.compare_price | currency:'EUR' }}</small>
+                                  } @else { - }
+                                </td>
+                                <td><span [class.low-stock]="v.is_low_stock">{{ v.stock }}</span></td>
+                                <td>
+                                  <span class="status-badge" [class.active]="v.is_active">
+                                    {{ v.is_active ? 'Activo' : 'Inactivo' }}
+                                  </span>
+                                </td>
+                                <td>
+                                  <button class="btn btn--icon" (click)="editVariant(product, v)" title="Editar variante">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                  </button>
+                                </td>
+                              </tr>
+                            }
+                          </tbody>
+                        </table>
+                      </div>
+                    </td>
+                  </tr>
+                }
               } @empty {
                 <tr>
                   <td colspan="7" class="empty">No hay productos</td>
@@ -102,6 +180,79 @@ interface AdminProduct {
         </div>
       }
       
+      <!-- Variant edit modal -->
+      @if (showVariantForm()) {
+        <div class="modal-overlay" (click)="closeVariantForm()">
+          <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Editar variante {{ editingVariant()?.format }}</h2>
+              <button class="close-btn" (click)="closeVariantForm()">×</button>
+            </div>
+            <form [formGroup]="variantForm" (ngSubmit)="saveVariant()">
+              <div class="modal-body">
+                <!-- Image upload section -->
+                <div class="form-group">
+                  <label>Imagen de la variante</label>
+                  <div class="image-upload-area">
+                    <img
+                      [src]="variantImagePreview() || editingVariant()?.images?.at(0)?.url || '/assets/images/placeholder.jpg'"
+                      alt="Imagen variante"
+                      class="image-preview-thumb">
+                    <div class="image-upload-controls">
+                      <input #variantFileInput type="file" accept="image/*" style="display:none"
+                        (change)="onVariantImageChange($event)">
+                      <button type="button" class="btn btn--secondary btn--sm"
+                        [disabled]="variantUploadingImage()"
+                        (click)="variantFileInput.click()">
+                        {{ variantUploadingImage() ? 'Subiendo...' : 'Cambiar imagen' }}
+                      </button>
+                      @if (variantImagePreview()) {
+                        <small class="upload-success">✓ Nueva imagen lista</small>
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Precio *</label>
+                    <input type="number" formControlName="price" step="0.01" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>Precio anterior</label>
+                    <input type="number" formControlName="compare_price" step="0.01" min="0">
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Stock *</label>
+                    <input type="number" formControlName="stock" min="0">
+                  </div>
+                  <div class="form-group">
+                    <label>SKU</label>
+                    <input type="text" formControlName="sku">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="checkbox">
+                    <input type="checkbox" formControlName="is_active">
+                    <span>Variante activa</span>
+                  </label>
+                </div>
+                @if (variantFormError()) {
+                  <div class="error-message">{{ variantFormError() }}</div>
+                }
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" (click)="closeVariantForm()">Cancelar</button>
+                <button type="submit" class="btn btn--primary" [disabled]="savingVariant() || variantUploadingImage()">
+                  {{ savingVariant() ? 'Guardando...' : 'Guardar variante' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
       <!-- Product form modal -->
       @if (showForm()) {
         <div class="modal-overlay" (click)="closeForm()">
@@ -157,8 +308,25 @@ interface AdminProduct {
                 </div>
                 
                 <div class="form-group">
-                  <label for="images">URLs de imágenes (una por línea)</label>
-                  <textarea id="images" formControlName="images" rows="2" placeholder="/assets/images/producto.jpg"></textarea>
+                  <label>Imágenes del producto</label>
+                  <div class="product-images-editor">
+                    @for (url of productImageUrls(); track url; let i = $index) {
+                      <div class="product-image-tile">
+                        <img [src]="url" alt="Imagen {{i+1}}" class="image-preview-thumb">
+                        <button type="button" class="remove-image-btn" (click)="removeProductImage(i)" title="Eliminar">×</button>
+                      </div>
+                    }
+                    <div class="add-image-tile">
+                      <input #productFileInput type="file" accept="image/*" style="display:none"
+                        (change)="onProductImageChange($event)">
+                      <button type="button" class="btn btn--secondary btn--sm"
+                        [disabled]="productUploadingImage()"
+                        (click)="productFileInput.click()">
+                        @if (productUploadingImage()) { <span>Subiendo...</span> }
+                        @else { <span>+ Añadir imagen</span> }
+                      </button>
+                    </div>
+                  </div>
                 </div>
                 
                 <div class="form-row">
@@ -480,6 +648,133 @@ interface AdminProduct {
       border-radius: 4px;
       margin-top: 1rem;
     }
+
+    .variants-row td { padding: 0; background: #f9f9f9; }
+
+    .variants-panel {
+      padding: 1rem 1.5rem;
+      border-top: 2px solid #4a7c4e;
+
+      h4 {
+        margin: 0 0 0.75rem;
+        font-size: 0.9rem;
+        color: #4a7c4e;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+    }
+
+    .variants-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+
+      th, td {
+        padding: 0.5rem 0.75rem;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+      }
+
+      th {
+        background: #f0f0f0;
+        font-weight: 600;
+        color: #555;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+      }
+    }
+
+    .btn--icon.active {
+      background: #e8f5e9;
+      color: #4a7c4e;
+    }
+
+    .btn--sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.82rem;
+    }
+
+    .image-upload-area {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.75rem;
+      background: #f9f9f9;
+      border: 1px dashed #ddd;
+      border-radius: 6px;
+    }
+
+    .image-preview-thumb {
+      width: 72px;
+      height: 72px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #eee;
+      flex-shrink: 0;
+    }
+
+    .image-upload-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .upload-success {
+      color: #4a7c4e;
+      font-size: 0.78rem;
+    }
+
+    .product-images-editor {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: #f9f9f9;
+      border: 1px dashed #ddd;
+      border-radius: 6px;
+      min-height: 90px;
+      align-items: flex-start;
+    }
+
+    .product-image-tile {
+      position: relative;
+      width: 72px;
+      height: 72px;
+
+      img {
+        width: 72px;
+        height: 72px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #eee;
+      }
+    }
+
+    .remove-image-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      font-size: 0.85rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .add-image-tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 72px;
+    }
   `]
 })
 export class AdminProductsComponent implements OnInit {
@@ -494,15 +789,47 @@ export class AdminProductsComponent implements OnInit {
   editingProduct = signal<AdminProduct | null>(null);
   saving = signal(false);
   formError = signal<string | null>(null);
-  
+
+  // Variant management
+  expandedProduct = signal<number | null>(null);
+  showVariantForm = signal(false);
+  editingVariant = signal<AdminVariant | null>(null);
+  editingVariantProduct = signal<AdminProduct | null>(null);
+  savingVariant = signal(false);
+  variantFormError = signal<string | null>(null);
+  variantForm!: FormGroup;
+  variantUploadingImage = signal(false);
+  variantImagePreview = signal<string | null>(null);
+
+  // Product image management
+  productImageUrls = signal<string[]>([]);
+  productUploadingImage = signal(false);
+
   productForm!: FormGroup;
-  
+
+  private readonly FORMAT_TO_FOLDER: Record<string, string> = {
+    '100g': '100gr',
+    '200g': '200gr',
+    '1kg': '1000gr',
+  };
+
   ngOnInit(): void {
     this.initForm();
+    this.initVariantForm();
     this.loadProducts();
     this.loadCategories();
   }
-  
+
+  initVariantForm(): void {
+    this.variantForm = this.fb.group({
+      price: [0, [Validators.required, Validators.min(0)]],
+      compare_price: [null],
+      stock: [0, [Validators.required, Validators.min(0)]],
+      sku: [''],
+      is_active: [true],
+    });
+  }
+
   initForm(): void {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
@@ -512,7 +839,6 @@ export class AdminProductsComponent implements OnInit {
       compareAtPrice: [null],
       categoryId: [null],
       stockQuantity: [0, [Validators.required, Validators.min(0)]],
-      images: [''],
       ingredients: [''],
       weight: [''],
       nutritionInfo: [''],
@@ -541,6 +867,7 @@ export class AdminProductsComponent implements OnInit {
   
   openForm(): void {
     this.editingProduct.set(null);
+    this.productImageUrls.set([]);
     this.productForm.reset({
       price: 0,
       stockQuantity: 0,
@@ -549,9 +876,10 @@ export class AdminProductsComponent implements OnInit {
     });
     this.showForm.set(true);
   }
-  
+
   editProduct(product: AdminProduct): void {
     this.editingProduct.set(product);
+    this.productImageUrls.set(product.images?.map(i => i.url) ?? []);
     this.productForm.patchValue({
       name: product.name,
       sku: product.sku,
@@ -560,7 +888,6 @@ export class AdminProductsComponent implements OnInit {
       compareAtPrice: product.compare_price,
       categoryId: product.category?.id,
       stockQuantity: product.stock,
-      images: product.images?.map(i => i.url).join('\n') || '',
       isActive: product.is_active,
       isFeatured: product.is_featured
     });
@@ -591,7 +918,7 @@ export class AdminProductsComponent implements OnInit {
       compare_price: formValue.compareAtPrice || null,
       category_id: formValue.categoryId || null,
       stock: formValue.stockQuantity,
-      images: formValue.images ? formValue.images.split('\n').filter((i: string) => i.trim()) : [],
+      images: this.productImageUrls(),
       ingredients: formValue.ingredients,
       weight: formValue.weight,
       nutrition_info: formValue.nutritionInfo,
@@ -623,5 +950,125 @@ export class AdminProductsComponent implements OnInit {
         error: (err) => this.toastService.error('Error: ' + (err.error?.detail || 'Error al eliminar'))
       });
     }
+  }
+
+  // ── Variant management ──────────────────────────────────────────────────────
+
+  toggleVariants(productId: number): void {
+    this.expandedProduct.set(this.expandedProduct() === productId ? null : productId);
+  }
+
+  editVariant(product: AdminProduct, variant: AdminVariant): void {
+    this.editingVariant.set(variant);
+    this.editingVariantProduct.set(product);
+    this.variantImagePreview.set(null);
+    this.variantForm.patchValue({
+      price: variant.price,
+      compare_price: variant.compare_price,
+      stock: variant.stock,
+      sku: variant.sku || '',
+      is_active: variant.is_active,
+    });
+    this.variantFormError.set(null);
+    this.showVariantForm.set(true);
+  }
+
+  closeVariantForm(): void {
+    this.showVariantForm.set(false);
+    this.editingVariant.set(null);
+    this.editingVariantProduct.set(null);
+    this.variantFormError.set(null);
+    this.variantImagePreview.set(null);
+  }
+
+  saveVariant(): void {
+    if (this.variantForm.invalid) return;
+    const variant = this.editingVariant();
+    const product = this.editingVariantProduct();
+    if (!variant || !product) return;
+
+    this.savingVariant.set(true);
+    this.variantFormError.set(null);
+
+    const data: Record<string, unknown> = { ...this.variantForm.value };
+    if (this.variantImagePreview()) {
+      data['image_url'] = this.variantImagePreview();
+    }
+
+    this.http.put(
+      `${environment.apiUrl}/admin/products/${product.id}/variants/${variant.id}`,
+      data,
+    ).subscribe({
+      next: () => {
+        this.savingVariant.set(false);
+        this.toastService.success('Variante actualizada');
+        this.closeVariantForm();
+        this.loadProducts();
+      },
+      error: (err) => {
+        this.savingVariant.set(false);
+        this.variantFormError.set(err.error?.detail || 'Error al guardar la variante');
+      },
+    });
+  }
+
+  onVariantImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const variant = this.editingVariant();
+    const product = this.editingVariantProduct();
+    if (!variant || !product) return;
+
+    const folder = this.FORMAT_TO_FOLDER[variant.format] ?? variant.format;
+    const destPath = `products/${product.name}/${folder}`;
+
+    this.variantUploadingImage.set(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('dest_path', destPath);
+
+    this.http.post<{ url: string }>(`${environment.apiUrl}/admin/upload-image`, formData).subscribe({
+      next: (res) => {
+        this.variantImagePreview.set(res.url);
+        this.variantUploadingImage.set(false);
+      },
+      error: (err) => {
+        this.variantUploadingImage.set(false);
+        this.toastService.error('Error al subir imagen: ' + (err.error?.detail || 'Error desconocido'));
+      },
+    });
+    input.value = '';
+  }
+
+  onProductImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const productName = this.productForm.value.name || this.editingProduct()?.name || 'producto';
+    const destPath = `products/${productName}`;
+
+    this.productUploadingImage.set(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('dest_path', destPath);
+
+    this.http.post<{ url: string }>(`${environment.apiUrl}/admin/upload-image`, formData).subscribe({
+      next: (res) => {
+        this.productImageUrls.update(urls => [...urls, res.url]);
+        this.productUploadingImage.set(false);
+      },
+      error: (err) => {
+        this.productUploadingImage.set(false);
+        this.toastService.error('Error al subir imagen: ' + (err.error?.detail || 'Error desconocido'));
+      },
+    });
+    input.value = '';
+  }
+
+  removeProductImage(index: number): void {
+    this.productImageUrls.update(urls => urls.filter((_, i) => i !== index));
   }
 }

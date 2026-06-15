@@ -99,19 +99,41 @@ export class AuthService {
    */
   loadCurrentUser(): void {
     if (!this.getAccessToken()) return;
-    
+
     this.http.get<User>(`${this.apiUrl}/me`).pipe(
       tap(user => {
         this.currentUserSignal.set(user);
         this.storeUser(user);
       }),
-      catchError(() => {
-        this.clearAuth();
+      catchError((error: any) => {
+        // Only clear auth on genuine authentication failure (401).
+        // Server errors (500) or network errors must NOT log the user out —
+        // the session is still valid, the server is just temporarily broken.
+        const status = error?.status ?? error?.original?.status;
+        if (status === 401) {
+          this.clearAuth();
+        }
         return of(null);
       })
     ).subscribe();
   }
   
+  /**
+   * Login / register via Google Identity Services
+   * Sends the ID token received from the Google button callback to the backend for verification.
+   */
+  loginWithGoogle(idToken: string): Observable<AuthTokens> {
+    return this.http.post<AuthTokens>(`${this.apiUrl}/google`, { id_token: idToken }).pipe(
+      tap(tokens => {
+        this.storeTokens(tokens);
+        this.loadCurrentUser();
+      }),
+      catchError(error => {
+        throw error;
+      })
+    );
+  }
+
   /**
    * Request password reset email
    */

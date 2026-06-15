@@ -17,7 +17,13 @@ export const authInterceptor: HttpInterceptorFn = (
   
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 && token) {
+      // Don't try to refresh if the failing request is itself an auth endpoint.
+      // /auth/refresh: prevents infinite recursion when the refresh token is invalid.
+      // /auth/logout: the server-side logout failing doesn't require a retry.
+      const isAuthInfraRequest =
+        req.url.includes('/auth/refresh') || req.url.includes('/auth/logout');
+
+      if (error.status === 401 && token && !isAuthInfraRequest) {
         // Try to refresh token
         return authService.refreshToken().pipe(
           switchMap((tokens) => {
@@ -28,7 +34,7 @@ export const authInterceptor: HttpInterceptorFn = (
             return throwError(() => error);
           }),
           catchError(() => {
-            // Refresh failed, logout
+            // Refresh failed — session is irrecoverably stale
             authService.logout();
             return throwError(() => error);
           })

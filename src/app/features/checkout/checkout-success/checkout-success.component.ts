@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { OrderService } from '../../../core/services/order.service';
+import { CartService } from '../../../core/services/cart.service';
 import { Order } from '../../../core/models';
 
 @Component({
@@ -19,8 +20,12 @@ import { Order } from '../../../core/models';
             </svg>
           </div>
           
-          <h1>¡Pedido confirmado!</h1>
-          <p class="success-message">Gracias por tu compra. Hemos enviado un email de confirmación.</p>
+          <h1>{{ isPaymentFailed ? 'Pago no completado' : '¡Pedido confirmado!' }}</h1>
+          <p class="success-message">{{ statusMessage }}</p>
+
+          @if (isPaymentFailed) {
+            <a routerLink="/checkout" class="btn btn--primary">Volver al checkout</a>
+          }
           
           @if (order()) {
             <div class="order-details">
@@ -258,16 +263,57 @@ import { Order } from '../../../core/models';
 export class CheckoutSuccessComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private orderService = inject(OrderService);
-  
+  private cartService = inject(CartService);
+
   order = signal<Order | null>(null);
-  
+  redirectStatus = signal<'succeeded' | 'processing' | 'requires_payment_method' | null>(null);
+  loading = signal(true);
+
   ngOnInit(): void {
-    const orderId = this.route.snapshot.queryParams['orderId'];
-    if (orderId) {
-      this.orderService.getOrder(orderId.toString()).subscribe({
-        next: (order) => this.order.set(order),
-        error: (err) => console.error('Error loading order:', err)
-      });
+    const params = this.route.snapshot.queryParams;
+
+    const orderNumber: string | undefined = params['order'];
+    const paymentIntentId: string | undefined = params['payment_intent'];
+    const stripeStatus = params['redirect_status'] as 'succeeded' | 'processing' | 'requires_payment_method' | undefined;
+    const orderId: string | undefined = params['orderId'];
+
+    if (stripeStatus) {
+      this.redirectStatus.set(stripeStatus);
     }
+
+    // Clear frontend cart state when payment succeeded.
+    // clearCart() is a cold Observable — calling it without .subscribe() does nothing.
+    // Use clearLocalState() instead: synchronous, wipes signal + localStorage immediately.
+    // The server-side cart was already cleared by the Stripe webhook _handle_payment_succeeded.
+    if (stripeStatus === 'succeeded') {
+      this.cartService.clearLocalState();
+    }
+
+    if (orderNumber) {
+      this.orderService.getOrderConfirmation(orderNumber, paymentIntentId).subscribe({
+        next: (order) => { this.order.set(order); this.loading.set(false); },
+        error: () => this.loading.set(false),
+      });
+    } else if (orderId) {
+      this.orderService.getOrder(orderId).subscribe({
+        next: (order) => { this.order.set(order); this.loading.set(false); },
+        error: () => this.loading.set(false),
+      });
+    } else {
+      this.loading.set(false);
+    }
+  }
+
+  get statusMessage(): string {
+    switch (this.redirectStatus()) {
+      case 'succeeded': return '¡Pago confirmado! Gracias por tu pedido.';
+      case 'processing': return 'Tu pago está siendo procesado. Te confirmaremos por email.';
+      case 'requires_payment_method': return 'El pago no se ha completado. Por favor inténtalo de nuevo.';
+      default: return 'Gracias por tu compra. Hemos enviado un email de confirmación.';
+    }
+  }
+
+  get isPaymentFailed(): boolean {
+    return this.redirectStatus() === 'requires_payment_method';
   }
 }

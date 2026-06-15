@@ -8,7 +8,7 @@ import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Product, ProductVariant } from '../../../core/models';
+import { Product, ProductImage, ProductVariant } from '../../../core/models';
 import { FormatSelectorComponent, ProductFormat } from '../components/format-selector/format-selector.component';
 import { PriceDisplayComponent } from '../components/price-display/price-display.component';
 import { AudioPlayerComponent } from '../components/audio-player/audio-player.component';
@@ -91,9 +91,9 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               <div class="pd__main-img">
                 <img [src]="selectedImage() || firstImage()" [alt]="product()!.name + ' — crema de pistacho manchego'" loading="eager">
               </div>
-              @if ((product()!.images?.length ?? 0) > 1) {
+              @if (currentImages().length > 1) {
                 <div class="pd__thumbs">
-                  @for (img of product()!.images!; track img.id) {
+                  @for (img of currentImages(); track img.id) {
                     <button
                       class="pd__thumb"
                       [class.is-active]="selectedImage() === img.url || (!selectedImage() && $index === 0)"
@@ -109,17 +109,17 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             <!-- Mobile: scroll-snap + dots -->
             <div class="pd__gallery-mobile">
               <div class="pd__slides" #slidesEl (scroll)="onGalleryScroll()">
-                @if (product()!.images?.length) {
-                  @for (img of product()!.images!; track img.id) {
+                @if (currentImages().length) {
+                  @for (img of currentImages(); track img.id) {
                     <div class="pd__slide"><img [src]="img.url" [alt]="product()!.name" loading="lazy"></div>
                   }
                 } @else {
                   <div class="pd__slide"><img src="/assets/images/placeholder.jpg" [alt]="product()!.name"></div>
                 }
               </div>
-              @if ((product()!.images?.length ?? 0) > 1) {
+              @if (currentImages().length > 1) {
                 <div class="pd__dots" role="tablist">
-                  @for (img of product()!.images!; track img.id) {
+                  @for (img of currentImages(); track img.id) {
                     <button class="pd__dot" [class.is-active]="currentSlide() === $index"
                       (click)="scrollToSlide($index)" role="tab"
                       [attr.aria-selected]="currentSlide() === $index"
@@ -916,8 +916,16 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return (p.variants ?? []).find(v => v.id === selected.id) ?? null;
   });
 
+  readonly currentImages = computed<ProductImage[]>(() => {
+    const variant = this.selectedVariant();
+    const p = this.product();
+    if (!p) return [];
+    const variantImgs = variant?.images ?? [];
+    return variantImgs.length > 0 ? variantImgs : (p.images ?? []);
+  });
+
   readonly firstImage = computed(() =>
-    this.product()?.images?.[0]?.url ?? '/assets/images/placeholder.jpg'
+    this.currentImages()[0]?.url ?? '/assets/images/placeholder.jpg'
   );
 
   private observer?: IntersectionObserver;
@@ -959,6 +967,9 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   onFormatChange(fmt: ProductFormat): void {
     this.selectedFormat.set(fmt);
     this.quantity.set(1);
+    this.selectedImage.set(null);
+    const el = this.slidesEl?.nativeElement;
+    if (el) el.scrollTo({ left: 0, behavior: 'instant' });
   }
 
   activateSubscription(): void {

@@ -14,7 +14,7 @@ import { RouterModule } from '@angular/router';
           <div class="footer__section">
             <h3 class="footer__title">Cremacuadrado</h3>
             <p class="footer__text">
-              Crema de pistacho artesanal elaborada con los mejores pistachos de Sicilia. 
+              Crema de pistacho artesanal elaborada con los mejores pistachos ibéricos de Ciudad Real. 
               100% natural, sin aditivos. El sabor auténtico del pistacho.
             </p>
           </div>

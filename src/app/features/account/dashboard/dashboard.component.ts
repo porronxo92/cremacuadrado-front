@@ -1,9 +1,9 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
 import { OrderService } from '../../../core/services/order.service';
-import { Order, OrderListItem } from '../../../core/models';
+import { UserService } from '../../../core/services/user.service';
+import { OrderListItem, User } from '../../../core/models';
 
 @Component({
   selector: 'app-account-dashboard',
@@ -12,10 +12,10 @@ import { Order, OrderListItem } from '../../../core/models';
   template: `
     <div class="account-dashboard">
       <div class="welcome-section">
-        <h1>Hola, {{ authService.currentUser()?.first_name }}!</h1>
+        <h1>Hola, {{ user()?.first_name || '...' }}!</h1>
         <p>Bienvenido a tu cuenta de Cremacuadrado</p>
       </div>
-      
+
       <div class="dashboard-grid">
         <!-- Quick links -->
         <div class="dashboard-card">
@@ -54,14 +54,14 @@ import { Order, OrderListItem } from '../../../core/models';
             </a>
           </nav>
         </div>
-        
+
         <!-- Recent orders -->
         <div class="dashboard-card">
           <div class="card-header">
             <h2>Pedidos recientes</h2>
             <a routerLink="/account/orders">Ver todos</a>
           </div>
-          
+
           @if (loadingOrders()) {
             <div class="loading">Cargando pedidos...</div>
           } @else if (recentOrders().length === 0) {
@@ -88,24 +88,29 @@ import { Order, OrderListItem } from '../../../core/models';
             </div>
           }
         </div>
-        
+
         <!-- Account info -->
         <div class="dashboard-card">
           <h2>Información de cuenta</h2>
-          <div class="account-info">
-            <div class="info-row">
-              <span class="label">Nombre</span>
-              <span class="value">{{ authService.currentUser()?.first_name }} {{ authService.currentUser()?.last_name }}</span>
+
+          @if (loadingUser()) {
+            <div class="loading">Cargando...</div>
+          } @else {
+            <div class="account-info">
+              <div class="info-row">
+                <span class="label">Nombre</span>
+                <span class="value">{{ user()?.first_name }} {{ user()?.last_name }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Email</span>
+                <span class="value">{{ user()?.email }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">Teléfono</span>
+                <span class="value">{{ user()?.phone || 'No especificado' }}</span>
+              </div>
             </div>
-            <div class="info-row">
-              <span class="label">Email</span>
-              <span class="value">{{ authService.currentUser()?.email }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">Teléfono</span>
-              <span class="value">{{ authService.currentUser()?.phone || 'No especificado' }}</span>
-            </div>
-          </div>
+          }
           <a routerLink="/account/profile" class="btn btn--secondary">Editar perfil</a>
         </div>
       </div>
@@ -115,67 +120,67 @@ import { Order, OrderListItem } from '../../../core/models';
     .account-dashboard {
       padding: 0;
     }
-    
+
     .welcome-section {
       margin-bottom: 2rem;
-      
+
       h1 {
         margin: 0 0 0.5rem;
         color: #333;
       }
-      
+
       p {
         color: #666;
         margin: 0;
       }
     }
-    
+
     .dashboard-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
       gap: 1.5rem;
     }
-    
+
     .dashboard-card {
       background: #fff;
       border-radius: 8px;
       padding: 1.5rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      
+
       h2 {
         margin: 0 0 1rem;
         font-size: 1.1rem;
         color: #333;
       }
     }
-    
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1rem;
-      
+
       h2 {
         margin: 0;
       }
-      
+
       a {
         font-size: 0.9rem;
         color: #4a7c4e;
         text-decoration: none;
-        
+
         &:hover {
           text-decoration: underline;
         }
       }
     }
-    
+
     .quick-links {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
     }
-    
+
     .quick-link {
       display: flex;
       flex-direction: column;
@@ -187,28 +192,28 @@ import { Order, OrderListItem } from '../../../core/models';
       text-decoration: none;
       color: #333;
       transition: all 0.3s;
-      
+
       &:hover {
         background: #f0f7f0;
         color: #4a7c4e;
       }
-      
+
       svg {
         color: #4a7c4e;
       }
-      
+
       span {
         font-size: 0.9rem;
         font-weight: 500;
       }
     }
-    
+
     .orders-list {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
     }
-    
+
     .order-item {
       display: flex;
       align-items: center;
@@ -217,101 +222,116 @@ import { Order, OrderListItem } from '../../../core/models';
       background: #f9f9f9;
       border-radius: 4px;
     }
-    
+
     .order-info {
       flex: 1;
-      
+
       .order-number {
         display: block;
         font-weight: 500;
         color: #333;
         font-size: 0.9rem;
       }
-      
+
       .order-date {
         font-size: 0.8rem;
         color: #666;
       }
     }
-    
+
     .order-status {
       padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.75rem;
       font-weight: 600;
-      
+
       &.status--pending {
         background: #fff3cd;
         color: #856404;
       }
-      
+
       &.status--processing {
         background: #cce5ff;
         color: #004085;
       }
-      
+
       &.status--shipped {
         background: #d4edda;
         color: #155724;
       }
-      
+
       &.status--delivered {
         background: #d4edda;
         color: #155724;
       }
-      
+
+      &.status--paid {
+        background: #d4edda;
+        color: #155724;
+      }
+
+      &.status--pending_payment, &.status--payment_processing {
+        background: #fff3cd;
+        color: #856404;
+      }
+
+      &.status--payment_failed {
+        background: #f8d7da;
+        color: #721c24;
+      }
+
       &.status--cancelled {
         background: #f8d7da;
         color: #721c24;
       }
     }
-    
+
     .order-total {
       font-weight: 600;
       color: #4a7c4e;
     }
-    
+
     .account-info {
       margin-bottom: 1rem;
     }
-    
+
     .info-row {
       display: flex;
       justify-content: space-between;
       padding: 0.5rem 0;
       border-bottom: 1px solid #eee;
-      
+
       &:last-child {
         border-bottom: none;
       }
-      
+
       .label {
         color: #666;
         font-size: 0.9rem;
       }
-      
+
       .value {
         color: #333;
         font-weight: 500;
       }
     }
-    
+
     .empty-state {
       text-align: center;
       padding: 1.5rem;
-      
+
       p {
         color: #666;
         margin-bottom: 1rem;
       }
     }
-    
+
     .loading {
       text-align: center;
       padding: 1.5rem;
       color: #666;
     }
-    
+
     .btn {
       display: inline-block;
       padding: 0.5rem 1rem;
@@ -321,20 +341,20 @@ import { Order, OrderListItem } from '../../../core/models';
       font-size: 0.9rem;
       cursor: pointer;
       border: none;
-      
+
       &--primary {
         background: #4a7c4e;
         color: #fff;
-        
+
         &:hover {
           background: #3d6640;
         }
       }
-      
+
       &--secondary {
         background: #f5f5f5;
         color: #333;
-        
+
         &:hover {
           background: #eee;
         }
@@ -343,20 +363,36 @@ import { Order, OrderListItem } from '../../../core/models';
   `]
 })
 export class AccountDashboardComponent implements OnInit {
-  authService = inject(AuthService);
   private orderService = inject(OrderService);
-  
+  private userService = inject(UserService);
+
+  user = signal<User | null>(null);
+  loadingUser = signal(true);
+
   recentOrders = signal<OrderListItem[]>([]);
   loadingOrders = signal(true);
-  
+
   ngOnInit(): void {
+    this.loadUser();
     this.loadRecentOrders();
   }
-  
+
+  loadUser(): void {
+    this.userService.getProfile().subscribe({
+      next: (user) => {
+        this.user.set(user);
+        this.loadingUser.set(false);
+      },
+      error: () => {
+        this.loadingUser.set(false);
+      }
+    });
+  }
+
   loadRecentOrders(): void {
-    this.orderService.getOrders(1, 3).subscribe({
-      next: (response) => {
-        this.recentOrders.set(response.items);
+    this.orderService.getOrders().subscribe({
+      next: (orders) => {
+        this.recentOrders.set(orders.slice(0, 3));
         this.loadingOrders.set(false);
       },
       error: () => {
@@ -364,14 +400,19 @@ export class AccountDashboardComponent implements OnInit {
       }
     });
   }
-  
+
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       'pending': 'Pendiente',
-      'processing': 'Procesando',
+      'pending_payment': 'Pago pendiente',
+      'payment_processing': 'Procesando pago',
+      'payment_failed': 'Pago fallido',
+      'paid': 'Pagado',
+      'processing': 'Preparando',
       'shipped': 'Enviado',
       'delivered': 'Entregado',
-      'cancelled': 'Cancelado'
+      'cancelled': 'Cancelado',
+      'refunded': 'Reembolsado',
     };
     return labels[status] || status;
   }

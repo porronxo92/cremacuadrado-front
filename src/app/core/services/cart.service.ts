@@ -1,8 +1,8 @@
 import { Injectable, signal, computed, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, tap, catchError, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, Subject, tap, catchError, of } from 'rxjs';
+import { map, takeUntil } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import { Cart, CartItem } from '../models';
 
@@ -18,6 +18,8 @@ export class CartService {
 
   private cartSignal = signal<Cart | null>(null);
   private isLoadingSignal = signal<boolean>(false);
+  // Emitting on this Subject cancels any syncFromServer() currently in flight.
+  private cancelSync$ = new Subject<void>();
 
   readonly cart = this.cartSignal.asReadonly();
   readonly isLoading = this.isLoadingSignal.asReadonly();
@@ -101,6 +103,9 @@ export class CartService {
 
   private syncFromServer(): void {
     this.http.get<Cart>(this.apiUrl, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
+      // Stop processing if clearLocalState() was called while this request was in flight.
+      // Without this, the response would race with the explicit clear and restore the old cart.
+      takeUntil(this.cancelSync$),
       tap(response => {
         this.saveCartSession(response.headers);
         const serverCart = this.normalizeCart(response.body!);
@@ -253,6 +258,23 @@ export class CartService {
       localStorage.removeItem(CART_SESSION_KEY);
     }
     this.syncFromServer();
+  }
+
+  /**
+   * Clear cart state immediately without any HTTP call.
+   * Use this after a successful order — the backend webhook already cleared
+   * the server cart. We just need to wipe local state so the UI updates instantly.
+   *
+   * Cancels any syncFromServer() currently in flight to prevent the race condition
+   * where the server response arrives after this clear and restores the old cart.
+   */
+  clearLocalState(): void {
+    this.cancelSync$.next();  // discard any in-flight syncFromServer response
+    this.cartSignal.set(null);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem(CART_KEY);
+      localStorage.removeItem(CART_SESSION_KEY);
+    }
   }
 
   private saveCartToStorage(cart: Cart): void {

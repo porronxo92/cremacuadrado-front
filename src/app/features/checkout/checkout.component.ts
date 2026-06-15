@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
+import { StripeService } from '../../core/services/stripe.service';
 
 @Component({
   selector: 'app-checkout',
@@ -124,56 +125,31 @@ import { AuthService } from '../../core/services/auth.service';
               <section class="checkout-section">
                 <h2>
                   <span class="step-number">3</span>
-                  Método de pago
+                  Pago seguro
                 </h2>
-                
-                <div class="payment-methods">
-                  <label class="payment-option" [class.selected]="paymentMethod() === 'card'">
-                    <input type="radio" name="payment" value="card" (change)="paymentMethod.set('card')" checked>
-                    <div class="payment-option__content">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
-                        <line x1="1" y1="10" x2="23" y2="10"></line>
-                      </svg>
-                      <span>Tarjeta de crédito/débito</span>
-                    </div>
-                  </label>
-                  
-                  <label class="payment-option" [class.selected]="paymentMethod() === 'paypal'">
-                    <input type="radio" name="payment" value="paypal" (change)="paymentMethod.set('paypal')">
-                    <div class="payment-option__content">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.287-.023.143-.047.288-.077.437-.983 5.05-4.349 6.797-8.647 6.797h-2.19c-.524 0-.968.382-1.05.9l-1.12 7.106zm14.146-14.42a3.35 3.35 0 0 0-.607-.541c-.013.076-.026.175-.041.254-.93 4.778-4.005 7.201-9.138 7.201h-2.19a.563.563 0 0 0-.556.479l-1.187 7.527h-.506l-.24 1.516a.56.56 0 0 0 .554.647h3.882c.46 0 .85-.334.922-.788.06-.26.76-4.852.816-5.09a.932.932 0 0 1 .923-.788h.58c3.76 0 6.705-1.528 7.565-5.946.36-1.847.174-3.388-.777-4.471z"/>
-                      </svg>
-                      <span>PayPal</span>
-                    </div>
-                  </label>
-                </div>
-                
-                @if (paymentMethod() === 'card') {
-                  <div class="card-form">
-                    <div class="form-group">
-                      <label for="cardNumber">Número de tarjeta</label>
-                      <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19">
-                    </div>
-                    <div class="form-row form-row--2">
-                      <div class="form-group">
-                        <label for="cardExpiry">Fecha de expiración</label>
-                        <input type="text" id="cardExpiry" placeholder="MM/AA" maxlength="5">
-                      </div>
-                      <div class="form-group">
-                        <label for="cardCvc">CVC</label>
-                        <input type="text" id="cardCvc" placeholder="123" maxlength="4">
-                      </div>
-                    </div>
-                    <p class="payment-notice">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                      </svg>
-                      Pago seguro con cifrado SSL
-                    </p>
+
+                @if (stripeInitializing()) {
+                  <div class="stripe-loading">
+                    <span class="spinner"></span>
+                    Preparando formulario de pago...
                   </div>
                 }
+
+                <!-- Stripe Payment Element mounts here -->
+                <div id="payment-element" [class.hidden]="!stripeReady()"></div>
+
+                @if (!stripeReady() && !stripeInitializing()) {
+                  <p class="stripe-hint">
+                    Completa los pasos anteriores para activar el formulario de pago.
+                  </p>
+                }
+
+                <p class="payment-notice">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                  </svg>
+                  Pago 100% seguro · Procesado por Stripe · Cifrado SSL
+                </p>
               </section>
             </div>
             
@@ -420,11 +396,47 @@ import { AuthService } from '../../core/services/auth.service';
       gap: 0.5rem;
       color: #666;
       font-size: 0.85rem;
-      margin-top: 0.5rem;
-      
+      margin-top: 1rem;
+
       svg {
         color: #27ae60;
+        flex-shrink: 0;
       }
+    }
+
+    .stripe-loading {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .stripe-hint {
+      color: #999;
+      font-size: 0.9rem;
+      font-style: italic;
+      padding: 1rem 0;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #ddd;
+      border-top-color: #4a7c4e;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #payment-element {
+      margin-bottom: 1rem;
+      &.hidden { display: none; }
     }
     
     .order-summary {
@@ -607,29 +619,35 @@ import { AuthService } from '../../core/services/auth.service';
     }
   `]
 })
-export class CheckoutComponent implements OnInit {
+export class CheckoutComponent implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private orderService = inject(OrderService);
-  
+  private stripeService = inject(StripeService);
+
   cartService = inject(CartService);
   authService = inject(AuthService);
-  
+
   contactForm!: FormGroup;
   shippingForm!: FormGroup;
-  
-  paymentMethod = signal('card');
+
   processing = signal(false);
   error = signal<string | null>(null);
-  
+  stripeReady = signal(false);
+  stripeInitializing = signal(false);
+
+  private orderNumber: string | null = null;
+  private stripeInitTriggered = false;
+
+  constructor() {}
+
   get shippingCost(): number {
-    return (this.cartService.cart()?.subtotal || 0) >= 30 ? 0 : 4.95;
+    return (this.cartService.cart()?.subtotal || 0) >= 50 ? 0 : 4.95;
   }
-  
+
   ngOnInit(): void {
     this.initForms();
-    
-    // Pre-fill if user is logged in
+
     if (this.authService.isAuthenticated()) {
       const user = this.authService.currentUser();
       if (user) {
@@ -637,81 +655,121 @@ export class CheckoutComponent implements OnInit {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          phone: user.phone
+          phone: user.phone,
         });
       }
     }
+
+    // Watch form status changes to trigger Stripe init
+    this.contactForm.statusChanges.subscribe(() => this.tryInitStripe());
+    this.shippingForm.statusChanges.subscribe(() => this.tryInitStripe());
   }
-  
+
+  ngOnDestroy(): void {
+    this.stripeService.destroy();
+  }
+
   initForms(): void {
     this.contactForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
-      phone: ['', Validators.required]
+      phone: ['', Validators.required],
     });
-    
+
     this.shippingForm = this.fb.group({
       address: ['', Validators.required],
       city: ['', Validators.required],
       postalCode: ['', Validators.required],
       state: ['', Validators.required],
       country: ['ES', Validators.required],
-      notes: ['']
+      notes: [''],
     });
   }
-  
+
   isFormValid(): boolean {
     return this.contactForm.valid && this.shippingForm.valid;
   }
-  
-  placeOrder(): void {
+
+  private tryInitStripe(): void {
+    if (this.isFormValid() && !this.stripeInitTriggered) {
+      this.initStripeElement();
+    }
+  }
+
+  private buildCheckoutData() {
+    const addr = {
+      first_name: this.contactForm.value.firstName,
+      last_name: this.contactForm.value.lastName,
+      street: this.shippingForm.value.address,
+      city: this.shippingForm.value.city,
+      postal_code: this.shippingForm.value.postalCode,
+      province: this.shippingForm.value.state,
+      country: this.shippingForm.value.country,
+      phone: this.contactForm.value.phone,
+    };
+
+    return {
+      shipping_address: addr,
+      billing_address: addr,
+      same_billing_address: true,
+      guest_email: this.authService.isAuthenticated() ? undefined : this.contactForm.value.email,
+      customer_notes: this.shippingForm.value.notes || undefined,
+    };
+  }
+
+  private initStripeElement(): void {
+    this.stripeInitTriggered = true;
+    this.stripeInitializing.set(true);
+    this.error.set(null);
+
+    this.orderService.createPaymentIntent(this.buildCheckoutData() as any).subscribe({
+      next: async (response) => {
+        this.orderNumber = response.order_number;
+        try {
+          await this.stripeService.initElements(response.client_secret);
+          // Small timeout ensures the #payment-element div is rendered
+          setTimeout(() => {
+            this.stripeService.mountPaymentElement('#payment-element');
+            this.stripeReady.set(true);
+            this.stripeInitializing.set(false);
+          }, 50);
+        } catch (e: any) {
+          this.error.set(e.message || 'Error al inicializar el formulario de pago');
+          this.stripeInitializing.set(false);
+          this.stripeInitTriggered = false;
+        }
+      },
+      error: (err) => {
+        this.error.set(err.error?.detail || 'Error al preparar el pago');
+        this.stripeInitializing.set(false);
+        this.stripeInitTriggered = false;
+      },
+    });
+  }
+
+  async placeOrder(): Promise<void> {
     if (!this.isFormValid()) {
       this.contactForm.markAllAsTouched();
       this.shippingForm.markAllAsTouched();
       return;
     }
-    
+
+    if (!this.stripeReady()) {
+      this.error.set('El formulario de pago no está listo todavía. Por favor espera un momento.');
+      return;
+    }
+
     this.processing.set(true);
     this.error.set(null);
-    
-    const orderData = {
-      shipping_address: {
-        first_name: this.contactForm.value.firstName,
-        last_name: this.contactForm.value.lastName,
-        street: this.shippingForm.value.address,
-        city: this.shippingForm.value.city,
-        postal_code: this.shippingForm.value.postalCode,
-        province: this.shippingForm.value.state,
-        country: this.shippingForm.value.country,
-        phone: this.contactForm.value.phone
-      },
-      billing_address: {
-        first_name: this.contactForm.value.firstName,
-        last_name: this.contactForm.value.lastName,
-        street: this.shippingForm.value.address,
-        city: this.shippingForm.value.city,
-        postal_code: this.shippingForm.value.postalCode,
-        province: this.shippingForm.value.state,
-        country: this.shippingForm.value.country,
-        phone: this.contactForm.value.phone
-      },
-      notes: this.shippingForm.value.notes,
-      payment_method: this.paymentMethod()
-    };
-    
-    this.orderService.createOrder(orderData).subscribe({
-      next: (order) => {
-        this.processing.set(false);
-        this.cartService.clearCart();
-        this.router.navigate(['/gracias'], {
-          queryParams: { orderId: order.id }
-        });
-      },
-      error: (err) => {
-        this.processing.set(false);
-        this.error.set(err.message || 'Error al procesar el pedido');
-      }
-    });
+
+    const returnUrl = `${window.location.origin}/gracias?order=${this.orderNumber}`;
+    const result = await this.stripeService.confirmPayment(returnUrl);
+
+    if (result.error) {
+      this.error.set(result.error.message);
+      this.processing.set(false);
+    }
+    // On success Stripe redirects — no further action needed here
   }
 }
