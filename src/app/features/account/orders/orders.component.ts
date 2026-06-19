@@ -539,10 +539,10 @@ export class AccountOrdersComponent implements OnInit {
     this.loading.set(true);
     this.currentPage.set(page);
 
-    this.orderService.getOrders().subscribe({
-      next: (orders) => {
-        this.orders.set(orders);
-        this.totalPages.set(1);
+    this.orderService.getOrders(page).subscribe({
+      next: (response) => {
+        this.orders.set(response.items);
+        this.totalPages.set(response.total_pages);
         this.loading.set(false);
       },
       error: () => {

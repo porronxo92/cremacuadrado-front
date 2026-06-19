@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import {
   Order, OrderListItem, CheckoutData, CheckoutValidation,
-  PaymentIntent, ApiMessage
+  PaymentIntent, ApiMessage, PaginatedResponse
 } from '../models';
 
 const CART_SESSION_KEY = 'cc_cart_session';
@@ -81,11 +81,10 @@ export class OrderService {
     return this.http.post<Order>(`${this.checkoutUrl}/complete`, data, { headers: this.getCartSessionHeader() });
   }
   
-  /**
-   * Get user's orders (backend returns flat array, no server-side pagination)
-   */
-  getOrders(): Observable<OrderListItem[]> {
-    return this.http.get<OrderListItem[]>(this.ordersUrl);
+  getOrders(page = 1, pageSize = 10): Observable<PaginatedResponse<OrderListItem>> {
+    return this.http.get<PaginatedResponse<OrderListItem>>(this.ordersUrl, {
+      params: { page: page.toString(), page_size: pageSize.toString() }
+    });
   }
   
   /**
