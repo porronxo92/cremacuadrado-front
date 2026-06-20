@@ -37,18 +37,24 @@ export class ProductService {
   private resolveUrl(url: string | null): string | null {
     if (!url) return null;
 
-    // If URL is relative (starts with /), prepend mediaUrl
+    // Relative path → prepend mediaUrl (legacy static files: /static/images/...)
     if (url.startsWith('/')) {
       return `${environment.mediaUrl}${url}`;
     }
 
-    // If URL is absolute, replace the host with mediaUrl
+    // Absolute URL: only rewrite if it comes from our own backend
+    // (normalizes localhost:8000 → prod domain). External CDN/blob URLs pass through as-is.
     try {
       const parsed = new URL(url);
-      return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
+      const backendHost = new URL(environment.apiUrl).hostname;
+      if (parsed.hostname === backendHost || parsed.hostname === 'localhost') {
+        return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
+      }
     } catch {
-      return url;
+      // not a valid URL
     }
+
+    return url;
   }
 
   private normalizeListItem(item: ProductListItem): ProductListItem {
