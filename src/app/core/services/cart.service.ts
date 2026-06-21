@@ -67,18 +67,26 @@ export class CartService {
   private resolveUrl(url: string | null): string | null {
     if (!url) return null;
 
-    // If URL is relative (starts with /), prepend mediaUrl
+    // Relative path → prepend mediaUrl (dev: http://localhost:8000, prod: '')
     if (url.startsWith('/')) {
       return `${environment.mediaUrl}${url}`;
     }
 
-    // If URL is absolute, replace the host with mediaUrl
-    try {
-      const parsed = new URL(url);
-      return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
-    } catch {
-      return url;
+    // Absolute URL: only rewrite if it comes from our own backend host
+    if (environment.mediaUrl) {
+      try {
+        const parsed = new URL(url);
+        const backendHost = new URL(environment.mediaUrl).hostname;
+        if (parsed.hostname === backendHost) {
+          return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
+        }
+      } catch {
+        return url;
+      }
     }
+
+    // Blob CDN, external CDN, or any other absolute URL → pass through unchanged
+    return url;
   }
 
   private normalizeCart(cart: Cart): Cart {
