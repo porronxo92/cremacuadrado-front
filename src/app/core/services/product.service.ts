@@ -46,8 +46,8 @@ export class ProductService {
     // (normalizes localhost:8000 → prod domain). External CDN/blob URLs pass through as-is.
     try {
       const parsed = new URL(url);
-      const backendHost = new URL(environment.apiUrl).hostname;
-      if (parsed.hostname === backendHost || parsed.hostname === 'localhost') {
+      const backendHost = environment.mediaUrl ? new URL(environment.mediaUrl).hostname : null;
+      if (backendHost && parsed.hostname === backendHost) {
         return `${environment.mediaUrl}${parsed.pathname}${parsed.search}`;
       }
     } catch {
