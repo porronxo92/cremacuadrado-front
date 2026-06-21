@@ -392,7 +392,7 @@ export class AccountDashboardComponent implements OnInit {
   loadRecentOrders(): void {
     this.orderService.getOrders().subscribe({
       next: (orders) => {
-        this.recentOrders.set(orders.slice(0, 3));
+        this.recentOrders.set(orders.items.slice(0, 3));
         this.loadingOrders.set(false);
       },
       error: () => {
