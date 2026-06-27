@@ -8,6 +8,7 @@ import { User, AuthTokens, LoginCredentials, RegisterData, ApiMessage } from '..
 const TOKEN_KEY = 'cc_access_token';
 const REFRESH_TOKEN_KEY = 'cc_refresh_token';
 const USER_KEY = 'cc_user';
+const CART_SESSION_KEY = 'cc_cart_session';
 
 @Injectable({
   providedIn: 'root'
@@ -195,6 +196,7 @@ export class AuthService {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(CART_SESSION_KEY);
     this.currentUserSignal.set(null);
   }
 }
