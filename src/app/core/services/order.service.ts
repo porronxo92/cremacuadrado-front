@@ -121,4 +121,11 @@ export class OrderService {
   reorder(orderNumber: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${this.ordersUrl}/${orderNumber}/reorder`, {});
   }
+
+  /**
+   * Request an invoice PDF — backend generates it and emails it to the user
+   */
+  requestInvoice(orderNumber: string): Observable<ApiMessage> {
+    return this.http.post<ApiMessage>(`${this.ordersUrl}/${orderNumber}/request-invoice`, {});
+  }
 }

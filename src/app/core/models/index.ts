@@ -220,6 +220,7 @@ export interface OrderListItem {
   total: number;
   item_count: number;
   created_at: string;
+  primary_image_url: string | null;
 }
 
 export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
