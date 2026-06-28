@@ -12,7 +12,7 @@ import { Order, OrderListItem } from '../../../core/models';
   template: `
     <div class="orders-page">
       <h1>Mis pedidos</h1>
-      
+
       @if (loading()) {
         <div class="loading">
           <div class="spinner"></div>
@@ -34,113 +34,186 @@ import { Order, OrderListItem } from '../../../core/models';
         <div class="orders-list">
           @for (order of orders(); track order.id) {
             <div class="order-card">
-              <div class="order-header">
-                <div class="order-info">
+              <div class="order-card__header">
+                <div class="order-card__meta">
                   <span class="order-number">Pedido {{ order.order_number }}</span>
-                  <span class="order-date">{{ order.created_at | date:'dd MMMM yyyy' }}</span>
+                  <span class="order-date">{{ order.created_at | date:'dd MMM yyyy' }}</span>
                 </div>
-                <div class="order-status" [class]="'status--' + order.status">
+                <span class="status-badge" [class]="'status--' + order.status">
                   {{ getStatusLabel(order.status) }}
+                </span>
+              </div>
+
+              <div class="order-card__body">
+                @if (order.primary_image_url) {
+                  <div class="order-card__thumb">
+                    <img [src]="order.primary_image_url" [alt]="'Pedido ' + order.order_number" loading="lazy">
+                  </div>
+                }
+                <div class="order-card__info">
+                  <span class="order-items-count">{{ order.item_count }} artículo{{ order.item_count !== 1 ? 's' : '' }}</span>
+                  <strong class="order-total">{{ order.total | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
                 </div>
               </div>
-              
-              <div class="order-summary-brief">
-                <span>{{ order.item_count }} artículo(s)</span>
-              </div>
-              
-              <div class="order-footer">
-                <div class="order-total">
-                  <span>Total:</span>
-                  <strong>{{ order.total | currency:'EUR' }}</strong>
-                </div>
-                <div class="order-actions">
-                  @if (order.status === 'pending') {
-                    <button class="btn btn--outline" (click)="cancelOrder(order.order_number)">Cancelar pedido</button>
-                  }
-                  <button class="btn btn--secondary" (click)="viewOrder(order)">Ver detalles</button>
-                </div>
+
+              <div class="order-card__footer">
+                @if (order.status === 'pending') {
+                  <button class="btn btn--ghost btn--danger" (click)="cancelOrder(order.order_number)">
+                    Cancelar
+                  </button>
+                }
+                <button class="btn btn--outline" (click)="viewOrder(order)">
+                  Ver detalles
+                </button>
               </div>
             </div>
           }
         </div>
-        
-        <!-- Pagination -->
+
         @if (totalPages() > 1) {
           <div class="pagination">
-            <button 
+            <button
+              class="pagination__btn"
               (click)="loadOrders(currentPage() - 1)"
               [disabled]="currentPage() === 1">
-              Anterior
+              ← Anterior
             </button>
-            <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
-            <button 
+            <span class="pagination__info">{{ currentPage() }} / {{ totalPages() }}</span>
+            <button
+              class="pagination__btn"
               (click)="loadOrders(currentPage() + 1)"
               [disabled]="currentPage() === totalPages()">
-              Siguiente
+              Siguiente →
             </button>
           </div>
         }
       }
-      
-      <!-- Order detail modal -->
+
+      <!-- Modal detalle de pedido -->
       @if (selectedOrder()) {
         <div class="modal-overlay" (click)="closeModal()">
           <div class="modal" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h2>Pedido {{ selectedOrder()!.order_number }}</h2>
-              <button class="close-btn" (click)="closeModal()">×</button>
+
+            <div class="modal__header">
+              <div>
+                <h2>Pedido {{ selectedOrder()!.order_number }}</h2>
+                <span class="modal__date">{{ selectedOrder()!.created_at | date:'dd MMMM yyyy, HH:mm' }}</span>
+              </div>
+              <button class="modal__close" (click)="closeModal()" aria-label="Cerrar">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
-            
-            <div class="modal-body">
-              <div class="detail-section">
-                <h3>Estado</h3>
-                <div class="order-status" [class]="'status--' + selectedOrder()!.status">
-                  {{ getStatusLabel(selectedOrder()!.status) }}
+
+            <div class="modal__body">
+
+              <!-- Estado y seguimiento -->
+              <div class="modal__section">
+                <div class="modal__status-row">
+                  <span class="status-badge status-badge--lg" [class]="'status--' + selectedOrder()!.status">
+                    {{ getStatusLabel(selectedOrder()!.status) }}
+                  </span>
+                  @if (selectedOrder()!.tracking_number) {
+                    <a
+                      [href]="'https://www.correos.es/ss/Satellite/site/pagina-inicio_CA_correosexp/sidioma=es_ES#tracking=' + selectedOrder()!.tracking_number"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="tracking-link">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                      {{ selectedOrder()!.tracking_number }}
+                    </a>
+                  }
                 </div>
               </div>
-              
-              <div class="detail-section">
-                <h3>Productos</h3>
-                @for (item of selectedOrder()!.items; track item.id) {
-                  <div class="detail-item">
-                    <span>{{ item.product_name }} × {{ item.quantity }}</span>
-                    <span>{{ item.total | currency:'EUR' }}</span>
+
+              <!-- Productos -->
+              <div class="modal__section">
+                <h3 class="modal__section-title">Productos</h3>
+                <div class="modal__items">
+                  @for (item of selectedOrder()!.items; track item.id) {
+                    <div class="modal__item">
+                      @if (item.product_image_url) {
+                        <div class="modal__item-img">
+                          <img [src]="item.product_image_url" [alt]="item.product_name" loading="lazy">
+                        </div>
+                      } @else {
+                        <div class="modal__item-img modal__item-img--placeholder">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        </div>
+                      }
+                      <div class="modal__item-info">
+                        <span class="modal__item-name">{{ item.product_name }}</span>
+                        @if (item.product_sku) {
+                          <span class="modal__item-sku">{{ item.product_sku }}</span>
+                        }
+                      </div>
+                      <div class="modal__item-qty">× {{ item.quantity }}</div>
+                      <div class="modal__item-price">{{ item.total | currency:'EUR':'symbol':'1.2-2':'es' }}</div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Resumen de precios -->
+              <div class="modal__section">
+                <h3 class="modal__section-title">Resumen</h3>
+                <div class="modal__price-table">
+                  <div class="modal__price-row">
+                    <span>Subtotal</span>
+                    <span>{{ selectedOrder()!.subtotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                   </div>
-                }
-              </div>
-              
-              <div class="detail-section">
-                <h3>Resumen</h3>
-                <div class="detail-item">
-                  <span>Subtotal</span>
-                  <span>{{ selectedOrder()!.subtotal | currency:'EUR' }}</span>
-                </div>
-                <div class="detail-item">
-                  <span>Envío</span>
-                  <span>{{ selectedOrder()!.shipping_cost | currency:'EUR' }}</span>
-                </div>
-                @if (selectedOrder()!.discount > 0) {
-                  <div class="detail-item discount">
-                    <span>Descuento</span>
-                    <span>-{{ selectedOrder()!.discount | currency:'EUR' }}</span>
+                  <div class="modal__price-row">
+                    <span>Envío</span>
+                    <span>{{ selectedOrder()!.shipping_cost === 0 ? 'Gratis' : (selectedOrder()!.shipping_cost | currency:'EUR':'symbol':'1.2-2':'es') }}</span>
                   </div>
-                }
-                <div class="detail-item total">
-                  <span>Total</span>
-                  <span>{{ selectedOrder()!.total | currency:'EUR' }}</span>
+                  @if (selectedOrder()!.discount > 0) {
+                    <div class="modal__price-row modal__price-row--discount">
+                      <span>Descuento@if (selectedOrder()!.coupon_code) { <small>({{ selectedOrder()!.coupon_code }})</small> }</span>
+                      <span>−{{ selectedOrder()!.discount | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                    </div>
+                  }
+                  <div class="modal__price-row modal__price-row--total">
+                    <span>Total</span>
+                    <span>{{ selectedOrder()!.total | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                  </div>
                 </div>
               </div>
-              
-              <div class="detail-section">
-                <h3>Dirección de envío</h3>
-                <p>
+
+              <!-- Dirección de envío -->
+              <div class="modal__section">
+                <h3 class="modal__section-title">Dirección de envío</h3>
+                <address class="modal__address">
                   {{ selectedOrder()!.shipping_address.first_name }} {{ selectedOrder()!.shipping_address.last_name }}<br>
                   {{ selectedOrder()!.shipping_address.street }}<br>
                   {{ selectedOrder()!.shipping_address.postal_code }} {{ selectedOrder()!.shipping_address.city }}<br>
-                  {{ selectedOrder()!.shipping_address.province }}, {{ selectedOrder()!.shipping_address.country }}
-                </p>
+                  {{ selectedOrder()!.shipping_address.province }}
+                </address>
               </div>
+
             </div>
+
+            <!-- Acciones del modal -->
+            <div class="modal__footer">
+              @if (canRequestInvoice(selectedOrder()!.status)) {
+                <button
+                  class="btn btn--outline"
+                  [disabled]="requestingInvoice()"
+                  (click)="requestInvoice(selectedOrder()!.order_number)">
+                  @if (requestingInvoice()) {
+                    <span class="btn-spinner"></span> Enviando...
+                  } @else {
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                    Recibir factura por email
+                  }
+                </button>
+              }
+              @if (selectedOrder()!.status === 'pending') {
+                <button class="btn btn--ghost btn--danger" (click)="cancelOrder(selectedOrder()!.order_number)">
+                  Cancelar pedido
+                </button>
+              }
+              <button class="btn btn--primary" (click)="closeModal()">Cerrar</button>
+            </div>
+
           </div>
         </div>
       }
@@ -149,375 +222,567 @@ import { Order, OrderListItem } from '../../../core/models';
   styles: [`
     .orders-page {
       h1 {
+        font-family: 'Teko', sans-serif;
+        font-size: 2rem;
+        text-transform: uppercase;
+        letter-spacing: -0.02em;
+        color: var(--color-granate, #7B1716);
         margin: 0 0 2rem;
-        color: #333;
       }
     }
-    
+
+    /* ── Lista de pedidos ── */
     .orders-list {
       display: flex;
       flex-direction: column;
-      gap: 1.5rem;
+      gap: 1rem;
     }
-    
+
     .order-card {
-      background: #fff;
+      background: var(--color-card-bg, #EDE9DF);
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border: 1px solid var(--color-border, rgba(28,26,20,0.1));
     }
-    
-    .order-header {
+
+    .order-card__header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.5rem;
-      background: #f9f9f9;
-      border-bottom: 1px solid #eee;
+      padding: 0.875rem 1.25rem;
+      background: rgba(28,26,20,0.04);
+      border-bottom: 1px solid var(--color-border, rgba(28,26,20,0.1));
     }
-    
-    .order-info {
-      .order-number {
-        display: block;
-        font-weight: 600;
-        color: #333;
-      }
-      
-      .order-date {
-        font-size: 0.85rem;
-        color: #666;
-      }
+
+    .order-card__meta {
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
     }
-    
-    .order-status {
-      padding: 0.25rem 0.75rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
+
+    .order-number {
+      font-family: 'Poppins', sans-serif;
       font-weight: 600;
-      
-      &.status--pending {
-        background: #fff3cd;
-        color: #856404;
-      }
-      
-      &.status--processing {
-        background: #cce5ff;
-        color: #004085;
-      }
-      
-      &.status--shipped {
-        background: #d4edda;
-        color: #155724;
-      }
-      
-      &.status--delivered {
-        background: #d4edda;
-        color: #155724;
-      }
-      
-      &.status--paid {
-        background: #d4edda;
-        color: #155724;
-      }
-
-      &.status--pending_payment, &.status--payment_processing {
-        background: #fff3cd;
-        color: #856404;
-      }
-
-      &.status--payment_failed {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      &.status--cancelled {
-        background: #f8d7da;
-        color: #721c24;
-      }
-
-      &.status--refunded {
-        background: #e2e3e5;
-        color: #383d41;
-      }
+      font-size: 0.9rem;
+      color: var(--color-ink, #1C1A14);
     }
-    
-    .order-items {
-      padding: 1rem 1.5rem;
+
+    .order-date {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.8rem;
+      color: var(--color-muted, #6B6456);
     }
-    
-    .order-item {
+
+    .order-card__body {
       display: flex;
       align-items: center;
       gap: 1rem;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #eee;
-      
-      &:last-child {
-        border-bottom: none;
-      }
+      padding: 1rem 1.25rem;
     }
-    
-    .item-image {
-      width: 60px;
-      height: 60px;
-      border-radius: 4px;
+
+    .order-card__thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 6px;
       overflow: hidden;
-      
+      flex-shrink: 0;
+      background: rgba(28,26,20,0.06);
+
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
     }
-    
-    .item-info {
+
+    .order-card__info {
       flex: 1;
-      
-      h4 {
-        margin: 0 0 0.25rem;
-        font-size: 0.95rem;
-        color: #333;
-      }
-      
-      p {
-        margin: 0;
-        font-size: 0.85rem;
-        color: #666;
-      }
-    }
-    
-    .item-total {
-      font-weight: 600;
-      color: #333;
-    }
-    
-    .order-footer {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      background: #f9f9f9;
-      border-top: 1px solid #eee;
+      flex-direction: column;
+      gap: 0.125rem;
     }
-    
+
+    .order-items-count {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      color: var(--color-muted, #6B6456);
+    }
+
     .order-total {
-      span {
-        color: #666;
-        margin-right: 0.5rem;
-      }
-      
-      strong {
-        font-size: 1.1rem;
-        color: #4a7c4e;
-      }
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--color-ink, #1C1A14);
     }
-    
-    .order-actions {
+
+    .order-card__footer {
       display: flex;
+      justify-content: flex-end;
+      align-items: center;
       gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--color-border, rgba(28,26,20,0.1));
     }
-    
+
+    /* ── Status badges ── */
+    .status-badge {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 20px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.75rem;
+      font-weight: 600;
+      white-space: nowrap;
+
+      &.status-badge--lg {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.9rem;
+      }
+
+      &.status--pending, &.status--pending_payment, &.status--payment_processing {
+        background: #FEF3C7;
+        color: #92400E;
+      }
+
+      &.status--processing, &.status--paid {
+        background: #DBEAFE;
+        color: #1E40AF;
+      }
+
+      &.status--shipped {
+        background: #D1FAE5;
+        color: #065F46;
+      }
+
+      &.status--delivered {
+        background: #D1FAE5;
+        color: #065F46;
+      }
+
+      &.status--payment_failed {
+        background: #FEE2E2;
+        color: #991B1B;
+      }
+
+      &.status--cancelled {
+        background: #FEE2E2;
+        color: #991B1B;
+      }
+
+      &.status--refunded {
+        background: #F3F4F6;
+        color: #374151;
+      }
+    }
+
+    /* ── Botones ── */
     .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
       padding: 0.5rem 1rem;
-      border-radius: 4px;
-      font-weight: 500;
+      border-radius: 20px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 0.85rem;
       cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.3s;
-      
+      transition: all 0.2s;
+      white-space: nowrap;
+      border: 1.5px solid transparent;
+
       &--primary {
-        background: #4a7c4e;
-        color: #fff;
-        border: none;
-        
+        background: var(--color-granate, #7B1716);
+        color: #F4F1E9;
+        border-color: var(--color-granate, #7B1716);
+
         &:hover {
-          background: #3d6640;
+          background: #5f1212;
+          border-color: #5f1212;
         }
       }
-      
-      &--secondary {
-        background: #333;
-        color: #fff;
-        border: none;
-        
-        &:hover {
-          background: #222;
-        }
-      }
-      
+
       &--outline {
-        background: none;
-        border: 1px solid #ddd;
-        color: #666;
-        
+        background: transparent;
+        color: var(--color-granate, #7B1716);
+        border-color: var(--color-granate, #7B1716);
+
         &:hover {
-          border-color: #e74c3c;
-          color: #e74c3c;
+          background: var(--color-granate, #7B1716);
+          color: #F4F1E9;
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      &--ghost {
+        background: transparent;
+        border-color: transparent;
+        color: var(--color-muted, #6B6456);
+
+        &:hover {
+          background: rgba(28,26,20,0.06);
+        }
+      }
+
+      &--danger {
+        color: #991B1B;
+
+        &:hover {
+          background: #FEE2E2;
+          border-color: #991B1B;
         }
       }
     }
-    
+
+    /* ── Empty / loading ── */
     .empty-state {
       text-align: center;
-      padding: 3rem;
-      background: #fff;
+      padding: 3rem 1.5rem;
+      background: var(--color-card-bg, #EDE9DF);
       border-radius: 8px;
-      
+
       svg {
-        color: #ccc;
+        color: var(--color-muted, #6B6456);
+        opacity: 0.4;
         margin-bottom: 1rem;
       }
-      
+
       h2 {
-        color: #333;
+        font-family: 'Lora', serif;
+        color: var(--color-ink, #1C1A14);
         margin-bottom: 0.5rem;
       }
-      
+
       p {
-        color: #666;
+        color: var(--color-muted, #6B6456);
         margin-bottom: 1.5rem;
       }
     }
-    
+
     .loading {
       text-align: center;
       padding: 3rem;
     }
-    
+
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid #eee;
-      border-top-color: #4a7c4e;
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(123,23,22,0.15);
+      border-top-color: var(--color-granate, #7B1716);
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
       margin: 0 auto 1rem;
     }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-    
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Paginación ── */
     .pagination {
       display: flex;
       justify-content: center;
       align-items: center;
       gap: 1rem;
       margin-top: 2rem;
-      
-      button {
-        padding: 0.5rem 1rem;
-        border: 1px solid #ddd;
-        background: #fff;
-        border-radius: 4px;
-        cursor: pointer;
-        
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        
-        &:hover:not(:disabled) {
-          border-color: #4a7c4e;
-          color: #4a7c4e;
-        }
+    }
+
+    .pagination__btn {
+      padding: 0.4rem 0.875rem;
+      border: 1px solid var(--color-border, rgba(28,26,20,0.15));
+      background: var(--color-card-bg, #EDE9DF);
+      border-radius: 20px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
       }
-      
-      span {
-        color: #666;
+
+      &:hover:not(:disabled) {
+        border-color: var(--color-granate, #7B1716);
+        color: var(--color-granate, #7B1716);
       }
     }
-    
+
+    .pagination__info {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      color: var(--color-muted, #6B6456);
+    }
+
+    /* ── Modal ── */
     .modal-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
+      inset: 0;
+      background: rgba(28,26,20,0.55);
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: center;
       z-index: 1000;
-      padding: 1rem;
+
+      @media (min-width: 640px) {
+        align-items: center;
+        padding: 1rem;
+      }
     }
-    
+
     .modal {
-      background: #fff;
-      border-radius: 8px;
+      background: var(--color-bg, #F4F1E9);
       width: 100%;
-      max-width: 500px;
-      max-height: 80vh;
-      overflow-y: auto;
+      max-width: 560px;
+      max-height: 92dvh;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px 12px 0 0;
+      overflow: hidden;
+
+      @media (min-width: 640px) {
+        border-radius: 12px;
+        max-height: 85vh;
+      }
     }
-    
-    .modal-header {
+
+    .modal__header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #eee;
-      
+      align-items: flex-start;
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--color-border, rgba(28,26,20,0.1));
+      flex-shrink: 0;
+
       h2 {
-        margin: 0;
-        font-size: 1.1rem;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--color-ink, #1C1A14);
+        margin: 0 0 0.2rem;
       }
-      
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #666;
-        
-        &:hover {
-          color: #333;
+    }
+
+    .modal__date {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.8rem;
+      color: var(--color-muted, #6B6456);
+    }
+
+    .modal__close {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-muted, #6B6456);
+      padding: 0.25rem;
+      border-radius: 4px;
+      line-height: 0;
+      flex-shrink: 0;
+
+      &:hover {
+        color: var(--color-ink, #1C1A14);
+        background: rgba(28,26,20,0.06);
+      }
+    }
+
+    .modal__body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0;
+    }
+
+    .modal__section {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--color-border, rgba(28,26,20,0.08));
+
+      &:last-child {
+        border-bottom: none;
+      }
+    }
+
+    .modal__section-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-muted, #6B6456);
+      margin: 0 0 0.75rem;
+    }
+
+    .modal__status-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .tracking-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--color-granate, #7B1716);
+      text-decoration: none;
+      border-bottom: 1px dashed currentColor;
+
+      &:hover {
+        border-bottom-style: solid;
+      }
+    }
+
+    /* Líneas de producto en el modal */
+    .modal__items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .modal__item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .modal__item-img {
+      width: 52px;
+      height: 52px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: rgba(28,26,20,0.06);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      &--placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--color-muted, #6B6456);
+        opacity: 0.4;
+      }
+    }
+
+    .modal__item-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+    }
+
+    .modal__item-name {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-ink, #1C1A14);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .modal__item-sku {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.75rem;
+      color: var(--color-muted, #6B6456);
+    }
+
+    .modal__item-qty {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      color: var(--color-muted, #6B6456);
+      white-space: nowrap;
+    }
+
+    .modal__item-price {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--color-ink, #1C1A14);
+      white-space: nowrap;
+    }
+
+    /* Tabla de precios */
+    .modal__price-table {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .modal__price-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      color: var(--color-ink, #1C1A14);
+
+      span:first-child {
+        color: var(--color-muted, #6B6456);
+      }
+
+      small {
+        font-size: 0.75rem;
+        margin-left: 0.25rem;
+      }
+
+      &--discount {
+        color: #065F46;
+
+        span:first-child {
+          color: #065F46;
+        }
+      }
+
+      &--total {
+        padding-top: 0.5rem;
+        margin-top: 0.25rem;
+        border-top: 1px solid var(--color-border, rgba(28,26,20,0.12));
+        font-weight: 700;
+        font-size: 1rem;
+
+        span:first-child {
+          color: var(--color-ink, #1C1A14);
         }
       }
     }
-    
-    .modal-body {
-      padding: 1.5rem;
+
+    /* Dirección */
+    .modal__address {
+      font-style: normal;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: var(--color-ink, #1C1A14);
     }
-    
-    .detail-section {
-      margin-bottom: 1.5rem;
-      
-      &:last-child {
-        margin-bottom: 0;
-      }
-      
-      h3 {
-        font-size: 0.9rem;
-        color: #666;
-        margin: 0 0 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-      
-      p {
-        margin: 0;
-        color: #333;
-        line-height: 1.6;
-      }
-    }
-    
-    .detail-item {
+
+    /* Footer del modal */
+    .modal__footer {
       display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      
-      &.discount {
-        color: #27ae60;
-      }
-      
-      &.total {
-        font-weight: 700;
-        font-size: 1.1rem;
-        border-top: 1px solid #eee;
-        padding-top: 0.75rem;
-        margin-top: 0.5rem;
-      }
+      justify-content: flex-end;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--color-border, rgba(28,26,20,0.1));
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .btn-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(123,23,22,0.3);
+      border-top-color: var(--color-granate, #7B1716);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
   `]
 })
@@ -530,6 +795,7 @@ export class AccountOrdersComponent implements OnInit {
   currentPage = signal(1);
   totalPages = signal(1);
   selectedOrder = signal<Order | null>(null);
+  requestingInvoice = signal(false);
 
   ngOnInit(): void {
     this.loadOrders();
@@ -546,36 +812,61 @@ export class AccountOrdersComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
+        this.toastService.error('Error al cargar los pedidos');
         this.loading.set(false);
       }
     });
   }
-  
+
   viewOrder(order: OrderListItem): void {
     this.orderService.getOrder(order.order_number).subscribe({
       next: (fullOrder) => {
         this.selectedOrder.set(fullOrder);
+      },
+      error: () => {
+        this.toastService.error('No se pudo cargar el detalle del pedido');
       }
     });
   }
-  
+
   closeModal(): void {
     this.selectedOrder.set(null);
+    this.requestingInvoice.set(false);
   }
-  
+
   cancelOrder(orderNumber: string): void {
-    if (confirm('¿Estás seguro de que quieres cancelar este pedido?')) {
-      this.orderService.cancelOrder(orderNumber).subscribe({
-        next: () => {
-          this.loadOrders(this.currentPage());
-        },
-        error: (err: Error) => {
-          this.toastService.error('Error al cancelar el pedido: ' + err.message);
-        }
-      });
-    }
+    if (!confirm('¿Estás seguro de que quieres cancelar este pedido?')) return;
+
+    this.orderService.cancelOrder(orderNumber).subscribe({
+      next: () => {
+        this.toastService.success('Pedido cancelado correctamente');
+        this.closeModal();
+        this.loadOrders(this.currentPage());
+      },
+      error: (err: Error) => {
+        this.toastService.error('Error al cancelar el pedido: ' + err.message);
+      }
+    });
   }
-  
+
+  requestInvoice(orderNumber: string): void {
+    this.requestingInvoice.set(true);
+    this.orderService.requestInvoice(orderNumber).subscribe({
+      next: () => {
+        this.toastService.success('Te enviaremos la factura por email en unos minutos');
+        this.requestingInvoice.set(false);
+      },
+      error: () => {
+        this.toastService.error('No se pudo solicitar la factura. Inténtalo de nuevo.');
+        this.requestingInvoice.set(false);
+      }
+    });
+  }
+
+  canRequestInvoice(status: string): boolean {
+    return ['paid', 'processing', 'shipped', 'delivered'].includes(status);
+  }
+
   getStatusLabel(status: string): string {
     const labels: Record<string, string> = {
       'pending': 'Pendiente',
