@@ -7,8 +7,8 @@ import { ProductListItem, ProductVariant } from '../../../core/models';
 const PRODUCT_SLUGS = ['crema-pistacho-pura', 'crema-pistacho-crunchy'];
 
 const TAGLINES: Record<string, string> = {
-  'crema-pistacho-pura': 'Pistacho manchego tostado al natural, sin nada más',
-  'crema-pistacho-crunchy': 'Con trozos crujientes de pistacho para los que quieren más',
+  'crema-pistacho-pura': 'Pistacho manchego tostado, repelado y molido en piedra.',
+  'crema-pistacho-crunchy': 'Con trozos crujientes. El topping perfecto.',
 };
 
 @Component({

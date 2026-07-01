@@ -338,3 +338,12 @@ export interface TopProduct {
   quantity_sold: number;
   revenue: number;
 }
+
+// Points of sale (/puntos-de-venta)
+export interface PointOfSale {
+  id: number;
+  name: string;
+  city: string;
+  instagram_url: string;
+  maps_url: string;
+}

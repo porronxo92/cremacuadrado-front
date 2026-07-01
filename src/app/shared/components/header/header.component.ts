@@ -62,7 +62,48 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
             <a routerLink="/nuestro-metodo" routerLinkActive="active" class="nav-item__link">Nuestro Método</a>
             <a routerLink="/puntos-de-venta" routerLinkActive="active" class="nav-item__link">Puntos de Venta</a>
             <a routerLink="/para-tiendas" routerLinkActive="active" class="nav-item__link">Profesionales</a>
-            <a routerLink="/el-archivo" routerLinkActive="active" class="nav-item__link">Recetario</a>
+
+            <!-- Recetario (dropdown) -->
+            <div class="nav-item nav-item--dropdown">
+              <button class="nav-item__trigger" [class.active]="isArchiveActive()">
+                Recetario
+                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              <div class="nav-item__dropdown">
+                <a routerLink="/el-archivo/categoria/recetas" class="dropdown-item" (click)="closeAll()">
+                  <div class="dropdown-item__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/><path d="M8 12s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
+                  </div>
+                  <div class="dropdown-item__text">
+                    <strong>Recetas</strong>
+                    <span>Ideas con nuestras cremas</span>
+                  </div>
+                </a>
+                <a routerLink="/el-archivo/categoria/pistacho-en-el-campo" class="dropdown-item" (click)="closeAll()">
+                  <div class="dropdown-item__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                  </div>
+                  <div class="dropdown-item__text">
+                    <strong>Pistacho en el campo</strong>
+                    <span>Cultivo, economía e industria</span>
+                  </div>
+                </a>
+                <a routerLink="/el-archivo/categoria/el-obrador" class="dropdown-item" (click)="closeAll()">
+                  <div class="dropdown-item__icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/><path d="M12 6v6l4 2"/></svg>
+                  </div>
+                  <div class="dropdown-item__text">
+                    <strong>El Obrador</strong>
+                    <span>Tostado, repelado, molienda</span>
+                  </div>
+                </a>
+                <div class="dropdown-divider"></div>
+                <a routerLink="/el-archivo" class="dropdown-item dropdown-item--all" (click)="closeAll()">
+                  Ver todo el archivo
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                </a>
+              </div>
+            </div>
 
           </nav>
 
@@ -151,7 +192,31 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
             <a routerLink="/nuestro-metodo" routerLinkActive="active" (click)="closeAll()">Nuestro Método</a>
             <a routerLink="/puntos-de-venta" routerLinkActive="active" (click)="closeAll()">Puntos de Venta</a>
             <a routerLink="/para-tiendas" routerLinkActive="active" (click)="closeAll()">Profesionales</a>
-            <a routerLink="/el-archivo" routerLinkActive="active" (click)="closeAll()">Recetario</a>
+
+            <!-- Recetario accordion -->
+            <div class="mobile-menu__accordion">
+              <button class="mobile-menu__accordion-trigger" (click)="toggleArchiveMobile()" [class.is-open]="showArchiveMobile">
+                <span>Recetario</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+              </button>
+              @if (showArchiveMobile) {
+                <div class="mobile-menu__sub">
+                  <a routerLink="/el-archivo/categoria/recetas" (click)="closeAll()">
+                    <span>Recetas</span>
+                    <small>Ideas con nuestras cremas</small>
+                  </a>
+                  <a routerLink="/el-archivo/categoria/pistacho-en-el-campo" (click)="closeAll()">
+                    <span>Pistacho en el campo</span>
+                    <small>Cultivo, economía e industria</small>
+                  </a>
+                  <a routerLink="/el-archivo/categoria/el-obrador" (click)="closeAll()">
+                    <span>El Obrador</span>
+                    <small>Tostado, repelado, molienda</small>
+                  </a>
+                  <a routerLink="/el-archivo" (click)="closeAll()">Ver todo el archivo →</a>
+                </div>
+              }
+            </div>
 
             <hr>
 
@@ -688,9 +753,14 @@ export class HeaderComponent {
   showUserMenu = false;
   showMobileMenu = false;
   showShopMobile = false;
+  showArchiveMobile = false;
 
   isShopActive(): boolean {
     return window.location.pathname.startsWith('/tienda');
+  }
+
+  isArchiveActive(): boolean {
+    return window.location.pathname.startsWith('/el-archivo');
   }
 
   toggleUserMenu(): void {
@@ -699,11 +769,18 @@ export class HeaderComponent {
 
   toggleMobileMenu(): void {
     this.showMobileMenu = !this.showMobileMenu;
-    if (!this.showMobileMenu) this.showShopMobile = false;
+    if (!this.showMobileMenu) {
+      this.showShopMobile = false;
+      this.showArchiveMobile = false;
+    }
   }
 
   toggleShopMobile(): void {
     this.showShopMobile = !this.showShopMobile;
+  }
+
+  toggleArchiveMobile(): void {
+    this.showArchiveMobile = !this.showArchiveMobile;
   }
 
   closeUserMenu(): void {
@@ -713,6 +790,7 @@ export class HeaderComponent {
   closeAll(): void {
     this.showMobileMenu = false;
     this.showShopMobile = false;
+    this.showArchiveMobile = false;
     this.showUserMenu = false;
   }
 

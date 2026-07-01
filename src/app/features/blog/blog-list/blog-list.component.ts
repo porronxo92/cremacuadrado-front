@@ -1,10 +1,26 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { BlogService } from '../../../core/services/blog.service';
 import { BlogPostListItem } from '../../../core/models';
 
-// Static blog data (from scraped content)
+// Categorías fijas del Recetario (ver también header.component.ts y app.routes.ts)
+const CATEGORY_META: Record<string, { title: string; subtitle: string }> = {
+  'recetas': {
+    title: 'Recetas',
+    subtitle: 'Ideas y recetas con nuestras cremas de pistacho',
+  },
+  'pistacho-en-el-campo': {
+    title: 'Pistacho en el campo',
+    subtitle: 'Cultivo, economía e industria del pistacho',
+  },
+  'el-obrador': {
+    title: 'El Obrador',
+    subtitle: 'Técnicas de producción: tostado, repelado, molienda',
+  },
+};
+
+// Static blog data (from scraped content) — solo se usa en la vista general (sin categoría)
 const STATIC_BLOGS: BlogPostListItem[] = [
   {
     id: 907,
@@ -35,8 +51,8 @@ const STATIC_BLOGS: BlogPostListItem[] = [
       <!-- Hero -->
       <section class="blog-hero">
         <div class="container">
-          <h1>Blog</h1>
-          <p class="subtitle">Descubre todo sobre el pistacho manchego</p>
+          <h1>{{ pageTitle() }}</h1>
+          <p class="subtitle">{{ pageSubtitle() }}</p>
         </div>
       </section>
 
@@ -317,30 +333,48 @@ const STATIC_BLOGS: BlogPostListItem[] = [
 })
 export class BlogListComponent implements OnInit {
   private blogService = inject(BlogService);
+  private route = inject(ActivatedRoute);
 
   posts = signal<BlogPostListItem[]>([]);
   loading = signal(true);
+  categorySlug = signal<string | null>(null);
+
+  readonly pageTitle = computed(() => {
+    const slug = this.categorySlug();
+    return slug ? (CATEGORY_META[slug]?.title ?? 'El Archivo') : 'El Archivo';
+  });
+
+  readonly pageSubtitle = computed(() => {
+    const slug = this.categorySlug();
+    return slug ? (CATEGORY_META[slug]?.subtitle ?? '') : 'Descubre todo sobre el pistacho manchego';
+  });
 
   ngOnInit(): void {
-    this.loadPosts();
+    this.route.paramMap.subscribe(params => {
+      this.categorySlug.set(params.get('categorySlug'));
+      this.loadPosts();
+    });
   }
 
   loadPosts(): void {
     this.loading.set(true);
-    // Try API first, fallback to static data
-    this.blogService.getPosts(1, 10).subscribe({
+    const category = this.categorySlug() ?? undefined;
+
+    this.blogService.getPosts(1, 10, category).subscribe({
       next: (response) => {
         if (response.items.length > 0) {
           this.posts.set(response.items);
-        } else {
-          // Use static data if API returns empty
+        } else if (!category) {
+          // Fallback a datos estáticos solo en la vista general (sin categoría),
+          // para no mostrar contenido de ejemplo en una categoría genuinamente vacía.
           this.posts.set(STATIC_BLOGS);
+        } else {
+          this.posts.set([]);
         }
         this.loading.set(false);
       },
       error: () => {
-        // Fallback to static data on error
-        this.posts.set(STATIC_BLOGS);
+        this.posts.set(category ? [] : STATIC_BLOGS);
         this.loading.set(false);
       }
     });

@@ -225,7 +225,7 @@ Zona inferior (tras los CTAs):
 **`B2BLeadForm`**
 - Props: `type` (punto_de_venta | profesional)
 - Botón del hero hace scroll suave al formulario (anchor link)
-- Al enviar: POST al backend correspondiente → HubSpot → email de confirmación automático
+- Al enviar: POST al backend correspondiente → se guarda el lead en tabla propia (BBDD) → email de confirmación automático al solicitante + notificación interna a b2b@cremacuadrado.com
 
 ### Blog
 
@@ -287,14 +287,14 @@ Zona inferior (tras los CTAs):
 1. Menú PROFESIONALES → Para tiendas gourmet → /para-tiendas
 2. Lee bloques colapsables
 3. Rellena formulario → "Conocer precios de venta"
-4. Backend → HubSpot + email confirmación
+4. Backend → guarda lead en tabla propia (BBDD) → email confirmación + notificación interna a b2b@cremacuadrado.com
 5. Lucas/Stefano llaman en 48h
 
 ### B2B — Ingrediente profesional
 1. Menú PROFESIONALES → Para restaurantes y obradores → /para-restaurantes
 2. Lee bloques colapsables
 3. Rellena formulario → "Conocer precios profesionales"
-4. Backend → HubSpot + email confirmación + notificación con tipo de negocio
+4. Backend → guarda lead en tabla propia (BBDD) → email confirmación + notificación interna a b2b@cremacuadrado.com con tipo de negocio
 5. Lucas/Stefano llaman en 48h
 
 ### Registro con incentivo
@@ -312,7 +312,7 @@ Zona inferior (tras los CTAs):
 
 - El precio **siempre se valida en el servidor** antes de crear la sesión de Stripe. El frontend no envía precios, solo IDs de variante y cantidades.
 - El coste de envío **siempre lo calcula el backend**, nunca el frontend.
-- Los formularios B2B hacen POST al backend que gestiona la integración con HubSpot.
+- Los formularios B2B hacen POST al backend, que guarda el lead en una tabla propia y envía emails de confirmación/notificación. (Integración con un CRM externo tipo HubSpot queda como posible mejora futura, no implementada.)
 
 ### Estados de UI requeridos
 

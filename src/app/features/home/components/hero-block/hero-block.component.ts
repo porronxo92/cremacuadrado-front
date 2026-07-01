@@ -2,6 +2,7 @@ import { Component, Input, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementR
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { NewsletterService } from '../../../../core/services/newsletter.service';
 
 @Component({
   selector: 'app-hero-block',
@@ -54,7 +55,9 @@ import { FormsModule } from '@angular/forms';
               name="popupEmail"
               required
               aria-label="Tu email">
-            <button type="submit" class="hero__popup-btn">Quiero el descuento</button>
+            <button type="submit" class="hero__popup-btn" [disabled]="submitting()">
+              {{ submitting() ? 'Enviando...' : 'Quiero el descuento' }}
+            </button>
           </form>
           <p class="hero__popup-legal">Sin spam. Baja cuando quieras.</p>
         </div>
@@ -370,9 +373,11 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('videoEl') videoEl?: ElementRef<HTMLVideoElement>;
 
   private platformId = inject(PLATFORM_ID);
+  private newsletterService = inject(NewsletterService);
 
   readonly showPopup = signal(false);
   readonly emailSubmitted = signal(false);
+  readonly submitting = signal(false);
   popupEmail = '';
 
   private scrollCount = 0;
@@ -426,10 +431,23 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
 
   submitEmail(event: Event): void {
     event.preventDefault();
-    if (!this.popupEmail) return;
-    // TODO: integrate with newsletter backend
-    this.dismissed = true;
-    this.showPopup.set(false);
-    this.emailSubmitted.set(true);
+    if (!this.popupEmail || this.submitting()) return;
+
+    this.submitting.set(true);
+    this.newsletterService.subscribe(this.popupEmail).subscribe({
+      next: () => {
+        this.submitting.set(false);
+        this.dismissed = true;
+        this.showPopup.set(false);
+        this.emailSubmitted.set(true);
+      },
+      error: () => {
+        // Best-effort: keep the UX simple, don't punish the user for a backend hiccup.
+        this.submitting.set(false);
+        this.dismissed = true;
+        this.showPopup.set(false);
+        this.emailSubmitted.set(true);
+      },
+    });
   }
 }

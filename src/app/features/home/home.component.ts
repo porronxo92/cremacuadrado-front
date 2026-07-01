@@ -112,7 +112,7 @@ const REVIEWS = [
             </div>
             <h3 class="b2b__card-title">RESTAURANTES Y OBRADORES</h3>
             <p class="b2b__card-text">El ingrediente que diferencia tus postres, cremas y maridajes. Precio profesional, calidad constante.</p>
-            <a routerLink="/para-restaurantes" class="b2b__card-cta">Conocer condiciones →</a>
+            <a routerLink="/para-tiendas" class="b2b__card-cta">Conocer condiciones →</a>
           </div>
         </div>
       </div>

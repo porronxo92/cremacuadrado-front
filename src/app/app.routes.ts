@@ -43,10 +43,18 @@ export const routes: Routes = [
     path: 'puntos-de-venta',
     loadComponent: () => import('./features/pages/puntos-de-venta/puntos-de-venta.component').then(m => m.PuntosDeVentaComponent),
   },
+  {
+    path: 'para-tiendas',
+    loadComponent: () => import('./features/pages/para-tiendas/para-tiendas.component').then(m => m.ParaTiendasComponent),
+  },
 
   // Blog
   {
     path: 'el-archivo',
+    loadComponent: () => import('./features/blog/blog-list/blog-list.component').then(m => m.BlogListComponent),
+  },
+  {
+    path: 'el-archivo/categoria/:categorySlug',
     loadComponent: () => import('./features/blog/blog-list/blog-list.component').then(m => m.BlogListComponent),
   },
   {

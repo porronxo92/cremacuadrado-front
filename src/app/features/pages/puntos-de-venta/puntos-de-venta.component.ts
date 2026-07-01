@@ -1,22 +1,10 @@
-import { Component, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
-
-interface Store {
-  id: number;
-  name: string;
-  type: string;
-  address: string;
-  city: string;
-  province: string;
-  phone?: string;
-  hours?: string;
-  tags: string[];
-  lat?: number;
-  lng?: number;
-}
+import { PointOfSaleService } from '../../../core/services/point-of-sale.service';
+import { PointOfSale } from '../../../core/models';
 
 @Component({
   selector: 'app-puntos-de-venta',
@@ -52,7 +40,7 @@ interface Store {
               <svg class="pdv-search__icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input
                 type="text"
-                placeholder="Busca por ciudad, tienda o provincia…"
+                placeholder="Busca por ciudad o tienda…"
                 [(ngModel)]="searchQuery"
                 class="pdv-search__input"
               >
@@ -63,12 +51,12 @@ interface Store {
               }
             </div>
             <div class="pdv-search__filters">
-              @for (tag of availableTags; track tag) {
+              @for (city of availableCities(); track city) {
                 <button
                   class="pdv-tag"
-                  [class.pdv-tag--active]="activeTag() === tag"
-                  (click)="toggleTag(tag)"
-                >{{ tag }}</button>
+                  [class.pdv-tag--active]="activeCity() === city"
+                  (click)="toggleCity(city)"
+                >{{ city }}</button>
               }
             </div>
           </div>
@@ -93,8 +81,8 @@ interface Store {
           <!-- Resultados -->
           <div class="pdv-results">
             <p class="pdv-results__count">
-              @if (filteredStores().length === stores.length) {
-                {{ stores.length }} puntos de venta en toda España
+              @if (filteredStores().length === stores().length) {
+                {{ stores().length }} puntos de venta en toda España
               } @else {
                 {{ filteredStores().length }} resultado{{ filteredStores().length !== 1 ? 's' : '' }} encontrado{{ filteredStores().length !== 1 ? 's' : '' }}
               }
@@ -104,56 +92,44 @@ interface Store {
               <div class="pdv-no-results">
                 <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <p>No hemos encontrado tiendas que coincidan con "{{ searchQuery }}".</p>
-                <button class="btn btn--outline-brand" (click)="searchQuery = ''; activeTag.set(null)">Ver todas las tiendas</button>
+                <button class="btn btn--outline-brand" (click)="searchQuery = ''; activeCity.set(null)">Ver todas las tiendas</button>
               </div>
             } @else {
-              <div class="pdv-grid">
-                @for (store of filteredStores(); track store.id) {
-                  <div class="pdv-card">
-                    <div class="pdv-card__head">
-                      <div class="pdv-card__icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              @for (group of groupedStores(); track group.city) {
+                <div class="pdv-city-group">
+                  <h2 class="pdv-city-group__title">{{ group.city }}</h2>
+                  <div class="pdv-grid">
+                    @for (store of group.stores; track store.id) {
+                      <div class="pdv-card">
+                        <div class="pdv-card__head">
+                          <div class="pdv-card__icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                          </div>
+                          <div class="pdv-card__title-block">
+                            <h3>{{ store.name }}</h3>
+                            <span class="pdv-card__type">{{ store.city }}</span>
+                          </div>
+                        </div>
+                        <div class="pdv-card__links">
+                          <a [href]="store.instagram_url" target="_blank" rel="noopener" class="pdv-card__instagram">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                            Instagram
+                          </a>
+                        </div>
+                        <a
+                          [href]="store.maps_url"
+                          target="_blank"
+                          rel="noopener"
+                          class="pdv-card__cta"
+                        >
+                          Cómo llegar
+                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        </a>
                       </div>
-                      <div class="pdv-card__title-block">
-                        <h3>{{ store.name }}</h3>
-                        <span class="pdv-card__type">{{ store.type }}</span>
-                      </div>
-                    </div>
-                    <div class="pdv-card__body">
-                      <p class="pdv-card__address">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                        {{ store.address }}, {{ store.city }} ({{ store.province }})
-                      </p>
-                      @if (store.hours) {
-                        <p class="pdv-card__hours">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          {{ store.hours }}
-                        </p>
-                      }
-                      @if (store.phone) {
-                        <p class="pdv-card__phone">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.18 2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.58a16 16 0 0 0 6.51 6.51l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                          <a [href]="'tel:' + store.phone">{{ store.phone }}</a>
-                        </p>
-                      }
-                    </div>
-                    <div class="pdv-card__tags">
-                      @for (tag of store.tags; track tag) {
-                        <span class="pdv-tag pdv-tag--sm">{{ tag }}</span>
-                      }
-                    </div>
-                    <a
-                      [href]="'https://maps.google.com/?q=' + encodeAddress(store)"
-                      target="_blank"
-                      rel="noopener"
-                      class="pdv-card__cta"
-                    >
-                      Cómo llegar
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                    </a>
+                    }
                   </div>
-                }
-              </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -300,12 +276,12 @@ interface Store {
         <div class="container">
           <div class="pdv-stats__grid">
             <div class="pdv-stats__item">
-              <span class="pdv-stats__num">{{ stores.length }}+</span>
+              <span class="pdv-stats__num">{{ stores().length }}+</span>
               <span class="pdv-stats__label">Puntos de venta</span>
             </div>
             <div class="pdv-stats__item">
-              <span class="pdv-stats__num">8</span>
-              <span class="pdv-stats__label">Provincias</span>
+              <span class="pdv-stats__num">{{ availableCities().length }}</span>
+              <span class="pdv-stats__label">Ciudades</span>
             </div>
             <div class="pdv-stats__item">
               <span class="pdv-stats__num">48h</span>
@@ -578,6 +554,22 @@ interface Store {
       }
     }
 
+    .pdv-city-group {
+      margin-bottom: 2.25rem;
+
+      &__title {
+        font-family: 'Teko', sans-serif;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: $brand;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        margin: 0 0 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid $border;
+      }
+    }
+
     .pdv-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -641,35 +633,23 @@ interface Store {
         letter-spacing: 0.06em;
       }
 
-      &__body {
+      &__links {
         display: flex;
-        flex-direction: column;
-        gap: 0.35rem;
+        margin-top: auto;
       }
 
-      &__address, &__hours, &__phone {
-        display: flex;
-        align-items: flex-start;
+      &__instagram {
+        display: inline-flex;
+        align-items: center;
         gap: 0.4rem;
         font-family: 'Poppins', sans-serif;
         font-size: 0.78rem;
+        font-weight: 500;
         color: $text-lt;
-        line-height: 1.4;
-
-        svg { flex-shrink: 0; margin-top: 1px; color: $text-mt; }
-      }
-
-      &__phone a {
-        color: $brand;
         text-decoration: none;
-        &:hover { text-decoration: underline; }
-      }
 
-      &__tags {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.35rem;
-        margin-top: auto;
+        svg { flex-shrink: 0; color: $text-mt; }
+        &:hover { color: $brand; svg { color: $brand; } }
       }
 
       &__cta {
@@ -987,90 +967,52 @@ interface Store {
     }
   `]
 })
-export class PuntosDeVentaComponent {
+export class PuntosDeVentaComponent implements OnInit {
   private toastService = inject(ToastService);
+  private pointOfSaleService = inject(PointOfSaleService);
 
-  readonly availableTags = ['Delicatessen', 'Herboristería', 'Bio', 'Restaurante', 'Online'];
-
-  readonly stores: Store[] = [
-    {
-      id: 1, name: 'Delicatessen El Granero', type: 'Tienda Delicatessen',
-      address: 'Calle Mayor, 14', city: 'Madrid', province: 'Madrid',
-      phone: '+34 910 000 001', hours: 'L-S: 9:00–21:00',
-      tags: ['Delicatessen']
-    },
-    {
-      id: 2, name: 'Bio Natural Market', type: 'Herboristería / Tienda Bio',
-      address: 'Gran Vía, 102', city: 'Barcelona', province: 'Barcelona',
-      phone: '+34 930 000 002', hours: 'L-V: 9:30–20:30, S: 10:00–14:00',
-      tags: ['Herboristería', 'Bio']
-    },
-    {
-      id: 3, name: 'La Despensa Manchega', type: 'Tienda Gourmet',
-      address: 'Pl. Mayor, 5', city: 'Ciudad Real', province: 'Ciudad Real',
-      phone: '+34 926 000 003', hours: 'L-S: 10:00–20:00',
-      tags: ['Delicatessen']
-    },
-    {
-      id: 4, name: 'Herbolario Verde Vivo', type: 'Herboristería',
-      address: 'Calle Colón, 28', city: 'Valencia', province: 'Valencia',
-      phone: '+34 960 000 004', hours: 'L-V: 9:00–20:00',
-      tags: ['Herboristería', 'Bio']
-    },
-    {
-      id: 5, name: 'Restaurante Tierra y Sal', type: 'Restaurante',
-      address: 'Paseo de la Castellana, 45', city: 'Madrid', province: 'Madrid',
-      phone: '+34 910 000 005', hours: 'Mar-Dom: 13:00–16:00, 20:00–23:30',
-      tags: ['Restaurante']
-    },
-    {
-      id: 6, name: 'Gourmet Andaluz', type: 'Tienda Delicatessen',
-      address: 'Calle Sierpes, 12', city: 'Sevilla', province: 'Sevilla',
-      phone: '+34 950 000 006', hours: 'L-S: 10:00–21:00',
-      tags: ['Delicatessen']
-    },
-    {
-      id: 7, name: 'Ecomarket Bilbao', type: 'Supermercado Bio',
-      address: 'Calle Iparraguirre, 8', city: 'Bilbao', province: 'Vizcaya',
-      phone: '+34 940 000 007', hours: 'L-S: 9:00–21:00',
-      tags: ['Bio', 'Herboristería']
-    },
-    {
-      id: 8, name: 'Cremacuadrado Shop Online', type: 'Tienda Online',
-      address: 'cremacuadrado.com', city: 'España', province: 'Todo el país',
-      hours: '24h / 7 días',
-      tags: ['Online']
-    },
-  ];
+  stores = signal<PointOfSale[]>([]);
+  availableCities = computed(() => Array.from(new Set(this.stores().map(s => s.city))));
 
   searchQuery = '';
-  activeTag = signal<string | null>(null);
+  activeCity = signal<string | null>(null);
   activeForm = signal<'customer' | 'business'>('customer');
   submitting = signal(false);
 
+  ngOnInit(): void {
+    this.pointOfSaleService.getAll().subscribe({
+      next: (stores) => this.stores.set(stores),
+      error: () => this.toastService.error('No se han podido cargar los puntos de venta.'),
+    });
+  }
+
   filteredStores = computed(() => {
     const q = this.searchQuery.toLowerCase().trim();
-    const tag = this.activeTag();
-    return this.stores.filter(s => {
+    const city = this.activeCity();
+    return this.stores().filter(s => {
       const matchesQuery = !q ||
         s.name.toLowerCase().includes(q) ||
-        s.city.toLowerCase().includes(q) ||
-        s.province.toLowerCase().includes(q) ||
-        s.type.toLowerCase().includes(q);
-      const matchesTag = !tag || s.tags.includes(tag);
-      return matchesQuery && matchesTag;
+        s.city.toLowerCase().includes(q);
+      const matchesCity = !city || s.city === city;
+      return matchesQuery && matchesCity;
     });
+  });
+
+  groupedStores = computed(() => {
+    const groups = new Map<string, PointOfSale[]>();
+    for (const store of this.filteredStores()) {
+      const list = groups.get(store.city) ?? [];
+      list.push(store);
+      groups.set(store.city, list);
+    }
+    return Array.from(groups.entries()).map(([city, stores]) => ({ city, stores }));
   });
 
   customerForm = { name: '', email: '', subject: '', message: '' };
   businessForm = { contact: '', email: '', businessName: '', businessType: '', city: '', phone: '', message: '' };
 
-  toggleTag(tag: string): void {
-    this.activeTag.set(this.activeTag() === tag ? null : tag);
-  }
-
-  encodeAddress(store: Store): string {
-    return encodeURIComponent(`${store.name}, ${store.address}, ${store.city}`);
+  toggleCity(city: string): void {
+    this.activeCity.set(this.activeCity() === city ? null : city);
   }
 
   submitCustomerForm(event: Event): void {

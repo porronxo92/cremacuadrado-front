@@ -74,7 +74,7 @@ src/
 │   │   ├── blog/                 # blog-list (/el-archivo), blog-detail
 │   │   ├── about/                # /nuestro-metodo
 │   │   ├── contact/              # /contacto
-│   │   └── pages/                # privacidad, cookies, condiciones-venta, devoluciones, puntos-de-venta
+│   │   └── pages/                # privacidad, cookies, condiciones-venta, devoluciones, puntos-de-venta, para-tiendas
 │   └── shared/
 │       └── components/           # announcement-bar, header, footer, mini-cart, toast, not-found
 ├── assets/
@@ -102,6 +102,7 @@ src/
 | `/nuestro-metodo` | `AboutComponent` | — |
 | `/contacto` | `ContactComponent` | — |
 | `/puntos-de-venta` | `PuntosDeVentaComponent` | — |
+| `/para-tiendas` | `ParaTiendasComponent` | — |
 | `/privacidad` | `PrivacyPageComponent` | — |
 | `/condiciones-venta` | `ConditionsPageComponent` | — |
 | `/cookies` | `CookiesPageComponent` | — |
