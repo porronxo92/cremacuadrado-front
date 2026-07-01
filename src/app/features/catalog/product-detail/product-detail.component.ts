@@ -161,8 +161,8 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             
               <div class="step-body">
                 <span class="step-label">trilogía del sabor · 30s</span>
-                @if (product()!.audio_url) {
-                  <app-audio-player [src]="product()!.audio_url!" />
+                @if (audioUrl()) {
+                  <app-audio-player [src]="audioUrl()!" />
                 } @else {
                   <div class="pd__audio-placeholder">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -893,6 +893,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   readonly effectivePrice = computed(() =>
     this.purchaseType() === 'sub' ? this.subPrice() : (this.selectedFormat()?.price ?? 0)
   );
+
+  readonly audioUrl = computed(() => this.product()?.audio_url ?? null);
 
   readonly tabs: { id: Tab; label: string }[] = [
     { id: 'producto',     label: 'El producto'  },
