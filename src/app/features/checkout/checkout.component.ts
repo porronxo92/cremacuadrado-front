@@ -6,6 +6,8 @@ import { CartService } from '../../core/services/cart.service';
 import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { StripeService } from '../../core/services/stripe.service';
+import { UserService } from '../../core/services/user.service';
+import { Address } from '../../core/models';
 
 @Component({
   selector: 'app-checkout',
@@ -82,43 +84,75 @@ import { StripeService } from '../../core/services/stripe.service';
                   Dirección de envío
                 </h2>
                 
-                <form [formGroup]="shippingForm">
-                  <div class="form-group">
-                    <label for="address">Dirección *</label>
-                    <input type="text" id="address" formControlName="address" placeholder="Calle, número, piso...">
+                @if (savedAddresses().length > 0) {
+                  <div class="saved-addresses">
+                    @for (addr of savedAddresses(); track addr.id) {
+                      <label class="saved-address-option" [class.selected]="selectedAddressId() === addr.id">
+                        <input type="radio" name="savedAddress" [checked]="selectedAddressId() === addr.id" (change)="selectSavedAddress(addr)">
+                        <div class="saved-address-option__body">
+                          <strong>
+                            {{ addr.label || (addr.first_name + ' ' + addr.last_name) }}
+                            @if (addr.is_default) { <span class="badge">Predeterminada</span> }
+                          </strong>
+                          <p>{{ addr.street }}, {{ addr.postal_code }} {{ addr.city }} ({{ addr.province }})</p>
+                        </div>
+                      </label>
+                    }
+                    <label class="saved-address-option" [class.selected]="selectedAddressId() === 'new'">
+                      <input type="radio" name="savedAddress" [checked]="selectedAddressId() === 'new'" (change)="selectNewAddress()">
+                      <div class="saved-address-option__body">
+                        <strong>+ Usar otra dirección</strong>
+                      </div>
+                    </label>
                   </div>
-                  
-                  <div class="form-row form-row--2">
+                }
+
+                @if (selectedAddressId() === 'new') {
+                  <form [formGroup]="shippingForm">
                     <div class="form-group">
-                      <label for="city">Ciudad *</label>
-                      <input type="text" id="city" formControlName="city">
+                      <label for="address">Dirección *</label>
+                      <input type="text" id="address" formControlName="address" placeholder="Calle, número, piso...">
                     </div>
+
+                    <div class="form-row form-row--2">
+                      <div class="form-group">
+                        <label for="city">Ciudad *</label>
+                        <input type="text" id="city" formControlName="city">
+                      </div>
+                      <div class="form-group">
+                        <label for="postalCode">Código postal *</label>
+                        <input type="text" id="postalCode" formControlName="postalCode">
+                      </div>
+                    </div>
+
+                    <div class="form-row form-row--2">
+                      <div class="form-group">
+                        <label for="state">Provincia *</label>
+                        <input type="text" id="state" formControlName="state">
+                      </div>
+                      <div class="form-group">
+                        <label for="country">País *</label>
+                        <select id="country" formControlName="country">
+                          <option value="ES">España</option>
+                          <option value="PT">Portugal</option>
+                          <option value="FR">Francia</option>
+                        </select>
+                      </div>
+                    </div>
+
                     <div class="form-group">
-                      <label for="postalCode">Código postal *</label>
-                      <input type="text" id="postalCode" formControlName="postalCode">
+                      <label for="notes">Notas del pedido (opcional)</label>
+                      <textarea id="notes" formControlName="notes" rows="3" placeholder="Instrucciones especiales para la entrega..."></textarea>
                     </div>
-                  </div>
-                  
-                  <div class="form-row form-row--2">
-                    <div class="form-group">
-                      <label for="state">Provincia *</label>
-                      <input type="text" id="state" formControlName="state">
-                    </div>
-                    <div class="form-group">
-                      <label for="country">País *</label>
-                      <select id="country" formControlName="country">
-                        <option value="ES">España</option>
-                        <option value="PT">Portugal</option>
-                        <option value="FR">Francia</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div class="form-group">
-                    <label for="notes">Notas del pedido (opcional)</label>
-                    <textarea id="notes" formControlName="notes" rows="3" placeholder="Instrucciones especiales para la entrega..."></textarea>
-                  </div>
-                </form>
+                  </form>
+
+                  @if (authService.isAuthenticated()) {
+                    <label class="save-address-checkbox">
+                      <input type="checkbox" [checked]="saveNewAddress()" (change)="saveNewAddress.set($any($event.target).checked)">
+                      Guardar esta dirección para futuros pedidos
+                    </label>
+                  }
+                }
               </section>
               
               <!-- Step 3: Payment -->
@@ -344,6 +378,72 @@ import { StripeService } from '../../core/services/stripe.service';
       color: #e74c3c;
       font-size: 0.8rem;
       margin-top: 0.25rem;
+    }
+
+    .saved-addresses {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .saved-address-option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+
+      input[type="radio"] {
+        margin-top: 0.2rem;
+      }
+
+      &.selected {
+        border-color: #4a7c4e;
+        background: #f0f7f0;
+      }
+
+      &__body {
+        font-size: 0.9rem;
+
+        strong {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #333;
+        }
+
+        p {
+          margin: 0.25rem 0 0;
+          color: #666;
+        }
+      }
+    }
+
+    .badge {
+      background: #4a7c4e;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 10px;
+    }
+
+    .save-address-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: #333;
+      cursor: pointer;
+      margin-top: 0.5rem;
+
+      input {
+        width: auto;
+      }
     }
     
     .payment-methods {
@@ -624,6 +724,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private router = inject(Router);
   private orderService = inject(OrderService);
   private stripeService = inject(StripeService);
+  private userService = inject(UserService);
 
   cartService = inject(CartService);
   authService = inject(AuthService);
@@ -635,6 +736,10 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   error = signal<string | null>(null);
   stripeReady = signal(false);
   stripeInitializing = signal(false);
+
+  savedAddresses = signal<Address[]>([]);
+  selectedAddressId = signal<number | 'new'>('new');
+  saveNewAddress = signal(true);
 
   private orderNumber: string | null = null;
   private stripeInitTriggered = false;
@@ -658,6 +763,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           phone: user.phone,
         });
       }
+      this.loadSavedAddresses();
     }
 
     // Watch form status changes to trigger Stripe init
@@ -688,7 +794,45 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   isFormValid(): boolean {
+    if (this.selectedAddressId() !== 'new') {
+      return this.contactForm.valid;
+    }
     return this.contactForm.valid && this.shippingForm.valid;
+  }
+
+  private loadSavedAddresses(): void {
+    this.userService.getAddresses().subscribe({
+      next: (addresses) => {
+        this.savedAddresses.set(addresses);
+        const defaultAddress = addresses.find(a => a.is_default) || addresses[0];
+        if (defaultAddress) {
+          this.selectSavedAddress(defaultAddress);
+        }
+      },
+      error: () => {
+        // No saved addresses yet — keep the manual entry form
+      },
+    });
+  }
+
+  selectSavedAddress(addr: Address): void {
+    this.selectedAddressId.set(addr.id);
+    this.contactForm.patchValue({
+      firstName: addr.first_name,
+      lastName: addr.last_name,
+      phone: addr.phone,
+    });
+    this.shippingForm.patchValue({
+      address: addr.street,
+      city: addr.city,
+      postalCode: addr.postal_code,
+      state: addr.province,
+      country: addr.country,
+    });
+  }
+
+  selectNewAddress(): void {
+    this.selectedAddressId.set('new');
   }
 
   private tryInitStripe(): void {
@@ -762,6 +906,22 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
     this.processing.set(true);
     this.error.set(null);
+
+    if (this.authService.isAuthenticated() && this.selectedAddressId() === 'new' && this.saveNewAddress()) {
+      this.userService.createAddress({
+        label: null,
+        first_name: this.contactForm.value.firstName,
+        last_name: this.contactForm.value.lastName,
+        street: this.shippingForm.value.address,
+        street_2: null,
+        city: this.shippingForm.value.city,
+        province: this.shippingForm.value.state,
+        postal_code: this.shippingForm.value.postalCode,
+        country: this.shippingForm.value.country,
+        phone: this.contactForm.value.phone,
+        is_default: true,
+      }).subscribe({ error: () => {} });
+    }
 
     const returnUrl = `${window.location.origin}/gracias?order=${this.orderNumber}`;
     const result = await this.stripeService.confirmPayment(returnUrl);

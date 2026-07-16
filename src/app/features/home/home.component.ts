@@ -52,7 +52,7 @@ const REVIEWS = [
                 </a>
                 <div class="product-card__body">
                   <a [routerLink]="['/tienda', product.slug]" class="product-card__name">{{ product.name }}</a>
-                  <p class="product-card__tagline">100% natural · sin aditivos</p>
+                  <p class="product-card__tagline">{{ product.short_description }}</p>
                   <div class="product-card__footer">
                     <span class="product-card__price">{{ defaultVariantPrice(product) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                     <button class="product-card__cta" (click)="addToCart(product)">
