@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
   selector: 'app-cart',
@@ -105,41 +106,57 @@ import { CartService } from '../../core/services/cart.service';
                   </div>
                 </div>
               }
-              
+
+              @if ((cartService.cart()?.discount || 0) > 0) {
+                <div class="summary-row">
+                  <span>Descuento ({{ cartService.cart()?.coupon?.code }})</span>
+                  <span>−{{ cartService.cart()?.discount | currency:'EUR' }}</span>
+                </div>
+              }
+
               <!-- Coupon -->
               <div class="coupon-section">
-                <label>¿Tienes un cupón?</label>
-                <div class="coupon-input">
-                  <input 
-                    type="text" 
-                    [(ngModel)]="couponCode" 
-                    placeholder="Código de cupón"
-                    [disabled]="!!appliedCoupon">
-                  @if (!appliedCoupon) {
-                    <button 
-                      (click)="applyCoupon()" 
-                      [disabled]="!couponCode || applyingCoupon"
-                      class="btn btn--secondary">
-                      Aplicar
-                    </button>
-                  } @else {
-                    <button 
-                      (click)="removeCoupon()" 
-                      class="btn btn--outline">
-                      Quitar
-                    </button>
+                @if (authService.isAuthenticated()) {
+                  <label>¿Tienes un cupón?</label>
+                  <div class="coupon-input">
+                    <input
+                      type="text"
+                      [(ngModel)]="couponCode"
+                      placeholder="Código de cupón"
+                      [disabled]="!!cartService.cart()?.coupon">
+                    @if (!cartService.cart()?.coupon) {
+                      <button
+                        (click)="applyCoupon()"
+                        [disabled]="!couponCode || applyingCoupon"
+                        class="btn btn--secondary">
+                        Aplicar
+                      </button>
+                    } @else {
+                      <button
+                        (click)="removeCoupon()"
+                        class="btn btn--outline">
+                        Quitar
+                      </button>
+                    }
+                  </div>
+                  @if (couponError) {
+                    <p class="coupon-error">{{ couponError }}</p>
                   }
-                </div>
-                @if (couponError) {
-                  <p class="coupon-error">{{ couponError }}</p>
-                }
-                @if (appliedCoupon) {
-                  <p class="coupon-success">Cupón "{{ appliedCoupon }}" aplicado</p>
+                  @if (cartService.cart()?.coupon; as coupon) {
+                    <p class="coupon-success">Cupón "{{ coupon.code }}" aplicado</p>
+                  }
+                } @else {
+                  <p class="coupon-login-prompt">
+                    <a routerLink="/auth/login" [queryParams]="{returnUrl: '/carrito'}">Inicia sesión</a>
+                    o
+                    <a routerLink="/auth/register" [queryParams]="{returnUrl: '/carrito'}">crea una cuenta</a>
+                    para usar cupones de descuento
+                  </p>
                 }
               </div>
-              
+
               <hr>
-              
+
               <div class="summary-row summary-row--total">
                 <span>Total</span>
                 <span>{{ cartService.cart()?.total | currency:'EUR' }}</span>
@@ -386,6 +403,20 @@ import { CartService } from '../../core/services/cart.service';
       font-size: 0.85rem;
       margin: 0.5rem 0 0;
     }
+
+    .coupon-login-prompt {
+      font-size: 0.85rem;
+      color: #666;
+      margin: 0;
+      background: #f0f7f0;
+      padding: 0.75rem;
+      border-radius: 4px;
+
+      a {
+        color: #4a7c4e;
+        font-weight: 600;
+      }
+    }
     
     hr {
       border: none;
@@ -500,10 +531,10 @@ import { CartService } from '../../core/services/cart.service';
 })
 export class CartComponent implements OnInit {
   cartService = inject(CartService);
+  authService = inject(AuthService);
   readonly freeShippingThreshold = 48;
   
   couponCode = '';
-  appliedCoupon: string | null = null;
   couponError: string | null = null;
   applyingCoupon = false;
   updating = false;
@@ -541,25 +572,24 @@ export class CartComponent implements OnInit {
   
   applyCoupon(): void {
     if (!this.couponCode) return;
-    
+
     this.applyingCoupon = true;
     this.couponError = null;
-    
-    // MVP: Simple coupon validation
-    setTimeout(() => {
-      const validCoupons = ['BIENVENIDO10', 'PISTACHO20'];
-      if (validCoupons.includes(this.couponCode.toUpperCase())) {
-        this.appliedCoupon = this.couponCode.toUpperCase();
+
+    this.cartService.applyCoupon(this.couponCode.toUpperCase()).subscribe({
+      next: () => {
         this.couponCode = '';
-      } else {
-        this.couponError = 'Cupón no válido';
-      }
-      this.applyingCoupon = false;
-    }, 500);
+        this.applyingCoupon = false;
+      },
+      error: (err) => {
+        this.couponError = err.error?.detail || 'Cupón no válido';
+        this.applyingCoupon = false;
+      },
+    });
   }
-  
+
   removeCoupon(): void {
-    this.appliedCoupon = null;
     this.couponError = null;
+    this.cartService.removeCoupon().subscribe();
   }
 }

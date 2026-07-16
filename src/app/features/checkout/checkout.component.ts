@@ -36,11 +36,21 @@ import { Address } from '../../core/models';
                 
                 @if (!authService.isAuthenticated()) {
                   <p class="login-prompt">
-                    ¿Ya tienes cuenta? 
+                    ¿Ya tienes cuenta?
                     <a routerLink="/auth/login" [queryParams]="{returnUrl: '/checkout'}">Inicia sesión</a>
                   </p>
                 }
-                
+
+                @if (!authService.isAuthenticated() && cartService.cart()?.coupon) {
+                  <p class="coupon-guest-warning">
+                    Tu cupón <strong>{{ cartService.cart()?.coupon?.code }}</strong> no se aplicará como invitado.
+                    <a routerLink="/auth/login" [queryParams]="{returnUrl: '/checkout'}">Inicia sesión</a>
+                    o
+                    <a routerLink="/auth/register" [queryParams]="{returnUrl: '/checkout'}">crea una cuenta</a>
+                    para no perder el descuento.
+                  </p>
+                }
+
                 <form [formGroup]="contactForm">
                   <div class="form-row">
                     <div class="form-group">
@@ -326,7 +336,22 @@ import { Address } from '../../core/models';
       border-radius: 4px;
       margin-bottom: 1rem;
       font-size: 0.9rem;
-      
+
+      a {
+        color: #4a7c4e;
+        font-weight: 600;
+      }
+    }
+
+    .coupon-guest-warning {
+      background: #fff8e6;
+      border: 1px solid #f0d98c;
+      padding: 0.75rem;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: #7a5c00;
+
       a {
         color: #4a7c4e;
         font-weight: 600;

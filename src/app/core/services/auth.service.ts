@@ -1,9 +1,10 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, switchMap, map, BehaviorSubject } from 'rxjs';
 import { environment } from '@env/environment';
 import { User, AuthTokens, LoginCredentials, RegisterData, ApiMessage } from '../models';
+import { CartService } from './cart.service';
 
 const TOKEN_KEY = 'cc_access_token';
 const REFRESH_TOKEN_KEY = 'cc_refresh_token';
@@ -15,7 +16,8 @@ const CART_SESSION_KEY = 'cc_cart_session';
 })
 export class AuthService {
   private apiUrl = `${environment.apiUrl}/auth`;
-  
+  private cartService = inject(CartService);
+
   // State using signals
   private currentUserSignal = signal<User | null>(this.getStoredUser());
   private isLoadingSignal = signal<boolean>(false);
@@ -72,6 +74,7 @@ export class AuthService {
   logout(): void {
     this.http.post<ApiMessage>(`${this.apiUrl}/logout`, {}).subscribe();
     this.clearAuth();
+    this.cartService.resetCart();
     this.router.navigate(['/']);
   }
   
