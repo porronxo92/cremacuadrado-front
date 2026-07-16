@@ -1,7 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap, catchError, of, BehaviorSubject } from 'rxjs';
+import { Observable, tap, catchError, of, switchMap, map, BehaviorSubject } from 'rxjs';
 import { environment } from '@env/environment';
 import { User, AuthTokens, LoginCredentials, RegisterData, ApiMessage } from '../models';
 
@@ -56,11 +56,9 @@ export class AuthService {
   login(credentials: LoginCredentials): Observable<AuthTokens> {
     this.isLoadingSignal.set(true);
     return this.http.post<AuthTokens>(`${this.apiUrl}/login`, credentials).pipe(
-      tap(tokens => {
-        this.storeTokens(tokens);
-        this.loadCurrentUser();
-        this.isLoadingSignal.set(false);
-      }),
+      tap(tokens => this.storeTokens(tokens)),
+      switchMap(tokens => this.fetchCurrentUser().pipe(map(() => tokens))),
+      tap(() => this.isLoadingSignal.set(false)),
       catchError(error => {
         this.isLoadingSignal.set(false);
         throw error;
@@ -100,8 +98,16 @@ export class AuthService {
    */
   loadCurrentUser(): void {
     if (!this.getAccessToken()) return;
+    this.fetchCurrentUser().subscribe();
+  }
 
-    this.http.get<User>(`${this.apiUrl}/me`).pipe(
+  /**
+   * Fetch the current user profile and update the signal, waiting for the
+   * response — used by login() so navigation after login (e.g. returnUrl
+   * redirects) only happens once currentUser is actually populated.
+   */
+  private fetchCurrentUser(): Observable<User | null> {
+    return this.http.get<User>(`${this.apiUrl}/me`).pipe(
       tap(user => {
         this.currentUserSignal.set(user);
         this.storeUser(user);
@@ -116,7 +122,7 @@ export class AuthService {
         }
         return of(null);
       })
-    ).subscribe();
+    );
   }
   
   /**
@@ -125,10 +131,8 @@ export class AuthService {
    */
   loginWithGoogle(idToken: string): Observable<AuthTokens> {
     return this.http.post<AuthTokens>(`${this.apiUrl}/google`, { id_token: idToken }).pipe(
-      tap(tokens => {
-        this.storeTokens(tokens);
-        this.loadCurrentUser();
-      }),
+      tap(tokens => this.storeTokens(tokens)),
+      switchMap(tokens => this.fetchCurrentUser().pipe(map(() => tokens))),
       catchError(error => {
         throw error;
       })
