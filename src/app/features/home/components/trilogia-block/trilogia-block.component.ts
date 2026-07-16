@@ -5,19 +5,19 @@ const STEPS = [
     number: '01',
     name: 'Tostado',
     phrase: 'El calor activa los aceites naturales del pistacho, concentrando el sabor hasta su punto óptimo.',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M12 6v6l4 2"/></svg>`,
+    icon: 'assets/images/tostado.svg',
   },
   {
     number: '02',
     name: 'Repelado',
     phrase: 'Retiramos la piel para obtener la cremosidad y el color verde intenso sin amargor residual.',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    icon: 'assets/images/repelado.svg',
   },
   {
     number: '03',
     name: 'Molino de piedra',
     phrase: 'La piedra tritura lentamente sin calentar el aceite: la textura perfecta en su estado más puro.',
-    icon: `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="22"/><line x1="2" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="22" y2="12"/></svg>`,
+    icon: 'assets/images/molido.svg',
   },
 ];
 
@@ -36,7 +36,9 @@ const STEPS = [
             <div class="trilogia__step">
               <div class="trilogia__step-top">
                 <span class="trilogia__step-num">{{ step.number }}</span>
-                <div class="trilogia__step-icon" [innerHTML]="step.icon"></div>
+                <div class="trilogia__step-icon">
+                  <img [src]="step.icon" [alt]="step.name" width="28" height="28" loading="lazy">
+                </div>
               </div>
               <h3 class="trilogia__step-name">{{ step.name }}</h3>
               <p class="trilogia__step-phrase">{{ step.phrase }}</p>
@@ -144,6 +146,12 @@ const STEPS = [
       justify-content: center;
       color: $brand;
       flex-shrink: 0;
+
+      img {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+      }
     }
 
     .trilogia__step-name {

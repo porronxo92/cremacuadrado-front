@@ -282,10 +282,6 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                             <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
                             Modifica tu suscripción cuando quieras
                           </li>
-                          <li>
-                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                            Sorpresa exclusiva cada mes para suscriptores
-                          </li>
                         </ul>
                         <button class="pd__cta pd__cta--sub" (click)="activateSubscription()">
                           Suscribirme — próximamente

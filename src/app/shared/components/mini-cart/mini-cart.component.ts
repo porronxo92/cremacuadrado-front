@@ -115,10 +115,8 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
             <span>Subtotal</span>
             <strong>{{ cartService.subtotal() | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
           </div>
-          @if (cartService.subtotal() < 4800) {
-            <p class="mini-cart__shipping-notice">
-              Te faltan <strong>{{ (4800 - cartService.subtotal()) / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</strong> para envío gratis
-            </p>
+          @if ((cartService.cart()?.shipping_cost || 0) > 0) {
+            <p class="mini-cart__shipping-notice">{{ cartService.cart()?.shipping_message }}</p>
           } @else {
             <p class="mini-cart__shipping-free">✓ Envío gratis</p>
           }

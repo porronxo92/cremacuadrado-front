@@ -89,19 +89,19 @@ import { CartService } from '../../core/services/cart.service';
               <div class="summary-row">
                 <span>Envío</span>
                 <span>
-                  @if ((cartService.cart()?.subtotal || 0) >= 30) {
+                  @if ((cartService.cart()?.shipping_cost || 0) === 0) {
                     Gratis
                   } @else {
-                    4,95 €
+                    {{ cartService.cart()?.shipping_cost | currency:'EUR' }}
                   }
                 </span>
               </div>
-              
-              @if ((cartService.cart()?.subtotal || 0) < 30) {
+
+              @if ((cartService.cart()?.shipping_cost || 0) > 0) {
                 <div class="shipping-notice">
-                  <p>¡Te faltan {{ (30 - (cartService.cart()?.subtotal || 0)) | currency:'EUR' }} para envío gratis!</p>
+                  <p>{{ cartService.cart()?.shipping_message }}</p>
                   <div class="progress-bar">
-                    <div class="progress" [style.width.%]="((cartService.cart()?.subtotal || 0) / 30) * 100"></div>
+                    <div class="progress" [style.width.%]="((cartService.cart()?.subtotal || 0) / freeShippingThreshold) * 100"></div>
                   </div>
                 </div>
               }
@@ -500,6 +500,7 @@ import { CartService } from '../../core/services/cart.service';
 })
 export class CartComponent implements OnInit {
   cartService = inject(CartService);
+  readonly freeShippingThreshold = 48;
   
   couponCode = '';
   appliedCoupon: string | null = null;
