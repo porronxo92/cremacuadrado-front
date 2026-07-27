@@ -27,6 +27,7 @@ import { RouterModule } from '@angular/router';
               <a routerLink="/el-archivo">Blog</a>
               <a routerLink="/nuestro-metodo">Sobre nosotros</a>
               <a routerLink="/devoluciones">Envíos</a>
+              <a routerLink="/contacto">Contacto</a>
             </nav>
           </div>
           

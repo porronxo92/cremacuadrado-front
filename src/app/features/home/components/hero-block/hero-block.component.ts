@@ -74,6 +74,17 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
           <p class="hero__popup-sub">Revisa tu email. Tu código de descuento llegará en breve.</p>
         </div>
       }
+
+      @if (alreadyClaimed()) {
+        <div class="hero__popup-overlay" (click)="closePopup()" aria-hidden="true"></div>
+        <div class="hero__popup hero__popup--claimed" role="dialog" aria-modal="true" aria-label="Cupón no disponible">
+          <button class="hero__popup-close" (click)="closePopup()" aria-label="Cerrar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <p class="hero__popup-title">Cupón ya reclamado</p>
+          <p class="hero__popup-sub">Este correo ya tiene un cupón de bienvenida asignado. Revisa tu bandeja de entrada o la carpeta de spam.</p>
+        </div>
+      }
     </section>
   `,
   styles: [`
@@ -365,6 +376,14 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
       display: flex;
       align-items: center;
       justify-content: center;
+
+      &--info {
+        background: rgba(#4a90d9, 0.10);
+        color: #4a90d9;
+        font-size: 1.4rem;
+        font-weight: 700;
+        font-style: italic;
+      }
     }
   `]
 })
@@ -377,6 +396,7 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
 
   readonly showPopup = signal(false);
   readonly emailSubmitted = signal(false);
+  readonly alreadyClaimed = signal(false);
   readonly submitting = signal(false);
   popupEmail = '';
 
@@ -389,14 +409,14 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
 
     this.popupTimer = setTimeout(() => {
-      if (!this.dismissed && !this.showPopup() && !this.emailSubmitted()) {
+      if (!this.dismissed && !this.showPopup() && !this.emailSubmitted() && !this.alreadyClaimed()) {
         this.showPopup.set(true);
       }
     }, 30000);
 
     this.scrollHandler = () => {
       this.scrollCount++;
-      if (this.scrollCount >= 2 && !this.dismissed && !this.showPopup() && !this.emailSubmitted()) {
+      if (this.scrollCount >= 2 && !this.dismissed && !this.showPopup() && !this.emailSubmitted() && !this.alreadyClaimed()) {
         this.showPopup.set(true);
       }
     };
@@ -423,6 +443,7 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dismissed = true;
     this.showPopup.set(false);
     this.emailSubmitted.set(false);
+    this.alreadyClaimed.set(false);
     if (this.popupTimer) {
       clearTimeout(this.popupTimer);
       this.popupTimer = null;
@@ -441,12 +462,16 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
         this.showPopup.set(false);
         this.emailSubmitted.set(true);
       },
-      error: () => {
-        // Best-effort: keep the UX simple, don't punish the user for a backend hiccup.
+      error: (err) => {
         this.submitting.set(false);
         this.dismissed = true;
         this.showPopup.set(false);
-        this.emailSubmitted.set(true);
+        if (err?.status === 409) {
+          this.alreadyClaimed.set(true);
+        } else {
+          // Error genérico de red/servidor — mostramos éxito para no frustrar al usuario
+          this.emailSubmitted.set(true);
+        }
       },
     });
   }

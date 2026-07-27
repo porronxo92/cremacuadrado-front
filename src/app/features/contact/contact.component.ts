@@ -1,7 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ContactService } from '../../core/services/contact.service';
 
 interface FaqItem {
   question: string;
@@ -669,6 +670,8 @@ interface FaqItem {
   `]
 })
 export class ContactComponent {
+  private contactService = inject(ContactService);
+
   formData = { name: '', email: '', message: '', privacy: false, marketing: false };
   sent = signal(false);
   sending = signal(false);
@@ -722,11 +725,20 @@ export class ContactComponent {
 
   sendForm(): void {
     this.sending.set(true);
-    // Simulate send (no real backend endpoint for contact form yet)
-    setTimeout(() => {
-      this.sending.set(false);
-      this.sent.set(true);
-    }, 900);
+    this.contactService.submit({
+      name: this.formData.name,
+      email: this.formData.email,
+      message: this.formData.message,
+      accepts_marketing: this.formData.marketing,
+    }).subscribe({
+      next: () => {
+        this.sending.set(false);
+        this.sent.set(true);
+      },
+      error: () => {
+        this.sending.set(false);
+      },
+    });
   }
 
   resetForm(): void {

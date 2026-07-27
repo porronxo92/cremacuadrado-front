@@ -32,9 +32,13 @@ export class AuthService {
     private http: HttpClient,
     private router: Router
   ) {
-    // Check if we have a stored token and load user
+    // Check if we have a stored token and load user.
+    // Deferred with setTimeout so this constructor finishes and AuthService
+    // is fully registered in the injector before the HTTP call fires —
+    // otherwise authInterceptor's inject(AuthService) triggers NG0200
+    // (circular dependency) because it runs synchronously during construction.
     if (this.getAccessToken()) {
-      this.loadCurrentUser();
+      setTimeout(() => this.loadCurrentUser());
     }
   }
   

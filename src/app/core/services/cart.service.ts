@@ -32,8 +32,14 @@ export class CartService {
   constructor(private http: HttpClient) {
     // 1. Restore from localStorage immediately (zero network latency)
     this.restoreFromStorage();
-    // 2. Silently sync with server in the background — does not block rendering
-    this.syncFromServer();
+    // 2. Silently sync with server in the background — does not block rendering.
+    // Deferred with setTimeout so this constructor finishes and CartService is
+    // fully registered in the injector before the HTTP call fires. Otherwise,
+    // when CartService is constructed as a field-initializer dependency of
+    // another service (e.g. AuthService), the synchronous HTTP call here runs
+    // through authInterceptor's inject(AuthService) while that service is
+    // still mid-construction, triggering NG0200 (circular dependency).
+    setTimeout(() => this.syncFromServer());
   }
 
   private getCartSessionHeader(): HttpHeaders {

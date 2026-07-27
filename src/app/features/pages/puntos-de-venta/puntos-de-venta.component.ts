@@ -135,139 +135,19 @@ import { PointOfSale } from '../../../core/models';
         </div>
       </section>
 
-      <!-- ── Formulario de Contacto ───────────────────────────── -->
-      <section class="pdv-contact">
+      <!-- ── CTA Contacto ────────────────────────────────────── -->
+      <section class="pdv-cta">
         <div class="container">
-          <div class="pdv-contact__header">
-            <span class="pdv-contact__badge">✉️ Escríbenos</span>
-            <h2>¿Tienes alguna pregunta?</h2>
-            <p>Tanto si eres un cliente con dudas como si quieres convertirte en punto de venta, estamos aquí para ayudarte.</p>
+          <div class="pdv-cta__inner">
+            <div class="pdv-cta__text">
+              <h2>¿Tienes alguna pregunta?</h2>
+              <p>Tanto si eres un cliente con dudas como si quieres convertirte en punto de venta, estamos aquí para ayudarte.</p>
+            </div>
+            <a routerLink="/contacto" class="pdv-cta__btn">
+              Contáctanos
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
           </div>
-
-          <!-- Tabs -->
-          <div class="pdv-tabs">
-            <button
-              class="pdv-tab"
-              [class.pdv-tab--active]="activeForm() === 'customer'"
-              (click)="activeForm.set('customer')"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Soy cliente
-            </button>
-            <button
-              class="pdv-tab"
-              [class.pdv-tab--active]="activeForm() === 'business'"
-              (click)="activeForm.set('business')"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-              Quiero ser punto de venta
-            </button>
-          </div>
-
-          <!-- Formulario Cliente -->
-          @if (activeForm() === 'customer') {
-            <form class="pdv-form" (submit)="submitCustomerForm($event)">
-              <div class="pdv-form__grid">
-                <div class="form-field">
-                  <label for="c-name">Nombre *</label>
-                  <input type="text" id="c-name" [(ngModel)]="customerForm.name" name="c-name" placeholder="Tu nombre" required>
-                </div>
-                <div class="form-field">
-                  <label for="c-email">Email *</label>
-                  <input type="email" id="c-email" [(ngModel)]="customerForm.email" name="c-email" placeholder="tu@email.com" required>
-                </div>
-              </div>
-              <div class="form-field">
-                <label for="c-subject">Asunto</label>
-                <select id="c-subject" [(ngModel)]="customerForm.subject" name="c-subject">
-                  <option value="">Selecciona un tema…</option>
-                  <option value="pedido">Consulta sobre un pedido</option>
-                  <option value="producto">Información de producto</option>
-                  <option value="tienda">Encontrar punto de venta</option>
-                  <option value="otro">Otro</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="c-message">Mensaje *</label>
-                <textarea id="c-message" [(ngModel)]="customerForm.message" name="c-message" rows="5" placeholder="Cuéntanos en qué podemos ayudarte…" required></textarea>
-              </div>
-              <div class="pdv-form__footer">
-                <p class="pdv-form__privacy">Al enviar este formulario aceptas nuestra <a routerLink="/privacidad">política de privacidad</a>.</p>
-                <button type="submit" class="btn btn--brand" [disabled]="submitting()">
-                  @if (submitting()) {
-                    <span class="spinner"></span> Enviando…
-                  } @else {
-                    Enviar mensaje
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  }
-                </button>
-              </div>
-            </form>
-          }
-
-          <!-- Formulario Negocio -->
-          @if (activeForm() === 'business') {
-            <form class="pdv-form" (submit)="submitBusinessForm($event)">
-              <div class="pdv-form__info-banner">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <p>Colaboramos con tiendas delicatessen, herboristerías, tiendas bio y restaurantes. Rellena el formulario y nos ponemos en contacto contigo en 48h.</p>
-              </div>
-              <div class="pdv-form__grid">
-                <div class="form-field">
-                  <label for="b-contact">Persona de contacto *</label>
-                  <input type="text" id="b-contact" [(ngModel)]="businessForm.contact" name="b-contact" placeholder="Nombre y apellidos" required>
-                </div>
-                <div class="form-field">
-                  <label for="b-email">Email de negocio *</label>
-                  <input type="email" id="b-email" [(ngModel)]="businessForm.email" name="b-email" placeholder="tienda@ejemplo.com" required>
-                </div>
-              </div>
-              <div class="pdv-form__grid">
-                <div class="form-field">
-                  <label for="b-business">Nombre del negocio *</label>
-                  <input type="text" id="b-business" [(ngModel)]="businessForm.businessName" name="b-business" placeholder="Nombre de tu tienda" required>
-                </div>
-                <div class="form-field">
-                  <label for="b-type">Tipo de negocio *</label>
-                  <select id="b-type" [(ngModel)]="businessForm.businessType" name="b-type" required>
-                    <option value="">Selecciona…</option>
-                    <option value="delicatessen">Tienda delicatessen</option>
-                    <option value="herboristeria">Herboristería / Tienda bio</option>
-                    <option value="restaurante">Restaurante / Cafetería</option>
-                    <option value="supermercado">Supermercado</option>
-                    <option value="online">Tienda online</option>
-                    <option value="otro">Otro</option>
-                  </select>
-                </div>
-              </div>
-              <div class="pdv-form__grid">
-                <div class="form-field">
-                  <label for="b-city">Ciudad *</label>
-                  <input type="text" id="b-city" [(ngModel)]="businessForm.city" name="b-city" placeholder="Madrid, Barcelona…" required>
-                </div>
-                <div class="form-field">
-                  <label for="b-phone">Teléfono</label>
-                  <input type="tel" id="b-phone" [(ngModel)]="businessForm.phone" name="b-phone" placeholder="+34 600 000 000">
-                </div>
-              </div>
-              <div class="form-field">
-                <label for="b-message">Cuéntanos más sobre tu negocio</label>
-                <textarea id="b-message" [(ngModel)]="businessForm.message" name="b-message" rows="4" placeholder="Describe brevemente tu tienda, clientes habituales, volumen estimado…"></textarea>
-              </div>
-              <div class="pdv-form__footer">
-                <p class="pdv-form__privacy">Al enviar este formulario aceptas nuestra <a routerLink="/privacidad">política de privacidad</a>.</p>
-                <button type="submit" class="btn btn--brand" [disabled]="submitting()">
-                  @if (submitting()) {
-                    <span class="spinner"></span> Enviando…
-                  } @else {
-                    Solicitar colaboración
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                  }
-                </button>
-              </div>
-            </form>
-          }
-
         </div>
       </section>
 
@@ -671,214 +551,6 @@ import { PointOfSale } from '../../../core/models';
       }
     }
 
-    // ── Formulario ────────────────────────────────────────────
-    .pdv-contact {
-      background: $bg-alt;
-      border-top: 1px solid $border;
-      border-bottom: 1px solid $border;
-      padding: 4rem 0;
-    }
-
-    .pdv-contact__header {
-      text-align: center;
-      margin-bottom: 2.5rem;
-
-      &__badge, .pdv-contact__badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.4rem;
-        background: rgba($brand, 0.08);
-        color: $brand;
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.72rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        padding: 0.3rem 0.85rem;
-        border-radius: 50px;
-        margin-bottom: 0.75rem;
-      }
-
-      h2 {
-        font-family: 'Teko', sans-serif;
-        font-size: clamp(2rem, 4vw, 3rem);
-        font-weight: 700;
-        color: $text;
-        margin: 0.5rem 0;
-      }
-
-      p {
-        font-family: 'Lora', serif;
-        font-size: 1rem;
-        color: $text-lt;
-        max-width: 56ch;
-        margin: 0 auto;
-        line-height: 1.7;
-      }
-    }
-
-    .pdv-contact__badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.4rem;
-      background: rgba($brand, 0.08);
-      color: $brand;
-      font-family: 'Poppins', sans-serif;
-      font-size: 0.72rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      padding: 0.3rem 0.85rem;
-      border-radius: 50px;
-      margin-bottom: 0.75rem;
-    }
-
-    .pdv-tabs {
-      display: flex;
-      justify-content: center;
-      gap: 0.5rem;
-      margin-bottom: 2rem;
-    }
-
-    .pdv-tab {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.65rem 1.5rem;
-      border-radius: 50px;
-      border: 2px solid $border;
-      background: #fff;
-      font-family: 'Poppins', sans-serif;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: $text-lt;
-      cursor: pointer;
-      transition: all 200ms ease;
-
-      &:hover {
-        border-color: $brand;
-        color: $brand;
-      }
-
-      &--active {
-        background: $brand;
-        border-color: $brand;
-        color: #fff;
-
-        svg { stroke: #fff; }
-      }
-
-      @media (max-width: 480px) {
-        padding: 0.55rem 1rem;
-        font-size: 0.78rem;
-        span { display: none; }
-      }
-    }
-
-    .pdv-form {
-      max-width: 720px;
-      margin: 0 auto;
-      background: #fff;
-      border: 1px solid $border;
-      border-radius: 12px;
-      padding: 2rem 2.5rem;
-
-      @media (max-width: 600px) { padding: 1.5rem; }
-
-      &__grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1rem;
-
-        @media (max-width: 600px) { grid-template-columns: 1fr; }
-      }
-
-      &__info-banner {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        background: rgba($accent, 0.12);
-        border: 1px solid rgba($accent, 0.3);
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.5rem;
-
-        svg { flex-shrink: 0; color: darken(#E6C15A, 20%); margin-top: 2px; }
-
-        p {
-          font-family: 'Poppins', sans-serif;
-          font-size: 0.8rem;
-          color: $text-lt;
-          margin: 0;
-          line-height: 1.55;
-        }
-      }
-
-      &__footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 1rem;
-        margin-top: 1.5rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid $border;
-      }
-
-      &__privacy {
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.72rem;
-        color: $text-mt;
-        margin: 0;
-
-        a {
-          color: $brand;
-          text-decoration: none;
-          &:hover { text-decoration: underline; }
-        }
-      }
-    }
-
-    .form-field {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      margin-bottom: 1rem;
-
-      label {
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.78rem;
-        font-weight: 600;
-        color: $text-lt;
-        letter-spacing: 0.02em;
-      }
-
-      input, select, textarea {
-        width: 100%;
-        padding: 0.7rem 0.9rem;
-        border: 1.5px solid $border;
-        border-radius: 6px;
-        background: $bg;
-        font-family: 'Poppins', sans-serif;
-        font-size: 0.875rem;
-        color: $text;
-        outline: none;
-        transition: border-color 200ms ease, box-shadow 200ms ease;
-        box-sizing: border-box;
-
-        &::placeholder { color: $text-mt; }
-
-        &:focus {
-          border-color: $brand;
-          box-shadow: 0 0 0 3px rgba($brand, 0.1);
-          background: #fff;
-        }
-      }
-
-      textarea { resize: vertical; min-height: 100px; }
-      select { cursor: pointer; }
-    }
-
     // ── Botones ────────────────────────────────────────────────
     .btn {
       display: inline-flex;
@@ -911,17 +583,65 @@ import { PointOfSale } from '../../../core/models';
       }
     }
 
-    .spinner {
-      display: inline-block;
-      width: 14px;
-      height: 14px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-    }
+    // ── CTA Contacto ──────────────────────────────────────────
+    .pdv-cta {
+      padding: 3.5rem 0;
+      background: $brand;
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+      &__inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+
+        @media (max-width: 640px) {
+          flex-direction: column;
+          text-align: center;
+          gap: 1.5rem;
+        }
+      }
+
+      &__text {
+        h2 {
+          font-family: 'Teko', sans-serif;
+          font-size: 2rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: $accent;
+          margin: 0 0 0.35rem;
+          line-height: 1.1;
+        }
+        p {
+          font-family: 'Lora', serif;
+          font-size: 0.95rem;
+          color: rgba(244, 241, 233, 0.8);
+          margin: 0;
+          line-height: 1.6;
+        }
+      }
+
+      &__btn {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.75rem;
+        background: $accent;
+        color: $brand;
+        border-radius: 2px;
+        font-family: 'Poppins', sans-serif;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        text-decoration: none;
+        transition: background 200ms ease, color 200ms ease;
+
+        &:hover {
+          background: darken(#E6C15A, 8%);
+        }
+      }
+    }
 
     // ── Stats ──────────────────────────────────────────────────
     .pdv-stats {
@@ -976,8 +696,6 @@ export class PuntosDeVentaComponent implements OnInit {
 
   searchQuery = '';
   activeCity = signal<string | null>(null);
-  activeForm = signal<'customer' | 'business'>('customer');
-  submitting = signal(false);
 
   ngOnInit(): void {
     this.pointOfSaleService.getAll().subscribe({
@@ -1008,30 +726,7 @@ export class PuntosDeVentaComponent implements OnInit {
     return Array.from(groups.entries()).map(([city, stores]) => ({ city, stores }));
   });
 
-  customerForm = { name: '', email: '', subject: '', message: '' };
-  businessForm = { contact: '', email: '', businessName: '', businessType: '', city: '', phone: '', message: '' };
-
   toggleCity(city: string): void {
     this.activeCity.set(this.activeCity() === city ? null : city);
-  }
-
-  submitCustomerForm(event: Event): void {
-    event.preventDefault();
-    this.submitting.set(true);
-    setTimeout(() => {
-      this.submitting.set(false);
-      this.customerForm = { name: '', email: '', subject: '', message: '' };
-      this.toastService.success('¡Mensaje enviado! Te respondemos en menos de 24h.');
-    }, 1200);
-  }
-
-  submitBusinessForm(event: Event): void {
-    event.preventDefault();
-    this.submitting.set(true);
-    setTimeout(() => {
-      this.submitting.set(false);
-      this.businessForm = { contact: '', email: '', businessName: '', businessType: '', city: '', phone: '', message: '' };
-      this.toastService.success('¡Solicitud recibida! Nos ponemos en contacto contigo en 48h.');
-    }, 1200);
   }
 }

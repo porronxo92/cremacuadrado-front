@@ -225,6 +225,13 @@ import { Address } from '../../core/models';
                 <span>Subtotal</span>
                 <span>{{ cartService.cart()?.subtotal | currency:'EUR' }}</span>
               </div>
+
+              @if ((cartService.cart()?.discount ?? 0) > 0) {
+                <div class="summary-row summary-row--discount">
+                  <span>Descuento {{ cartService.cart()?.coupon?.code ? '(' + cartService.cart()!.coupon!.code + ')' : '' }}</span>
+                  <span>−{{ cartService.cart()?.discount | currency:'EUR' }}</span>
+                </div>
+              }
               
               <div class="summary-row">
                 <span>Envío</span>
@@ -241,7 +248,7 @@ import { Address } from '../../core/models';
               
               <div class="summary-row summary-row--total">
                 <span>Total</span>
-                <span>{{ (cartService.cart()?.subtotal || 0) + shippingCost | currency:'EUR' }}</span>
+                <span>{{ cartService.cart()?.total | currency:'EUR' }}</span>
               </div>
               
               <button 
@@ -657,6 +664,11 @@ import { Address } from '../../core/models';
       padding: 0.5rem 0;
       color: #666;
       
+      &--discount {
+        color: #27ae60;
+        font-weight: 500;
+      }
+
       &--total {
         font-size: 1.25rem;
         font-weight: 700;
@@ -766,13 +778,17 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   selectedAddressId = signal<number | 'new'>('new');
   saveNewAddress = signal(true);
 
+  /** Full Address object when user picks a saved address; null when filling manually. */
+  private _selectedAddress: Address | null = null;
+
   private orderNumber: string | null = null;
   private stripeInitTriggered = false;
 
   constructor() {}
 
   get shippingCost(): number {
-    return (this.cartService.cart()?.subtotal || 0) >= 50 ? 0 : 4.95;
+    // Use the shipping cost already calculated by the backend (accounts for discount)
+    return this.cartService.cart()?.shipping_cost ?? 4.95;
   }
 
   ngOnInit(): void {
@@ -841,12 +857,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   selectSavedAddress(addr: Address): void {
-    this.selectedAddressId.set(addr.id);
-    this.contactForm.patchValue({
-      firstName: addr.first_name,
-      lastName: addr.last_name,
-      phone: addr.phone,
-    });
+    this._selectedAddress = addr;
+    // Patch shippingForm FIRST so that when contactForm.patchValue triggers
+    // statusChanges (and tryInitStripe), the address values are already ready.
     this.shippingForm.patchValue({
       address: addr.street,
       city: addr.city,
@@ -854,9 +867,16 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       state: addr.province,
       country: addr.country,
     });
+    this.selectedAddressId.set(addr.id);
+    this.contactForm.patchValue({
+      firstName: addr.first_name,
+      lastName: addr.last_name,
+      phone: addr.phone,
+    });
   }
 
   selectNewAddress(): void {
+    this._selectedAddress = null;
     this.selectedAddressId.set('new');
   }
 
@@ -867,15 +887,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   private buildCheckoutData() {
+    // When a saved address is selected, read directly from the Address object
+    // to avoid a race condition where shippingForm values may still be empty
+    // when contactForm.statusChanges fires during selectSavedAddress.
+    const saved = this._selectedAddress;
     const addr = {
-      first_name: this.contactForm.value.firstName,
-      last_name: this.contactForm.value.lastName,
-      street: this.shippingForm.value.address,
-      city: this.shippingForm.value.city,
-      postal_code: this.shippingForm.value.postalCode,
-      province: this.shippingForm.value.state,
-      country: this.shippingForm.value.country,
-      phone: this.contactForm.value.phone,
+      first_name: saved?.first_name ?? this.contactForm.value.firstName,
+      last_name: saved?.last_name ?? this.contactForm.value.lastName,
+      street: saved?.street ?? this.shippingForm.value.address,
+      city: saved?.city ?? this.shippingForm.value.city,
+      postal_code: saved?.postal_code ?? this.shippingForm.value.postalCode,
+      province: saved?.province ?? this.shippingForm.value.state,
+      country: saved?.country ?? this.shippingForm.value.country,
+      phone: saved?.phone ?? this.contactForm.value.phone,
     };
 
     return {
