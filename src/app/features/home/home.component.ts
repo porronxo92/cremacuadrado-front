@@ -59,16 +59,18 @@ const REVIEWS = [
                         <button
                           class="variant-btn"
                           [class.variant-btn--active]="getSelectedVariant(product)?.id === variant.id"
+                          [disabled]="!variant.is_in_stock"
                           (click)="selectVariant(product, variant, $event)">
                           {{ variant.format }}
+                          @if (!variant.is_in_stock) { <span class="variant-btn__oos">Agotado</span> }
                         </button>
                       }
                     </div>
                   }
                   <div class="product-card__footer">
                     <span class="product-card__price">{{ (getSelectedVariant(product)?.price ?? 0) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
-                    <button class="product-card__cta" (click)="addToCart(product)">
-                      Añadir al carrito
+                    <button class="product-card__cta" (click)="addToCart(product)" [disabled]="!(getSelectedVariant(product)?.is_in_stock)">
+                      {{ (getSelectedVariant(product)?.is_in_stock) ? 'Añadir al carrito' : 'Sin stock' }}
                     </button>
                   </div>
                 </div>
@@ -314,7 +316,7 @@ const REVIEWS = [
       transition: border-color 150ms, color 150ms, background 150ms;
       line-height: 1.4;
 
-      &:hover {
+      &:hover:not(:disabled) {
         border-color: $brand;
         color: $brand;
       }
@@ -323,6 +325,17 @@ const REVIEWS = [
         border-color: $brand;
         background: $brand;
         color: white;
+      }
+
+      &:disabled {
+        border-color: rgba($ink, 0.12);
+        color: rgba($ink, 0.3);
+        cursor: not-allowed;
+        text-decoration: line-through;
+      }
+
+      &__oos {
+        display: none;  // etiqueta oculta, accesibilidad via disabled+strikethrough
       }
     }
 
@@ -357,7 +370,13 @@ const REVIEWS = [
       transition: background 150ms, color 150ms;
       white-space: nowrap;
 
-      &:hover { background: $brand; color: $bg; }
+      &:hover:not(:disabled) { background: $brand; color: $bg; }
+
+      &:disabled {
+        border-color: rgba($ink, 0.2);
+        color: rgba($ink, 0.35);
+        cursor: not-allowed;
+      }
     }
 
     .products__more {
@@ -661,7 +680,8 @@ export class HomeComponent implements OnInit {
       next: (products) => {
         const featured = products.slice(0, 2);
         featured.forEach(p => {
-          const def = p.variants?.[1] ?? p.variants?.[0] ?? null;
+          // prefer first in-stock variant; fallback to first if all OOS
+          const def = p.variants?.find(v => v.is_in_stock) ?? p.variants?.[0] ?? null;
           if (def) this.selectedVariants.set(p.id, def);
         });
         this.featuredProducts.set(featured);
