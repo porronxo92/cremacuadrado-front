@@ -46,15 +46,27 @@ const REVIEWS = [
                     [src]="product.primary_image || '/assets/images/placeholder.jpg'"
                     [alt]="product.name + ' — crema de pistacho manchego'"
                     loading="lazy">
-                  @if (product.compare_price && product.compare_price > defaultVariantPrice(product)) {
+                  @if (product.compare_price && product.compare_price > (getSelectedVariant(product)?.price ?? 0)) {
                     <span class="product-card__badge">Oferta</span>
                   }
                 </a>
                 <div class="product-card__body">
                   <a [routerLink]="['/tienda', product.slug]" class="product-card__name">{{ product.name }}</a>
                   <p class="product-card__tagline">{{ product.short_description }}</p>
+                  @if (product.variants && product.variants.length > 1) {
+                    <div class="product-card__variants">
+                      @for (variant of product.variants; track variant.id) {
+                        <button
+                          class="variant-btn"
+                          [class.variant-btn--active]="getSelectedVariant(product)?.id === variant.id"
+                          (click)="selectVariant(product, variant, $event)">
+                          {{ variant.format }}
+                        </button>
+                      }
+                    </div>
+                  }
                   <div class="product-card__footer">
-                    <span class="product-card__price">{{ defaultVariantPrice(product) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                    <span class="product-card__price">{{ (getSelectedVariant(product)?.price ?? 0) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                     <button class="product-card__cta" (click)="addToCart(product)">
                       Añadir al carrito
                     </button>
@@ -279,7 +291,39 @@ const REVIEWS = [
       font-style: italic;
       font-size: 0.8rem;
       color: $muted;
-      margin: 0 0 1rem;
+      margin: 0 0 0.75rem;
+    }
+
+    .product-card__variants {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.9rem;
+    }
+
+    .variant-btn {
+      padding: 0.25rem 0.65rem;
+      border: 1.5px solid $border;
+      border-radius: 20px;
+      background: transparent;
+      color: $muted;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 150ms, color 150ms, background 150ms;
+      line-height: 1.4;
+
+      &:hover {
+        border-color: $brand;
+        color: $brand;
+      }
+
+      &--active {
+        border-color: $brand;
+        background: $brand;
+        color: white;
+      }
     }
 
     .product-card__footer {
@@ -610,27 +654,35 @@ export class HomeComponent implements OnInit {
   readonly featuredProducts = signal<ProductListItem[]>([]);
   readonly loadingProducts = signal(true);
   readonly reviews = REVIEWS;
+  readonly selectedVariants = new Map<number, ProductVariant>();
 
   ngOnInit(): void {
     this.productService.getFeaturedProducts().subscribe({
       next: (products) => {
-        this.featuredProducts.set(products.slice(0, 2));
+        const featured = products.slice(0, 2);
+        featured.forEach(p => {
+          const def = p.variants?.[1] ?? p.variants?.[0] ?? null;
+          if (def) this.selectedVariants.set(p.id, def);
+        });
+        this.featuredProducts.set(featured);
         this.loadingProducts.set(false);
       },
       error: () => this.loadingProducts.set(false),
     });
   }
 
-  private defaultVariant(product: ProductListItem): ProductVariant | null {
-    return product.variants?.[1] ?? product.variants?.[0] ?? null;
+  getSelectedVariant(product: ProductListItem): ProductVariant | null {
+    return this.selectedVariants.get(product.id) ?? product.variants?.[1] ?? product.variants?.[0] ?? null;
   }
 
-  defaultVariantPrice(product: ProductListItem): number {
-    return this.defaultVariant(product)?.price ?? 0;
+  selectVariant(product: ProductListItem, variant: ProductVariant, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.selectedVariants.set(product.id, variant);
   }
 
   addToCart(product: ProductListItem): void {
-    const variant = this.defaultVariant(product);
+    const variant = this.getSelectedVariant(product);
     if (!variant) {
       this.toastService.error('Selecciona un formato antes de añadir al carrito');
       this.router.navigate(['/tienda', product.slug]);

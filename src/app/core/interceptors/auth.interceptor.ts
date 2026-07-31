@@ -35,7 +35,8 @@ export const authInterceptor: HttpInterceptorFn = (
           }),
           catchError(() => {
             // Refresh failed — session is irrecoverably stale
-            authService.logout();
+            // Use logoutLocal to avoid disrupting the current page with navigation
+            authService.logoutLocal();
             return throwError(() => error);
           })
         );

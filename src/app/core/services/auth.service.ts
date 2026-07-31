@@ -73,13 +73,24 @@ export class AuthService {
   }
   
   /**
-   * Logout user
+   * Logout user (manual logout with server notification and navigation)
    */
   logout(): void {
-    this.http.post<ApiMessage>(`${this.apiUrl}/logout`, {}).subscribe();
+    // Fire-and-forget logout to server (don't wait for response)
+    this.http.post<ApiMessage>(`${this.apiUrl}/logout`, {}).subscribe({
+      error: (err) => console.warn('Logout post failed:', err)
+    });
+    this.logoutLocal();
+    this.router.navigate(['/']);
+  }
+
+  /**
+   * Clear auth state locally without server notification or navigation.
+   * Used when token expires automatically (called from interceptor).
+   */
+  logoutLocal(): void {
     this.clearAuth();
     this.cartService.resetCart();
-    this.router.navigate(['/']);
   }
   
   /**
@@ -94,7 +105,7 @@ export class AuthService {
     return this.http.post<AuthTokens>(`${this.apiUrl}/refresh`, { refresh_token: refreshToken }).pipe(
       tap(tokens => this.storeTokens(tokens)),
       catchError(() => {
-        this.clearAuth();
+        this.logoutLocal();
         return of(null);
       })
     );
@@ -125,7 +136,7 @@ export class AuthService {
         // the session is still valid, the server is just temporarily broken.
         const status = error?.status ?? error?.original?.status;
         if (status === 401) {
-          this.clearAuth();
+          this.logoutLocal();
         }
         return of(null);
       })
