@@ -4,7 +4,7 @@ import { Observable, shareReplay } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '@env/environment';
 import {
-  Product, ProductListItem, Category, Review,
+  Product, ProductListItem, Category, Review, FeaturedReview,
   PaginatedResponse
 } from '../models';
 
@@ -130,6 +130,12 @@ export class ProductService {
 
   createReview(slug: string, data: { rating: number; title?: string; comment?: string }): Observable<Review> {
     return this.http.post<Review>(`${this.apiUrl}/${slug}/reviews`, data);
+  }
+
+  getFeaturedReviews(minRating: number = 4, limit: number = 4): Observable<FeaturedReview[]> {
+    return this.http.get<FeaturedReview[]>(`${this.apiUrl}/reviews/featured`, {
+      params: { min_rating: minRating.toString(), limit: limit.toString() }
+    });
   }
 
   getCategories(includeEmpty: boolean = false): Observable<Category[]> {

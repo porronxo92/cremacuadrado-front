@@ -98,6 +98,19 @@ export interface Review {
   created_at: string;
 }
 
+export interface FeaturedReview {
+  id: number;
+  rating: number;
+  title: string | null;
+  comment: string | null;
+  user_name: string | null;
+  product_name: string;
+  product_slug: string;
+  is_verified_purchase: boolean;
+  created_at: string;
+}
+
+
 // User interfaces
 export interface User {
   id: number;

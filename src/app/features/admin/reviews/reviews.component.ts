@@ -4,7 +4,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 
-interface PendingReview {
+type ReviewStatus = 'pending' | 'approved' | 'rejected';
+
+interface AdminReview {
   id: number;
   product_name: string;
   user_name: string;
@@ -12,6 +14,7 @@ interface PendingReview {
   title: string | null;
   comment: string | null;
   is_verified_purchase: boolean;
+  status: ReviewStatus;
   created_at: string;
 }
 
@@ -25,10 +28,22 @@ interface PendingReview {
         <h1>Moderación de reseñas</h1>
       </div>
 
+      <div class="filter-tabs">
+        <button class="chip" [class.active]="statusFilter() === 'pending'" (click)="setStatus('pending')">Pendientes</button>
+        <button class="chip" [class.active]="statusFilter() === 'approved'" (click)="setStatus('approved')">Aprobadas</button>
+        <button class="chip" [class.active]="statusFilter() === 'rejected'" (click)="setStatus('rejected')">Rechazadas</button>
+      </div>
+
       @if (loading()) {
         <div class="loading">Cargando…</div>
       } @else if (reviews().length === 0) {
-        <div class="empty">No hay reseñas pendientes de moderar. 🎉</div>
+        <div class="empty">
+          @if (statusFilter() === 'pending') {
+            No hay reseñas pendientes de moderar. 🎉
+          } @else {
+            No hay reseñas {{ statusFilter() === 'approved' ? 'aprobadas' : 'rechazadas' }}.
+          }
+        </div>
       } @else {
         <div class="review-list">
           @for (review of reviews(); track review.id) {
@@ -47,8 +62,12 @@ interface PendingReview {
               @if (review.title) { <p class="review-title">{{ review.title }}</p> }
               <p class="review-comment">{{ review.comment }}</p>
               <div class="review-actions">
-                <button class="btn btn--approve" (click)="approve(review)">✓ Aprobar</button>
-                <button class="btn btn--reject" (click)="reject(review)">✕ Rechazar</button>
+                @if (review.status !== 'approved') {
+                  <button class="btn btn--approve" (click)="approve(review)">✓ Aprobar</button>
+                }
+                @if (review.status !== 'rejected') {
+                  <button class="btn btn--reject" (click)="reject(review)">✕ Rechazar</button>
+                }
               </div>
             </div>
           }
@@ -59,6 +78,9 @@ interface PendingReview {
   styles: [`
     .admin-reviews { padding: 2rem; font-family: 'Poppins', sans-serif; max-width: 900px; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; margin-bottom: 1.5rem; }
+    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .chip { border: 1px solid #D9D3C5; background: #fff; color: #5A4F3E; border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
+    .chip.active { background: #7B1716; color: #E6C15A; border-color: #7B1716; }
     .loading, .empty { padding: 3rem; text-align: center; color: #8C7F6A; }
     .review-list { display: flex; flex-direction: column; gap: 1rem; }
     .review-card { background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.1rem 1.3rem; }
@@ -78,29 +100,37 @@ export class AdminReviewsComponent implements OnInit {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
 
-  reviews = signal<PendingReview[]>([]);
+  reviews = signal<AdminReview[]>([]);
   loading = signal(true);
+  statusFilter = signal<ReviewStatus>('pending');
 
   ngOnInit(): void {
     this.load();
   }
 
+  setStatus(status: ReviewStatus): void {
+    this.statusFilter.set(status);
+    this.load();
+  }
+
   load(): void {
     this.loading.set(true);
-    this.http.get<{ items: PendingReview[] }>(`${environment.apiUrl}/admin/reviews/pending?page_size=100`).subscribe({
+    this.http.get<{ items: AdminReview[] }>(
+      `${environment.apiUrl}/admin/reviews?status=${this.statusFilter()}&page_size=100`
+    ).subscribe({
       next: (res) => { this.reviews.set(res.items); this.loading.set(false); },
       error: () => this.loading.set(false),
     });
   }
 
-  approve(review: PendingReview): void {
+  approve(review: AdminReview): void {
     this.http.put(`${environment.apiUrl}/admin/reviews/${review.id}/approve`, {}).subscribe({
       next: () => { this.toast.success('Reseña aprobada'); this.load(); },
       error: (err) => this.toast.error(err.error?.detail || 'Error al aprobar'),
     });
   }
 
-  reject(review: PendingReview): void {
+  reject(review: AdminReview): void {
     this.http.put(`${environment.apiUrl}/admin/reviews/${review.id}/reject`, {}).subscribe({
       next: () => { this.toast.success('Reseña rechazada'); this.load(); },
       error: (err) => this.toast.error(err.error?.detail || 'Error al rechazar'),

@@ -5,15 +5,15 @@ import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { MiniCartService } from '../../core/services/mini-cart.service';
 import { ToastService } from '../../core/services/toast.service';
-import { ProductListItem, ProductVariant } from '../../core/models';
+import { ProductListItem, ProductVariant, FeaturedReview } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
 import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-block.component';
 
-const REVIEWS = [
-  { name: 'Ana M.', location: 'Madrid', text: 'Increíble sabor, mi favorita para el desayuno. Ya he pedido tres veces.', rating: 5, product: 'Crema Pura 100%' },
-  { name: 'Carlos R.', location: 'Barcelona', text: 'La calidad se nota desde el primer bocado. Pistacho real, sin engaños.', rating: 5, product: 'Crema Crunchy' },
-  { name: 'Laura G.', location: 'Valencia', text: 'Me la recomendaron en Instagram y fue un acierto total. El tarro dura poco en casa.', rating: 5, product: 'Crema Pura 100%' },
-  { name: 'Javier P.', location: 'Sevilla', text: 'La mejor crema de frutos secos que he probado. Mi familia está enganchada.', rating: 5, product: 'Crema Crunchy' },
+const FALLBACK_REVIEWS: FeaturedReview[] = [
+  { id: -1, rating: 5, title: null, comment: 'Increíble sabor, mi favorita para el desayuno. Ya he pedido tres veces.', user_name: 'Ana M.', product_name: 'Crema Pura 100%', product_slug: '', is_verified_purchase: true, created_at: '' },
+  { id: -2, rating: 5, title: null, comment: 'La calidad se nota desde el primer bocado. Pistacho real, sin engaños.', user_name: 'Carlos R.', product_name: 'Crema Crunchy', product_slug: '', is_verified_purchase: true, created_at: '' },
+  { id: -3, rating: 5, title: null, comment: 'Me la recomendaron en Instagram y fue un acierto total. El tarro dura poco en casa.', user_name: 'Laura G.', product_name: 'Crema Pura 100%', product_slug: '', is_verified_purchase: true, created_at: '' },
+  { id: -4, rating: 5, title: null, comment: 'La mejor crema de frutos secos que he probado. Mi familia está enganchada.', user_name: 'Javier P.', product_name: 'Crema Crunchy', product_slug: '', is_verified_purchase: true, created_at: '' },
 ];
 
 @Component({
@@ -89,16 +89,15 @@ const REVIEWS = [
     <section class="reviews">
       <div class="container">
         <h2 class="reviews__title">LO QUE DICEN</h2>
-        <p class="reviews__sub">Más de 400 clientes en toda España</p>
+        <p class="reviews__sub">Cientos de clientes ya estan satisfechos en toda España</p>
         <div class="reviews__grid">
-          @for (review of reviews; track review.name) {
+          @for (review of reviews(); track review.id) {
             <blockquote class="review-card">
-              <div class="review-card__stars">★★★★★</div>
-              <p class="review-card__text">"{{ review.text }}"</p>
+              <div class="review-card__stars">{{ starString(review.rating) }}</div>
+              <p class="review-card__text">"{{ review.comment }}"</p>
               <footer class="review-card__footer">
-                <strong>{{ review.name }}</strong>
-                <span>{{ review.location }}</span>
-                <span class="review-card__product">{{ review.product }}</span>
+                <strong>{{ review.user_name || 'Cliente verificado' }}</strong>
+                <span class="review-card__product">{{ review.product_name }}</span>
               </footer>
             </blockquote>
           }
@@ -669,7 +668,7 @@ export class HomeComponent implements OnInit {
 
   readonly featuredProducts = signal<ProductListItem[]>([]);
   readonly loadingProducts = signal(true);
-  readonly reviews = REVIEWS;
+  readonly reviews = signal<FeaturedReview[]>(FALLBACK_REVIEWS);
   readonly selectedVariants = new Map<number, ProductVariant>();
 
   ngOnInit(): void {
@@ -686,6 +685,15 @@ export class HomeComponent implements OnInit {
       },
       error: () => this.loadingProducts.set(false),
     });
+
+    this.productService.getFeaturedReviews(4, 4).subscribe({
+      next: (reviews) => { if (reviews.length > 0) this.reviews.set(reviews); },
+      error: () => {},
+    });
+  }
+
+  starString(rating: number): string {
+    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
   }
 
   getSelectedVariant(product: ProductListItem): ProductVariant | null {

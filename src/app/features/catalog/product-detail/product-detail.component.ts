@@ -3,12 +3,14 @@ import {
   ViewChild, ElementRef, inject, signal, computed, PLATFORM_ID
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Product, ProductImage, ProductVariant } from '../../../core/models';
+import { AuthService } from '../../../core/services/auth.service';
+import { Product, ProductImage, ProductVariant, Review } from '../../../core/models';
 import { FormatSelectorComponent, ProductFormat } from '../components/format-selector/format-selector.component';
 import { PriceDisplayComponent } from '../components/price-display/price-display.component';
 import { AudioPlayerComponent } from '../components/audio-player/audio-player.component';
@@ -63,7 +65,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormatSelectorComponent, PriceDisplayComponent, AudioPlayerComponent],
+  imports: [CommonModule, FormsModule, RouterModule, FormatSelectorComponent, PriceDisplayComponent, AudioPlayerComponent],
   template: `
     <div class="pd">
       @if (loading()) {
@@ -381,20 +383,61 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
         <div class="pd__reviews">
           <div class="pd__reviews-head">
             <strong>Lo que dicen quienes ya la tienen</strong>
-            <span class="pd__reviews-link">Ver todas →</span>
+            @if (authService.isAuthenticated()) {
+              <button type="button" class="pd__reviews-cta" (click)="toggleReviewForm()">
+                {{ showReviewForm() ? 'Cancelar' : '+ Escribir una reseña' }}
+              </button>
+            } @else {
+              <a routerLink="/auth/login" class="pd__reviews-cta">Inicia sesión para opinar</a>
+            }
           </div>
-          @for (review of placeholderReviews; track review.name) {
-            <div class="pd__review">
-              <div class="pd__review-top">
-                <span class="pd__review-name">{{ review.name }}</span>
-                <span class="pd__review-stars">★★★★★</span>
+
+          @if (showReviewForm()) {
+            <form class="pd__review-form" (ngSubmit)="submitReview()">
+              <div class="pd__review-form-stars">
+                @for (star of [1, 2, 3, 4, 5]; track star) {
+                  <button type="button" class="star-btn" [class.active]="star <= reviewRating" (click)="reviewRating = star">★</button>
+                }
               </div>
-              <p class="pd__review-text">"{{ review.text }}"</p>
-              <div class="pd__review-meta">
-                {{ review.location }}
-                <span class="pd__review-verified">Compra verificada</span>
+              <input type="text" placeholder="Título (opcional)" [(ngModel)]="reviewTitle" name="reviewTitle" />
+              <textarea placeholder="Cuéntanos tu experiencia..." [(ngModel)]="reviewComment" name="reviewComment" rows="3"></textarea>
+              <button type="submit" class="pd__review-submit" [disabled]="submittingReview()">
+                {{ submittingReview() ? 'Enviando…' : 'Enviar reseña' }}
+              </button>
+            </form>
+          }
+
+          @if (reviews().length > 0) {
+            @for (review of reviews(); track review.id) {
+              <div class="pd__review">
+                <div class="pd__review-top">
+                  <span class="pd__review-name">{{ review.user_name || 'Anónimo' }}</span>
+                  <span class="pd__review-stars">{{ starString(review.rating) }}</span>
+                </div>
+                @if (review.title) { <p class="pd__review-title">{{ review.title }}</p> }
+                @if (review.comment) { <p class="pd__review-text">"{{ review.comment }}"</p> }
+                <div class="pd__review-meta">
+                  {{ review.created_at | date:'d MMM yyyy' }}
+                  @if (review.is_verified_purchase) {
+                    <span class="pd__review-verified">Compra verificada</span>
+                  }
+                </div>
               </div>
-            </div>
+            }
+          } @else {
+            @for (review of placeholderReviews; track review.name) {
+              <div class="pd__review">
+                <div class="pd__review-top">
+                  <span class="pd__review-name">{{ review.name }}</span>
+                  <span class="pd__review-stars">★★★★★</span>
+                </div>
+                <p class="pd__review-text">"{{ review.text }}"</p>
+                <div class="pd__review-meta">
+                  {{ review.location }}
+                  <span class="pd__review-verified">Compra verificada</span>
+                </div>
+              </div>
+            }
           }
         </div>
 
@@ -795,6 +838,49 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       color: $brand; cursor: pointer;
     }
 
+    .pd__reviews-cta {
+      font-family: 'Poppins', sans-serif; font-size: .75rem; font-weight: 600;
+      color: $brand; background: none; border: none; cursor: pointer; text-decoration: underline;
+      padding: 0;
+    }
+
+    .pd__review-form {
+      padding: .9rem 1rem; border-bottom: 1px solid $border;
+      display: flex; flex-direction: column; gap: .55rem;
+      background: rgba($accent, .06);
+    }
+
+    .pd__review-form-stars {
+      display: flex; gap: 3px;
+    }
+
+    .star-btn {
+      background: none; border: none; cursor: pointer; font-size: 1.3rem;
+      color: rgba($ink, .2); padding: 0; line-height: 1;
+      &.active { color: $accent; }
+    }
+
+    .pd__review-form input,
+    .pd__review-form textarea {
+      font-family: 'Lora', serif; font-size: .82rem; color: $ink;
+      border: 1px solid $border; border-radius: 4px; padding: .5rem .65rem;
+      resize: vertical; width: 100%; box-sizing: border-box;
+      &:focus { outline: none; border-color: $brand; }
+    }
+
+    .pd__review-submit {
+      align-self: flex-start;
+      font-family: 'Poppins', sans-serif; font-size: .78rem; font-weight: 600;
+      color: #fff; background: $brand; border: none; border-radius: 4px;
+      padding: .5rem 1.2rem; cursor: pointer;
+      &:disabled { opacity: .6; cursor: default; }
+    }
+
+    .pd__review-title {
+      font-family: 'Poppins', sans-serif; font-size: .8rem; font-weight: 600;
+      color: $ink; margin: 0 0 3px;
+    }
+
     .pd__review {
       padding: .85rem 1rem;
       border-bottom: 1px solid $border;
@@ -869,6 +955,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   private miniCartService = inject(MiniCartService);
   private toastService = inject(ToastService);
   private platformId = inject(PLATFORM_ID);
+  readonly authService = inject(AuthService);
 
   readonly product = signal<Product | null>(null);
   readonly loading = signal(true);
@@ -901,6 +988,12 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
 
   readonly faqs = FAQS;
   readonly placeholderReviews = PLACEHOLDER_REVIEWS;
+  readonly reviews = signal<Review[]>([]);
+  readonly showReviewForm = signal(false);
+  readonly submittingReview = signal(false);
+  reviewRating = 5;
+  reviewTitle = '';
+  reviewComment = '';
 
   readonly formats = computed(() => {
     const p = this.product();
@@ -959,6 +1052,47 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+    this.loadReviews(slug);
+  }
+
+  private loadReviews(slug: string): void {
+    this.productService.getProductReviews(slug).subscribe({
+      next: (reviews) => this.reviews.set(reviews),
+      error: () => {},
+    });
+  }
+
+  starString(rating: number): string {
+    return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+  }
+
+  toggleReviewForm(): void {
+    this.showReviewForm.update(v => !v);
+  }
+
+  submitReview(): void {
+    const p = this.product();
+    if (!p || this.submittingReview()) return;
+
+    this.submittingReview.set(true);
+    this.productService.createReview(p.slug, {
+      rating: this.reviewRating,
+      title: this.reviewTitle.trim() || undefined,
+      comment: this.reviewComment.trim() || undefined,
+    }).subscribe({
+      next: () => {
+        this.submittingReview.set(false);
+        this.showReviewForm.set(false);
+        this.reviewRating = 5;
+        this.reviewTitle = '';
+        this.reviewComment = '';
+        this.toastService.success('¡Gracias! Tu reseña se publicará en cuanto sea moderada.');
+      },
+      error: (err) => {
+        this.submittingReview.set(false);
+        this.toastService.error(err.error?.detail || 'Error al enviar la reseña');
+      },
     });
   }
 
