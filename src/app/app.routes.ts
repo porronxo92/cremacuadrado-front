@@ -177,6 +177,38 @@ export const routes: Routes = [
         path: 'products',
         loadComponent: () => import('./features/admin/products/products.component').then(m => m.AdminProductsComponent),
       },
+      {
+        path: 'blog',
+        loadComponent: () => import('./features/admin/blog/blog-list.component').then(m => m.AdminBlogListComponent),
+      },
+      {
+        path: 'blog/nuevo',
+        loadComponent: () => import('./features/admin/blog/blog-editor.component').then(m => m.AdminBlogEditorComponent),
+      },
+      {
+        path: 'blog/:id',
+        loadComponent: () => import('./features/admin/blog/blog-editor.component').then(m => m.AdminBlogEditorComponent),
+      },
+      {
+        path: 'categorias',
+        loadComponent: () => import('./features/admin/categories/categories.component').then(m => m.AdminCategoriesComponent),
+      },
+      {
+        path: 'puntos-de-venta',
+        loadComponent: () => import('./features/admin/points-of-sale/points-of-sale.component').then(m => m.AdminPointsOfSaleComponent),
+      },
+      {
+        path: 'resenas',
+        loadComponent: () => import('./features/admin/reviews/reviews.component').then(m => m.AdminReviewsComponent),
+      },
+      {
+        path: 'cupones',
+        loadComponent: () => import('./features/admin/coupons/coupons.component').then(m => m.AdminCouponsComponent),
+      },
+      {
+        path: 'leads',
+        loadComponent: () => import('./features/admin/leads/leads.component').then(m => m.AdminLeadsComponent),
+      },
     ],
   },
   

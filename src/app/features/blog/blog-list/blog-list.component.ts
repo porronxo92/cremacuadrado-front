@@ -56,9 +56,46 @@ const STATIC_BLOGS: BlogPostListItem[] = [
         </div>
       </section>
 
+      <!-- Landing: 3 secciones del Archivo (solo en la vista general, sin categoría) -->
+      @if (!categorySlug()) {
+        <section class="archive-landing">
+          <div class="container">
+            <div class="archive-cards">
+              <a routerLink="/el-archivo/categoria/recetas" class="archive-card archive-card--recetas">
+                <div class="archive-card__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/><path d="M8 12s1.5 2 4 2 4-2 4-2"/><path d="M9 9h.01"/><path d="M15 9h.01"/></svg>
+                </div>
+                <h2>Recetas</h2>
+                <p>Ideas y recetas con nuestras cremas de pistacho</p>
+                <span class="archive-card__link">Ver recetas →</span>
+              </a>
+              <a routerLink="/el-archivo/categoria/pistacho-en-el-campo" class="archive-card archive-card--campo">
+                <div class="archive-card__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg>
+                </div>
+                <h2>Pistacho en el campo</h2>
+                <p>Cultivo, economía e industria del pistacho</p>
+                <span class="archive-card__link">Ver artículos →</span>
+              </a>
+              <a routerLink="/el-archivo/categoria/el-obrador" class="archive-card archive-card--obrador">
+                <div class="archive-card__icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10-4.5 10-10 10z"/><path d="M12 6v6l4 2"/></svg>
+                </div>
+                <h2>El Obrador</h2>
+                <p>Técnicas de producción: tostado, repelado, molienda</p>
+                <span class="archive-card__link">Ver artículos →</span>
+              </a>
+            </div>
+          </div>
+        </section>
+      }
+
       <!-- Blog Grid -->
       <section class="blog-section">
         <div class="container">
+          @if (!categorySlug()) {
+            <h2 class="section-heading">Últimas publicaciones</h2>
+          }
           @if (loading()) {
             <div class="loading">
               <div class="spinner"></div>
@@ -163,6 +200,90 @@ const STATIC_BLOGS: BlogPostListItem[] = [
         color: rgba(244, 241, 233, 0.75);
         margin: 0;
       }
+    }
+
+    /* Archive landing (3 secciones) */
+    .archive-landing {
+      padding: 3.5rem 0 0;
+    }
+
+    .archive-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.75rem;
+
+      @media (max-width: 900px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .archive-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+      background: #fff;
+      border: 1px solid #D9D3C5;
+      border-top: 3px solid #7B1716;
+      border-radius: 2px;
+      padding: 2rem 1.75rem;
+      text-decoration: none;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(26, 18, 8, 0.11);
+      }
+
+      &--recetas { border-top-color: #A2BA1C; }
+      &--campo { border-top-color: #F5A542; }
+      &--obrador { border-top-color: #7B1716; }
+    }
+
+    .archive-card__icon {
+      color: #7B1716;
+      margin-bottom: 0.25rem;
+    }
+
+    .archive-card h2 {
+      font-family: 'Teko', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: #1A1208;
+      margin: 0;
+    }
+
+    .archive-card p {
+      font-family: 'Lora', serif;
+      font-size: 0.9rem;
+      color: #5A4F3E;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .archive-card__link {
+      margin-top: 0.5rem;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #7B1716;
+      transition: color 0.2s;
+    }
+
+    .archive-card:hover .archive-card__link { color: #E6C15A; }
+
+    .section-heading {
+      font-family: 'Teko', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      color: #1A1208;
+      margin: 0 0 1.75rem;
     }
 
     /* Blog Section */

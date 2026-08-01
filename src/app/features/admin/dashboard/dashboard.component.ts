@@ -302,7 +302,7 @@ export class AdminDashboardComponent implements OnInit {
   }
   
   loadStats(): void {
-    this.http.get<DashboardStats>(`${environment.apiUrl}/admin/stats`).subscribe({
+    this.http.get<DashboardStats>(`${environment.apiUrl}/admin/dashboard`).subscribe({
       next: (stats) => {
         this.stats.set(stats);
         this.loading.set(false);

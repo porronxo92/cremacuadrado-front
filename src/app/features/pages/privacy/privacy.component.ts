@@ -26,15 +26,15 @@ import { RouterModule } from '@angular/router';
             <nav class="toc" [class.is-open]="tocOpen()">
               <p class="toc__title">Contenido</p>
               <ul>
-                <li><a href="#quienes-somos" (click)="tocOpen.set(false)">¿Quiénes somos?</a></li>
-                <li><a href="#datos-recopilados" (click)="tocOpen.set(false)">Datos que recopilamos</a></li>
-                <li><a href="#finalidad" (click)="tocOpen.set(false)">¿Por qué tratamos tus datos?</a></li>
-                <li><a href="#legitimacion" (click)="tocOpen.set(false)">Legitimación</a></li>
-                <li><a href="#destinatarios" (click)="tocOpen.set(false)">Destinatarios</a></li>
-                <li><a href="#conservacion" (click)="tocOpen.set(false)">Conservación</a></li>
-                <li><a href="#derechos" (click)="tocOpen.set(false)">Tus derechos</a></li>
-                <li><a href="#menores" (click)="tocOpen.set(false)">Menores de edad</a></li>
-                <li><a href="#seguridad" (click)="tocOpen.set(false)">Seguridad</a></li>
+                <li><a>¿Quiénes somos?</a></li>
+                <li><a>Datos que recopilamos</a></li>
+                <li><a>¿Por qué tratamos tus datos?</a></li>
+                <li><a>Legitimación</a></li>
+                <li><a>Destinatarios</a></li>
+                <li><a>Conservación</a></li>
+                <li><a>Tus derechos</a></li>
+                <li><a>Menores de edad</a></li>
+                <li><a>Seguridad</a></li>
               </ul>
             </nav>
 
@@ -51,7 +51,7 @@ import { RouterModule } from '@angular/router';
                   <div class="info-item"><span class="info-item__label">NIF</span><span class="info-item__value">B56673700</span></div>
                   <div class="info-item"><span class="info-item__label">Dirección</span><span class="info-item__value">Camino del Arca 18 – 13005 Ciudad Real</span></div>
                   <div class="info-item"><span class="info-item__label">Teléfono</span><span class="info-item__value">623 294 886</span></div>
-                  <div class="info-item info-item--full"><span class="info-item__label">Correo</span><a href="mailto:admin@cremacuadrado.com" class="info-item__value">admin&#64;cremacuadrado.com</a></div>
+                  <div class="info-item info-item--full"><span class="info-item__label">Correo</span><a href="mailto:info@cremacuadrado.com" class="info-item__value">info&#64;cremacuadrado.com</a></div>
                 </div>
               </section>
 

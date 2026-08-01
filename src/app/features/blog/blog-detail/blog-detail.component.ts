@@ -1,6 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { BlogService } from '../../../core/services/blog.service';
 import { BlogPost } from '../../../core/models';
 
@@ -124,6 +127,24 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
   }
 };
 
+// Plantilla de "Recetas": si el post lleva la Markdown como se explica en la guía del panel
+// (## Ingredientes, ## Elaboración/Preparación, ## Resultado), estas cabeceras se detectan
+// aquí y se les añade un icono + estilo especial (ver CSS `.recipe-heading--*`).
+const RECIPE_SECTION_ICONS: Record<string, string> = {
+  'ingredientes': '🥜',
+  'elaboracion': '👩‍🍳',
+  'preparacion': '👩‍🍳',
+  'resultado': '✨',
+};
+
+function normalizeHeading(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
 @Component({
   selector: 'app-blog-detail',
   standalone: true,
@@ -152,7 +173,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
             <span>{{ post()!.title }}</span>
           </nav>
 
-          <article class="article">
+          <article class="article" [class.article--recipe]="isRecipe()">
             <!-- Header -->
             <header class="article__header">
               @if (post()!.categories.length > 0) {
@@ -181,7 +202,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
             }
 
             <!-- Content -->
-            <div class="article__content" [innerHTML]="post()!.content"></div>
+            <div class="article__content" [innerHTML]="renderedContent()"></div>
 
             <!-- Footer -->
             <footer class="article__footer">
@@ -365,6 +386,74 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
       }
     }
 
+    /* Plantilla de Recetas: cabeceras Ingredientes/Elaboración/Resultado destacadas */
+    .article--recipe .article__content ::ng-deep {
+      h2.recipe-heading, h3.recipe-heading {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        background: rgba(162, 186, 28, 0.1);
+        border-left: 3px solid #A2BA1C;
+        padding: 0.6rem 1rem;
+        border-radius: 2px;
+        color: #1A1208;
+      }
+
+      .recipe-heading__icon {
+        font-size: 1.3rem;
+        line-height: 1;
+      }
+
+      .recipe-heading--ingredientes + ul {
+        list-style: none;
+        padding-left: 0;
+
+        li {
+          position: relative;
+          padding-left: 1.5rem;
+
+          &::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #A2BA1C;
+            font-weight: 700;
+          }
+        }
+      }
+
+      .recipe-heading--elaboracion + ol,
+      .recipe-heading--preparacion + ol {
+        padding-left: 1.25rem;
+        counter-reset: step;
+
+        li {
+          list-style: none;
+          counter-increment: step;
+          position: relative;
+          padding-left: 2rem;
+          margin-bottom: 0.85rem;
+
+          &::before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: -0.1rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            background: #7B1716;
+            color: #E6C15A;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+          }
+        }
+      }
+    }
+
     .article__footer {
       padding: 2rem;
       border-top: 1px solid #eee;
@@ -464,9 +553,13 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
 export class BlogDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private blogService = inject(BlogService);
+  private sanitizer = inject(DomSanitizer);
 
   post = signal<BlogPost | null>(null);
   loading = signal(true);
+  renderedContent = signal<SafeHtml>('');
+
+  readonly isRecipe = computed(() => !!this.post()?.categories.some(cat => cat.slug === 'recetas'));
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -483,6 +576,7 @@ export class BlogDetailComponent implements OnInit {
     this.blogService.getPost(slug).subscribe({
       next: (post) => {
         this.post.set(post);
+        this.updateRenderedContent(post.content);
         this.loading.set(false);
       },
       error: () => {
@@ -490,9 +584,29 @@ export class BlogDetailComponent implements OnInit {
         const staticPost = STATIC_BLOG_POSTS[slug];
         if (staticPost) {
           this.post.set(staticPost);
+          this.updateRenderedContent(staticPost.content);
         }
         this.loading.set(false);
       }
+    });
+  }
+
+  /** Content is stored as Markdown (legacy posts may contain raw HTML, which marked passes through). */
+  private updateRenderedContent(content: string): void {
+    let rawHtml = marked.parse(content || '', { async: false }) as string;
+    if (this.isRecipe()) {
+      rawHtml = this.enhanceRecipeHeadings(rawHtml);
+    }
+    this.renderedContent.set(this.sanitizer.bypassSecurityTrustHtml(DOMPurify.sanitize(rawHtml)));
+  }
+
+  /** Añade icono + clase a las cabeceras Ingredientes/Elaboración/Preparación/Resultado (ver plantilla de recetas). */
+  private enhanceRecipeHeadings(html: string): string {
+    return html.replace(/<h([23])>(.*?)<\/h\1>/gi, (match, level, text) => {
+      const key = normalizeHeading(text);
+      const icon = RECIPE_SECTION_ICONS[key];
+      if (!icon) return match;
+      return `<h${level} class="recipe-heading recipe-heading--${key}"><span class="recipe-heading__icon">${icon}</span>${text}</h${level}>`;
     });
   }
 }

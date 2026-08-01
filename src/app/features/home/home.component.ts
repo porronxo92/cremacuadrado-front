@@ -316,10 +316,7 @@ const REVIEWS = [
       transition: border-color 150ms, color 150ms, background 150ms;
       line-height: 1.4;
 
-      &:hover:not(:disabled) {
-        border-color: $brand;
-        color: $brand;
-      }
+      
 
       &--active {
         border-color: $brand;

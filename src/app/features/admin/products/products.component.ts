@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
-import { Category, ProductImage } from '../../../core/models';
+import { Category, ProductImage, ProductNutrition } from '../../../core/models';
 
 interface AdminVariant {
   id: number;
@@ -21,24 +21,33 @@ interface AdminVariant {
   images: ProductImage[];
 }
 
-// Admin-specific Product interface (matches API exactly)
+// Admin-specific Product interface (matches API exactly — ProductResponse schema)
 interface AdminProduct {
   id: number;
   name: string;
   sku: string | null;
   slug: string;
+  short_description: string | null;
   description: string | null;
-  price: number;
-  compare_price: number | null;
-  stock: number;
-  weight: number | null;
+  badge_color: string | null;
+  audio_url: string | null;
   is_active: boolean;
   is_featured: boolean;
+  is_in_stock: boolean;
   category: Category | null;
-  images: { url: string }[];
+  images: ProductImage[];
+  nutrition: ProductNutrition | null;
   variants: AdminVariant[];
   created_at: string;
   updated_at: string;
+}
+
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
 @Component({
@@ -61,8 +70,8 @@ interface AdminProduct {
               <tr>
                 <th>Imagen</th>
                 <th>Nombre</th>
-                <th>Precio</th>
-                <th>Stock</th>
+                <th>Precio (desde)</th>
+                <th>Stock total</th>
                 <th>Categoría</th>
                 <th>Estado</th>
                 <th>Acciones</th>
@@ -72,20 +81,17 @@ interface AdminProduct {
               @for (product of products(); track product.id) {
                 <tr>
                   <td>
-                    <img [src]="product.images.at(0)?.url || '/assets/images/placeholder.jpg'" [alt]="product.name" class="product-thumb">
+                    <img [src]="primaryImage(product) || '/assets/images/placeholder.jpg'" [alt]="product.name" class="product-thumb">
                   </td>
                   <td>
                     <strong>{{ product.name }}</strong>
                     <small>{{ product.sku }}</small>
                   </td>
                   <td>
-                    <strong>{{ product.price | currency:'EUR' }}</strong>
-                    @if (product.compare_price) {
-                      <small class="compare-price">{{ product.compare_price | currency:'EUR' }}</small>
-                    }
+                    <strong>{{ minPrice(product) | currency:'EUR' }}</strong>
                   </td>
                   <td>
-                    <span [class.low-stock]="product.stock <= 5">{{ product.stock }}</span>
+                    <span [class.low-stock]="totalStock(product) <= 5">{{ totalStock(product) }}</span>
                   </td>
                   <td>{{ product.category?.name || '-' }}</td>
                   <td>
@@ -119,7 +125,13 @@ interface AdminProduct {
                   <tr class="variants-row">
                     <td colspan="7">
                       <div class="variants-panel">
-                        <h4>Variantes de {{ product.name }}</h4>
+                        <div class="variants-panel__header">
+                          <h4>Variantes de {{ product.name }}</h4>
+                          <div class="variants-panel__actions">
+                            <button class="btn btn--secondary btn--sm" (click)="openNutritionForm(product)">Nutrición</button>
+                            <button class="btn btn--secondary btn--sm" (click)="openNewVariant(product)">+ Nueva variante</button>
+                          </div>
+                        </div>
                         <table class="variants-table">
                           <thead>
                             <tr>
@@ -154,11 +166,17 @@ interface AdminProduct {
                                     {{ v.is_active ? 'Activo' : 'Inactivo' }}
                                   </span>
                                 </td>
-                                <td>
+                                <td class="actions">
                                   <button class="btn btn--icon" (click)="editVariant(product, v)" title="Editar variante">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                    </svg>
+                                  </button>
+                                  <button class="btn btn--icon btn--danger" (click)="deleteVariant(product, v)" title="Eliminar variante">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                      <polyline points="3 6 5 6 21 6"></polyline>
+                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                     </svg>
                                   </button>
                                 </td>
@@ -180,17 +198,33 @@ interface AdminProduct {
         </div>
       }
       
-      <!-- Variant edit modal -->
+      <!-- Variant create/edit modal -->
       @if (showVariantForm()) {
         <div class="modal-overlay" (click)="closeVariantForm()">
           <div class="modal" (click)="$event.stopPropagation()">
             <div class="modal-header">
-              <h2>Editar variante {{ editingVariant()?.format }}</h2>
+              <h2>{{ editingVariant() ? 'Editar variante ' + editingVariant()!.format : 'Nueva variante' }}</h2>
               <button class="close-btn" (click)="closeVariantForm()">×</button>
             </div>
             <form [formGroup]="variantForm" (ngSubmit)="saveVariant()">
               <div class="modal-body">
-                <!-- Image upload section -->
+                @if (!editingVariant()) {
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Formato *</label>
+                      <select formControlName="format">
+                        <option value="100g">100g</option>
+                        <option value="200g">200g</option>
+                        <option value="1kg">1kg</option>
+                      </select>
+                    </div>
+                    <div class="form-group">
+                      <label>Peso (gramos) *</label>
+                      <input type="number" formControlName="weight_grams" min="1">
+                    </div>
+                  </div>
+                }
+                <!-- Image upload section (works for both new and existing variants) -->
                 <div class="form-group">
                   <label>Imagen de la variante</label>
                   <div class="image-upload-area">
@@ -204,7 +238,7 @@ interface AdminProduct {
                       <button type="button" class="btn btn--secondary btn--sm"
                         [disabled]="variantUploadingImage()"
                         (click)="variantFileInput.click()">
-                        {{ variantUploadingImage() ? 'Subiendo...' : 'Cambiar imagen' }}
+                        {{ variantUploadingImage() ? 'Subiendo...' : (editingVariant() ? 'Cambiar imagen' : '+ Añadir imagen') }}
                       </button>
                       @if (variantImagePreview()) {
                         <small class="upload-success">✓ Nueva imagen lista</small>
@@ -267,30 +301,30 @@ interface AdminProduct {
                 <div class="form-row">
                   <div class="form-group">
                     <label for="name">Nombre *</label>
-                    <input type="text" id="name" formControlName="name">
+                    <input type="text" id="name" formControlName="name" (input)="onNameChange()">
                   </div>
                   <div class="form-group">
-                    <label for="sku">SKU *</label>
+                    <label for="sku">SKU</label>
                     <input type="text" id="sku" formControlName="sku">
                   </div>
                 </div>
-                
+
+                <div class="form-group">
+                  <label for="slug">Slug (URL) *</label>
+                  <input type="text" id="slug" formControlName="slug">
+                  <small>/tienda/{{ productForm.value.slug || 'slug' }}</small>
+                </div>
+
+                <div class="form-group">
+                  <label for="shortDescription">Descripción corta</label>
+                  <input type="text" id="shortDescription" formControlName="shortDescription" placeholder="Para tarjetas de catálogo">
+                </div>
+
                 <div class="form-group">
                   <label for="description">Descripción *</label>
                   <textarea id="description" formControlName="description" rows="3"></textarea>
                 </div>
-                
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="price">Precio *</label>
-                    <input type="number" id="price" formControlName="price" step="0.01">
-                  </div>
-                  <div class="form-group">
-                    <label for="compareAtPrice">Precio anterior</label>
-                    <input type="number" id="compareAtPrice" formControlName="compareAtPrice" step="0.01">
-                  </div>
-                </div>
-                
+
                 <div class="form-row">
                   <div class="form-group">
                     <label for="categoryId">Categoría</label>
@@ -302,49 +336,69 @@ interface AdminProduct {
                     </select>
                   </div>
                   <div class="form-group">
-                    <label for="stockQuantity">Stock *</label>
-                    <input type="number" id="stockQuantity" formControlName="stockQuantity">
+                    <label for="badgeColor">Color de línea</label>
+                    <input type="text" id="badgeColor" formControlName="badgeColor" placeholder="#A2BA1C">
                   </div>
                 </div>
-                
-                <div class="form-group">
-                  <label>Imágenes del producto</label>
-                  <div class="product-images-editor">
-                    @for (url of productImageUrls(); track url; let i = $index) {
-                      <div class="product-image-tile">
-                        <img [src]="url" alt="Imagen {{i+1}}" class="image-preview-thumb">
-                        <button type="button" class="remove-image-btn" (click)="removeProductImage(i)" title="Eliminar">×</button>
+
+                @if (editingProduct()) {
+                  <div class="form-group">
+                    <label>Imágenes del producto (catálogo/home)</label>
+                    <div class="product-images-editor">
+                      @for (img of productLevelImages(); track img.id) {
+                        <div class="product-image-tile" [class.is-primary]="img.is_primary">
+                          <img [src]="img.url" [alt]="img.alt_text || productForm.value.name" class="image-preview-thumb">
+                          @if (img.is_primary) { <span class="primary-badge">Principal</span> }
+                          @else {
+                            <button type="button" class="set-primary-btn" (click)="setPrimaryImage(img)" title="Marcar como principal">★</button>
+                          }
+                          <button type="button" class="remove-image-btn" (click)="removeProductImage(img)" title="Eliminar">×</button>
+                        </div>
+                      }
+                      <div class="add-image-tile">
+                        <input #productFileInput type="file" accept="image/*" style="display:none"
+                          (change)="onProductImageChange($event)">
+                        <button type="button" class="btn btn--secondary btn--sm"
+                          [disabled]="productUploadingImage()"
+                          (click)="productFileInput.click()">
+                          @if (productUploadingImage()) { <span>Subiendo...</span> }
+                          @else { <span>+ Añadir imagen</span> }
+                        </button>
                       </div>
-                    }
-                    <div class="add-image-tile">
-                      <input #productFileInput type="file" accept="image/*" style="display:none"
-                        (change)="onProductImageChange($event)">
-                      <button type="button" class="btn btn--secondary btn--sm"
-                        [disabled]="productUploadingImage()"
-                        (click)="productFileInput.click()">
-                        @if (productUploadingImage()) { <span>Subiendo...</span> }
-                        @else { <span>+ Añadir imagen</span> }
-                      </button>
                     </div>
                   </div>
-                </div>
-                
+
+                  <div class="form-group">
+                    <label>Audio "Trilogía del sabor" (clip 30s)</label>
+                    <div class="image-upload-area">
+                      @if (productForm.value.audioUrl) {
+                        <audio controls [src]="productForm.value.audioUrl" style="height:32px;"></audio>
+                      } @else {
+                        <small>Sin audio</small>
+                      }
+                      <div class="image-upload-controls">
+                        <input #audioFileInput type="file" accept="audio/*" style="display:none" (change)="onAudioChange($event)">
+                        <button type="button" class="btn btn--secondary btn--sm" [disabled]="uploadingAudio()" (click)="audioFileInput.click()">
+                          {{ uploadingAudio() ? 'Subiendo...' : 'Cambiar audio' }}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                } @else {
+                  <p class="hint">Guarda el producto para poder añadir imágenes, audio, variantes y nutrición.</p>
+                }
+
                 <div class="form-row">
                   <div class="form-group">
-                    <label for="ingredients">Ingredientes</label>
-                    <input type="text" id="ingredients" formControlName="ingredients">
+                    <label for="metaTitle">Meta título (SEO)</label>
+                    <input type="text" id="metaTitle" formControlName="metaTitle">
                   </div>
                   <div class="form-group">
-                    <label for="weight">Peso</label>
-                    <input type="text" id="weight" formControlName="weight" placeholder="200g">
+                    <label for="metaDescription">Meta descripción (SEO)</label>
+                    <input type="text" id="metaDescription" formControlName="metaDescription">
                   </div>
                 </div>
-                
-                <div class="form-group">
-                  <label for="nutritionInfo">Información nutricional</label>
-                  <textarea id="nutritionInfo" formControlName="nutritionInfo" rows="2"></textarea>
-                </div>
-                
+
                 <div class="form-row checkboxes">
                   <label class="checkbox">
                     <input type="checkbox" formControlName="isActive">
@@ -369,6 +423,48 @@ interface AdminProduct {
                   } @else {
                     Guardar
                   }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- Nutrition modal -->
+      @if (showNutritionForm()) {
+        <div class="modal-overlay" (click)="closeNutritionForm()">
+          <div class="modal" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Información nutricional (por 100g)</h2>
+              <button class="close-btn" (click)="closeNutritionForm()">×</button>
+            </div>
+            <form [formGroup]="nutritionForm" (ngSubmit)="saveNutrition()">
+              <div class="modal-body">
+                <div class="form-row">
+                  <div class="form-group"><label>Energía (kcal)</label><input type="number" step="0.01" formControlName="energy_kcal"></div>
+                  <div class="form-group"><label>Energía (kJ)</label><input type="number" step="0.01" formControlName="energy_kj"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Grasas (g)</label><input type="number" step="0.01" formControlName="fat"></div>
+                  <div class="form-group"><label>Grasas saturadas (g)</label><input type="number" step="0.01" formControlName="saturated_fat"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Carbohidratos (g)</label><input type="number" step="0.01" formControlName="carbohydrates"></div>
+                  <div class="form-group"><label>Azúcares (g)</label><input type="number" step="0.01" formControlName="sugars"></div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group"><label>Fibra (g)</label><input type="number" step="0.01" formControlName="fiber"></div>
+                  <div class="form-group"><label>Proteínas (g)</label><input type="number" step="0.01" formControlName="proteins"></div>
+                </div>
+                <div class="form-group"><label>Sal (g)</label><input type="number" step="0.01" formControlName="salt"></div>
+                @if (nutritionFormError()) {
+                  <div class="error-message">{{ nutritionFormError() }}</div>
+                }
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn--secondary" (click)="closeNutritionForm()">Cancelar</button>
+                <button type="submit" class="btn btn--primary" [disabled]="savingNutrition()">
+                  {{ savingNutrition() ? 'Guardando...' : 'Guardar nutrición' }}
                 </button>
               </div>
             </form>
@@ -775,6 +871,65 @@ interface AdminProduct {
       justify-content: center;
       height: 72px;
     }
+
+    .product-image-tile.is-primary img {
+      border: 2px solid #4a7c4e;
+    }
+
+    .primary-badge {
+      position: absolute;
+      bottom: -6px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      background: #4a7c4e;
+      color: #fff;
+      border-radius: 3px;
+      padding: 1px 0;
+    }
+
+    .set-primary-btn {
+      position: absolute;
+      bottom: -6px;
+      left: -6px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #f5c542;
+      color: #fff;
+      border: none;
+      font-size: 0.75rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .hint {
+      color: #999;
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    .form-group small {
+      color: #999;
+      display: block;
+      margin-top: 0.25rem;
+    }
+
+    .variants-panel__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.75rem;
+
+      h4 { margin: 0; }
+    }
+
+    .variants-panel__actions {
+      display: flex;
+      gap: 0.5rem;
+    }
   `]
 })
 export class AdminProductsComponent implements OnInit {
@@ -789,6 +944,7 @@ export class AdminProductsComponent implements OnInit {
   editingProduct = signal<AdminProduct | null>(null);
   saving = signal(false);
   formError = signal<string | null>(null);
+  private slugTouchedByUser = false;
 
   // Variant management
   expandedProduct = signal<number | null>(null);
@@ -802,8 +958,15 @@ export class AdminProductsComponent implements OnInit {
   variantImagePreview = signal<string | null>(null);
 
   // Product image management
-  productImageUrls = signal<string[]>([]);
   productUploadingImage = signal(false);
+  uploadingAudio = signal(false);
+
+  // Nutrition management
+  showNutritionForm = signal(false);
+  nutritionProduct = signal<AdminProduct | null>(null);
+  savingNutrition = signal(false);
+  nutritionFormError = signal<string | null>(null);
+  nutritionForm!: FormGroup;
 
   productForm!: FormGroup;
 
@@ -816,12 +979,36 @@ export class AdminProductsComponent implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.initVariantForm();
+    this.initNutritionForm();
     this.loadProducts();
     this.loadCategories();
   }
 
+  // ── Computed helpers for the products table ─────────────────────────────
+
+  primaryImage(product: AdminProduct): string | null {
+    const productLevel = product.images.filter(i => !(i as any).variant_id);
+    return productLevel.find(i => i.is_primary)?.url ?? productLevel[0]?.url ?? product.images[0]?.url ?? null;
+  }
+
+  productLevelImages(product?: AdminProduct | null): ProductImage[] {
+    const p = product ?? this.editingProduct();
+    return p?.images ?? [];
+  }
+
+  minPrice(product: AdminProduct): number {
+    const active = product.variants.filter(v => v.is_active).map(v => v.price);
+    return active.length ? Math.min(...active) : 0;
+  }
+
+  totalStock(product: AdminProduct): number {
+    return product.variants.reduce((sum, v) => sum + v.stock, 0);
+  }
+
   initVariantForm(): void {
     this.variantForm = this.fb.group({
+      format: ['100g'],
+      weight_grams: [100, [Validators.min(1)]],
       price: [0, [Validators.required, Validators.min(0)]],
       compare_price: [null],
       stock: [0, [Validators.required, Validators.min(0)]],
@@ -830,18 +1017,25 @@ export class AdminProductsComponent implements OnInit {
     });
   }
 
+  initNutritionForm(): void {
+    this.nutritionForm = this.fb.group({
+      energy_kcal: [null], energy_kj: [null], fat: [null], saturated_fat: [null],
+      carbohydrates: [null], sugars: [null], fiber: [null], proteins: [null], salt: [null],
+    });
+  }
+
   initForm(): void {
     this.productForm = this.fb.group({
       name: ['', Validators.required],
-      sku: ['', Validators.required],
+      slug: ['', Validators.required],
+      sku: [''],
+      shortDescription: [''],
       description: ['', Validators.required],
-      price: [0, [Validators.required, Validators.min(0)]],
-      compareAtPrice: [null],
       categoryId: [null],
-      stockQuantity: [0, [Validators.required, Validators.min(0)]],
-      ingredients: [''],
-      weight: [''],
-      nutritionInfo: [''],
+      badgeColor: [''],
+      audioUrl: [null],
+      metaTitle: [''],
+      metaDescription: [''],
       isActive: [true],
       isFeatured: [false]
     });
@@ -852,6 +1046,12 @@ export class AdminProductsComponent implements OnInit {
       next: (response) => {
         this.products.set(response.items);
         this.loading.set(false);
+        // Keep the currently-open modal's product data in sync after a reload
+        const editing = this.editingProduct();
+        if (editing) {
+          const fresh = response.items.find(p => p.id === editing.id);
+          if (fresh) this.editingProduct.set(fresh);
+        }
       },
       error: () => {
         this.loading.set(false);
@@ -867,10 +1067,8 @@ export class AdminProductsComponent implements OnInit {
   
   openForm(): void {
     this.editingProduct.set(null);
-    this.productImageUrls.set([]);
+    this.slugTouchedByUser = false;
     this.productForm.reset({
-      price: 0,
-      stockQuantity: 0,
       isActive: true,
       isFeatured: false
     });
@@ -879,15 +1077,18 @@ export class AdminProductsComponent implements OnInit {
 
   editProduct(product: AdminProduct): void {
     this.editingProduct.set(product);
-    this.productImageUrls.set(product.images?.map(i => i.url) ?? []);
+    this.slugTouchedByUser = true;
     this.productForm.patchValue({
       name: product.name,
+      slug: product.slug,
       sku: product.sku,
+      shortDescription: product.short_description,
       description: product.description,
-      price: product.price,
-      compareAtPrice: product.compare_price,
       categoryId: product.category?.id,
-      stockQuantity: product.stock,
+      badgeColor: product.badge_color,
+      audioUrl: product.audio_url,
+      metaTitle: (product as any).meta_title || '',
+      metaDescription: (product as any).meta_description || '',
       isActive: product.is_active,
       isFeatured: product.is_featured
     });
@@ -898,6 +1099,15 @@ export class AdminProductsComponent implements OnInit {
     this.showForm.set(false);
     this.editingProduct.set(null);
     this.formError.set(null);
+  }
+
+  onNameChange(): void {
+    if (!this.slugTouchedByUser || !this.productForm.value.slug) {
+      const slug = (this.productForm.value.name || '')
+        .toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+      this.productForm.patchValue({ slug }, { emitEvent: false });
+    }
   }
   
   saveProduct(): void {
@@ -912,29 +1122,36 @@ export class AdminProductsComponent implements OnInit {
     const formValue = this.productForm.value;
     const productData = {
       name: formValue.name,
-      sku: formValue.sku,
+      slug: formValue.slug,
+      sku: formValue.sku || null,
+      short_description: formValue.shortDescription || null,
       description: formValue.description,
-      price: formValue.price,
-      compare_price: formValue.compareAtPrice || null,
       category_id: formValue.categoryId || null,
-      stock: formValue.stockQuantity,
-      images: this.productImageUrls(),
-      ingredients: formValue.ingredients,
-      weight: formValue.weight,
-      nutrition_info: formValue.nutritionInfo,
+      badge_color: formValue.badgeColor || null,
+      audio_url: formValue.audioUrl || null,
+      meta_title: formValue.metaTitle || null,
+      meta_description: formValue.metaDescription || null,
       is_active: formValue.isActive,
       is_featured: formValue.isFeatured
     };
     
-    const request = this.editingProduct()
-      ? this.http.put(`${environment.apiUrl}/admin/products/${this.editingProduct()!.id}`, productData)
-      : this.http.post(`${environment.apiUrl}/admin/products`, productData);
+    const existing = this.editingProduct();
+    const request = existing
+      ? this.http.put<AdminProduct>(`${environment.apiUrl}/admin/products/${existing.id}`, productData)
+      : this.http.post<AdminProduct>(`${environment.apiUrl}/admin/products`, productData);
     
     request.subscribe({
-      next: () => {
+      next: (created) => {
         this.saving.set(false);
-        this.closeForm();
-        this.loadProducts();
+        this.toastService.success('Producto guardado');
+        if (!existing) {
+          // Keep the modal open in edit mode so the user can add images/variants/nutrition right away
+          this.editProduct(created);
+          this.loadProducts();
+        } else {
+          this.closeForm();
+          this.loadProducts();
+        }
       },
       error: (err) => {
         this.saving.set(false);
@@ -952,10 +1169,139 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
+  // ── Product gallery management ──────────────────────────────────────────────
+
+  onProductImageChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const product = this.editingProduct();
+    if (!file || !product) return;
+
+    const destPath = `products/${product.name}`;
+    this.productUploadingImage.set(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('dest_path', destPath);
+
+    this.http.post<{ url: string }>(`${environment.apiUrl}/admin/upload-image`, formData).subscribe({
+      next: (res) => {
+        this.http.post(`${environment.apiUrl}/admin/products/${product.id}/images`, {
+          url: res.url,
+          is_primary: product.images.length === 0,
+        }).subscribe({
+          next: () => {
+            this.productUploadingImage.set(false);
+            this.loadProducts();
+          },
+          error: (err) => {
+            this.productUploadingImage.set(false);
+            this.toastService.error(err.error?.detail || 'Error al guardar la imagen');
+          },
+        });
+      },
+      error: (err) => {
+        this.productUploadingImage.set(false);
+        this.toastService.error('Error al subir imagen: ' + (err.error?.detail || 'Error desconocido'));
+      },
+    });
+    input.value = '';
+  }
+
+  setPrimaryImage(image: ProductImage): void {
+    const product = this.editingProduct();
+    if (!product) return;
+    this.http.put(`${environment.apiUrl}/admin/products/${product.id}/images/${image.id}`, { is_primary: true }).subscribe({
+      next: () => this.loadProducts(),
+      error: (err) => this.toastService.error(err.error?.detail || 'Error al actualizar la imagen'),
+    });
+  }
+
+  removeProductImage(image: ProductImage): void {
+    const product = this.editingProduct();
+    if (!product) return;
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    this.http.delete(`${environment.apiUrl}/admin/products/${product.id}/images/${image.id}`).subscribe({
+      next: () => this.loadProducts(),
+      error: (err) => this.toastService.error(err.error?.detail || 'Error al eliminar la imagen'),
+    });
+  }
+
+  onAudioChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    const product = this.editingProduct();
+    if (!file || !product) return;
+
+    this.uploadingAudio.set(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('dest_path', `products/${product.name}`);
+
+    this.http.post<{ url: string }>(`${environment.apiUrl}/admin/upload-audio`, formData).subscribe({
+      next: (res) => {
+        this.productForm.patchValue({ audioUrl: res.url });
+        this.http.put(`${environment.apiUrl}/admin/products/${product.id}`, { audio_url: res.url }).subscribe({
+          next: () => { this.uploadingAudio.set(false); this.toastService.success('Audio actualizado'); this.loadProducts(); },
+          error: (err) => { this.uploadingAudio.set(false); this.toastService.error(err.error?.detail || 'Error al guardar el audio'); },
+        });
+      },
+      error: (err) => {
+        this.uploadingAudio.set(false);
+        this.toastService.error('Error al subir audio: ' + (err.error?.detail || 'Error desconocido'));
+      },
+    });
+    input.value = '';
+  }
+
+  // ── Nutrition management ─────────────────────────────────────────────────────
+
+  openNutritionForm(product: AdminProduct): void {
+    this.nutritionProduct.set(product);
+    this.nutritionForm.reset(product.nutrition || {});
+    this.nutritionFormError.set(null);
+    this.showNutritionForm.set(true);
+  }
+
+  closeNutritionForm(): void {
+    this.showNutritionForm.set(false);
+    this.nutritionProduct.set(null);
+  }
+
+  saveNutrition(): void {
+    const product = this.nutritionProduct();
+    if (!product) return;
+    this.savingNutrition.set(true);
+    this.nutritionFormError.set(null);
+
+    this.http.put(`${environment.apiUrl}/admin/products/${product.id}/nutrition`, this.nutritionForm.value).subscribe({
+      next: () => {
+        this.savingNutrition.set(false);
+        this.toastService.success('Información nutricional guardada');
+        this.closeNutritionForm();
+        this.loadProducts();
+      },
+      error: (err) => {
+        this.savingNutrition.set(false);
+        this.nutritionFormError.set(err.error?.detail || 'Error al guardar la nutrición');
+      },
+    });
+  }
+
   // ── Variant management ──────────────────────────────────────────────────────
 
   toggleVariants(productId: number): void {
     this.expandedProduct.set(this.expandedProduct() === productId ? null : productId);
+  }
+
+  openNewVariant(product: AdminProduct): void {
+    this.editingVariant.set(null);
+    this.editingVariantProduct.set(product);
+    this.variantImagePreview.set(null);
+    this.variantForm.reset({
+      format: '100g', weight_grams: 100, price: 0, compare_price: null, stock: 0, sku: '', is_active: true,
+    });
+    this.variantFormError.set(null);
+    this.showVariantForm.set(true);
   }
 
   editVariant(product: AdminProduct, variant: AdminVariant): void {
@@ -981,11 +1327,19 @@ export class AdminProductsComponent implements OnInit {
     this.variantImagePreview.set(null);
   }
 
+  deleteVariant(product: AdminProduct, variant: AdminVariant): void {
+    if (!confirm(`¿Eliminar la variante ${variant.format}? Si tiene pedidos asociados, desactívala en su lugar.`)) return;
+    this.http.delete(`${environment.apiUrl}/admin/products/${product.id}/variants/${variant.id}`).subscribe({
+      next: () => { this.toastService.success('Variante eliminada'); this.loadProducts(); },
+      error: (err) => this.toastService.error(err.error?.detail || 'Error al eliminar la variante'),
+    });
+  }
+
   saveVariant(): void {
     if (this.variantForm.invalid) return;
     const variant = this.editingVariant();
     const product = this.editingVariantProduct();
-    if (!variant || !product) return;
+    if (!product) return;
 
     this.savingVariant.set(true);
     this.variantFormError.set(null);
@@ -995,13 +1349,14 @@ export class AdminProductsComponent implements OnInit {
       data['image_url'] = this.variantImagePreview();
     }
 
-    this.http.put(
-      `${environment.apiUrl}/admin/products/${product.id}/variants/${variant.id}`,
-      data,
-    ).subscribe({
+    const request = variant
+      ? this.http.put(`${environment.apiUrl}/admin/products/${product.id}/variants/${variant.id}`, data)
+      : this.http.post(`${environment.apiUrl}/admin/products/${product.id}/variants`, data);
+
+    request.subscribe({
       next: () => {
         this.savingVariant.set(false);
-        this.toastService.success('Variante actualizada');
+        this.toastService.success(variant ? 'Variante actualizada' : 'Variante creada');
         this.closeVariantForm();
         this.loadProducts();
       },
@@ -1017,11 +1372,11 @@ export class AdminProductsComponent implements OnInit {
     const file = input.files?.[0];
     if (!file) return;
 
-    const variant = this.editingVariant();
     const product = this.editingVariantProduct();
-    if (!variant || !product) return;
+    if (!product) return;
 
-    const folder = this.FORMAT_TO_FOLDER[variant.format] ?? variant.format;
+    const format = this.editingVariant()?.format ?? this.variantForm.value.format;
+    const folder = this.FORMAT_TO_FOLDER[format] ?? format;
     const destPath = `products/${product.name}/${folder}`;
 
     this.variantUploadingImage.set(true);
@@ -1040,35 +1395,5 @@ export class AdminProductsComponent implements OnInit {
       },
     });
     input.value = '';
-  }
-
-  onProductImageChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) return;
-
-    const productName = this.productForm.value.name || this.editingProduct()?.name || 'producto';
-    const destPath = `products/${productName}`;
-
-    this.productUploadingImage.set(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('dest_path', destPath);
-
-    this.http.post<{ url: string }>(`${environment.apiUrl}/admin/upload-image`, formData).subscribe({
-      next: (res) => {
-        this.productImageUrls.update(urls => [...urls, res.url]);
-        this.productUploadingImage.set(false);
-      },
-      error: (err) => {
-        this.productUploadingImage.set(false);
-        this.toastService.error('Error al subir imagen: ' + (err.error?.detail || 'Error desconocido'));
-      },
-    });
-    input.value = '';
-  }
-
-  removeProductImage(index: number): void {
-    this.productImageUrls.update(urls => urls.filter((_, i) => i !== index));
   }
 }

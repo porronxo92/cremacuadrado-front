@@ -582,7 +582,7 @@ export class CartComponent implements OnInit {
         this.applyingCoupon = false;
       },
       error: (err) => {
-        this.couponError = err.error?.detail || 'Cupón no válido';
+        this.couponError = err.message || err.error?.detail || 'Cupón no válido';
         this.applyingCoupon = false;
       },
     });
