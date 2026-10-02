@@ -153,6 +153,19 @@ export interface AddressInput {
   phone: string;
 }
 
+// Admin User interfaces
+export interface AdminUser extends User {
+  total_orders: number;
+  total_spent: number;
+  order_ids: number[];
+}
+
+export interface AdminUsersResponse {
+  data: AdminUser[];
+  total: number;
+  pages: number;
+}
+
 // Cart interfaces
 export interface Cart {
   id: number;
@@ -207,6 +220,7 @@ export interface Order {
   payment_method: string | null;
   tracking_number: string | null;
   customer_notes: string | null;
+  customer_email?: string | null;
   items: OrderItem[];
   item_count: number;
   created_at: string;

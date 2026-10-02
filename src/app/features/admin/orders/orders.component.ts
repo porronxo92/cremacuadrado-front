@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 import { Order } from '../../../core/models';
@@ -76,7 +76,7 @@ import { Order } from '../../../core/models';
                     <select 
                       class="status-select"
                       [value]="order.status"
-                      (change)="updateStatus(order.id, $any($event.target).value)">
+                      (change)="onStatusChange(order, $event)">
                       <option value="pending">Pendiente</option>
                       <option value="processing">En proceso</option>
                       <option value="shipped">Enviado</option>
@@ -119,6 +119,7 @@ import { Order } from '../../../core/models';
                   <h3>Cliente</h3>
                   <p>
                     {{ selectedOrder()!.shipping_address.first_name }} {{ selectedOrder()!.shipping_address.last_name }}<br>
+                    Email: {{ selectedOrder()!.customer_email || '—' }}<br>
                     Tel: {{ selectedOrder()!.shipping_address.phone }}
                   </p>
                 </div>
@@ -188,9 +189,90 @@ import { Order } from '../../../core/models';
           </div>
         </div>
       }
+
+      <!-- Tracking modal -->
+      @if (trackingOrder()) {
+        <div class="modal-overlay" (click)="closeTrackingModal()">
+          <div class="modal modal--small" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+              <h2>Marcar como enviado</h2>
+              <button class="close-btn" (click)="closeTrackingModal()">×</button>
+            </div>
+            <div class="modal-body">
+              <p class="tracking-help">
+                Introduce el nº de seguimiento del pedido <strong>{{ trackingOrder()!.order_number }}</strong>.
+                Se enviará un email de "pedido enviado" al cliente.
+              </p>
+              <input
+                type="text"
+                class="tracking-input"
+                [(ngModel)]="trackingNumber"
+                placeholder="Nº de seguimiento"
+                maxlength="100"
+                (keyup.enter)="confirmShipped()">
+              <div class="tracking-actions">
+                <button class="btn-secondary" (click)="closeTrackingModal()" [disabled]="savingTracking()">Cancelar</button>
+                <button class="btn-primary" (click)="confirmShipped()" [disabled]="!trackingNumber.trim() || savingTracking()">
+                  {{ savingTracking() ? 'Guardando...' : 'Confirmar envío' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: [`
+    .modal--small {
+      max-width: 440px;
+    }
+
+    .tracking-help {
+      margin: 0 0 1rem;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .tracking-input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.6rem;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+
+    .tracking-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+
+      button {
+        padding: 0.5rem 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9rem;
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+      }
+
+      .btn-secondary {
+        background: #fff;
+        border: 1px solid #ddd;
+        color: #333;
+      }
+
+      .btn-primary {
+        background: #7B1716;
+        border: 1px solid #7B1716;
+        color: #fff;
+      }
+    }
+
     .admin-orders {
       h1 {
         margin: 0 0 2rem;
@@ -503,6 +585,9 @@ export class AdminOrdersComponent implements OnInit {
   currentPage = signal(1);
   totalPages = signal(1);
   selectedOrder = signal<Order | null>(null);
+  trackingOrder = signal<Order | null>(null);
+  savingTracking = signal(false);
+  trackingNumber = '';
   
   statusFilter = '';
   searchTerm = '';
@@ -547,6 +632,59 @@ export class AdminOrdersComponent implements OnInit {
     this.selectedOrder.set(null);
   }
   
+  onStatusChange(order: Order, event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const status = select.value;
+
+    if (status === 'shipped' && order.status !== 'shipped') {
+      // El estado se aplica al confirmar el nº de seguimiento
+      select.value = order.status;
+      this.trackingNumber = order.tracking_number ?? '';
+      this.trackingOrder.set(order);
+      return;
+    }
+
+    this.updateStatus(order.id, status);
+  }
+
+  closeTrackingModal(): void {
+    if (this.savingTracking()) return;
+    this.trackingOrder.set(null);
+    this.trackingNumber = '';
+  }
+
+  confirmShipped(): void {
+    const order = this.trackingOrder();
+    const tracking = this.trackingNumber.trim();
+    if (!order || !tracking || this.savingTracking()) return;
+
+    this.savingTracking.set(true);
+    const params = new HttpParams().set('tracking_number', tracking);
+    const base = `${environment.apiUrl}/admin/orders/${order.id}`;
+
+    // El tracking envía el email de "pedido enviado" la primera vez que se asigna
+    this.http.patch(`${base}/tracking`, null, { params }).subscribe({
+      next: () => {
+        this.http.patch(`${base}/status`, { status: 'shipped' }).subscribe({
+          next: () => {
+            this.savingTracking.set(false);
+            this.closeTrackingModal();
+            this.toastService.success('Pedido marcado como enviado');
+            this.loadOrders();
+          },
+          error: (err) => {
+            this.savingTracking.set(false);
+            this.toastService.error('Error al actualizar el estado: ' + err.message);
+          }
+        });
+      },
+      error: (err) => {
+        this.savingTracking.set(false);
+        this.toastService.error('Error al guardar el nº de seguimiento: ' + err.message);
+      }
+    });
+  }
+
   updateStatus(orderId: number, status: string): void {
     this.http.patch(`${environment.apiUrl}/admin/orders/${orderId}/status`, { status }).subscribe({
       next: () => {

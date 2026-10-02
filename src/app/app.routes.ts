@@ -209,6 +209,10 @@ export const routes: Routes = [
         path: 'leads',
         loadComponent: () => import('./features/admin/leads/leads.component').then(m => m.AdminLeadsComponent),
       },
+      {
+        path: 'clientes',
+        loadComponent: () => import('./features/admin/users/users.component').then(m => m.AdminUsersComponent),
+      },
     ],
   },
   
