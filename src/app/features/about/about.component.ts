@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChildren, QueryList, AfterViewInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../core/services/seo.service';
 
 interface TimelineEvent {
   year: string;
@@ -19,13 +20,13 @@ interface TimelineEvent {
       <section class="about-hero">
         <img
           src="assets/images/nosotros/principal-quienes.somos2_.jpg"
-          alt="Stefano y Lucas — Fundadores de Cremacuadrado"
+          alt="Stefano y Lucas — Fundadores de CremaCuadrado"
           class="about-hero__img"
         >
         <div class="about-hero__overlay"></div>
         <div class="about-hero__content">
           <span class="about-hero__tag">Nuestra historia</span>
-          <h1>La Génesis de<br>Cremacuadrado</h1>
+          <h1>La Génesis de<br>CremaCuadrado</h1>
           <p class="about-hero__sub">Pasión, pistacho y tradición manchega</p>
         </div>
       </section>
@@ -451,6 +452,7 @@ interface TimelineEvent {
 })
 export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
+  private seo = inject(SeoService);
 
   @ViewChildren('timelineItem') timelineItems!: QueryList<ElementRef>;
 
@@ -483,12 +485,12 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
     {
       year: '2022',
       title: 'El reencuentro',
-      content: 'Lucas regresó a su ciudad natal, marcando un reencuentro que cambiaría el rumbo de sus vidas. Unidos por la pasión por el pistacho y el deseo de crear algo extraordinario, decidieron combinar su formación y experiencia para dar vida a Cremacuadrado.',
+      content: 'Lucas regresó a su ciudad natal, marcando un reencuentro que cambiaría el rumbo de sus vidas. Unidos por la pasión por el pistacho y el deseo de crear algo extraordinario, decidieron combinar su formación y experiencia para dar vida a CremaCuadrado.',
       image: 'assets/images/nosotros/4.jpg'
     },
     {
       year: '2022',
-      title: 'Nace Cremacuadrado',
+      title: 'Nace CremaCuadrado',
       content: 'No nació simplemente como una empresa, sino como la respuesta a un desafío. En un país donde el pistacho está en auge, especialmente en Castilla La Mancha, que produce alrededor del 80% del pistacho nacional, Stefano y Lucas quisieron agregar valor a este fruto. Su misión era clara: especializarse en generar valor añadido a través de nuevas formas de consumo.',
       image: 'assets/images/nosotros/5.jpg'
     },
@@ -501,12 +503,18 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
     {
       year: 'Hoy',
       title: 'Esto continúa...',
-      content: 'La historia de Cremacuadrado se va armando con un combo de pasión, desarrollo e investigación todo sazonado con una pizca de pura dedicación. El cuento sigue, sumando capítulos emocionantes para aportar a la tradición pistachera de aquí, de nuestra tierra.',
+      content: 'La historia de CremaCuadrado se va armando con un combo de pasión, desarrollo e investigación todo sazonado con una pizca de pura dedicación. El cuento sigue, sumando capítulos emocionantes para aportar a la tradición pistachera de aquí, de nuestra tierra.',
       image: 'assets/images/nosotros/7.jpg'
     }
   ];
 
   ngOnInit(): void {
+    this.seo.set({
+      title: 'Nuestro Método',
+      description: 'Tostado, repelado mecánico y molino de piedra: así elaboramos la crema de pistacho manchego en nuestro obrador de Ciudad Real.',
+      path: '/nuestro-metodo',
+    });
+
     this.visibleItems = this.timelineEvents.map(() => false);
 
     if (isPlatformBrowser(this.platformId)) {

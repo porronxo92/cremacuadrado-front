@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ContactService } from '../../core/services/contact.service';
+import { SeoService } from '../../core/services/seo.service';
 
 interface FaqItem {
   question: string;
@@ -671,10 +672,28 @@ interface FaqItem {
 })
 export class ContactComponent {
   private contactService = inject(ContactService);
+  private seo = inject(SeoService);
 
   formData = { name: '', email: '', message: '', privacy: false, marketing: false };
   sent = signal(false);
   sending = signal(false);
+
+  constructor() {
+    this.seo.set({
+      title: 'Contacto',
+      description: '¿Dudas sobre nuestra crema de pistacho manchego? Escríbenos o consulta las preguntas frecuentes sobre el producto.',
+      path: '/contacto',
+    });
+    this.seo.setJsonLd('ld-faq', {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: this.faqItems.map(item => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: { '@type': 'Answer', text: item.answer },
+      })),
+    });
+  }
 
   faqItems: FaqItem[] = [
     {
@@ -693,7 +712,7 @@ export class ContactComponent {
       open: false
     },
     {
-      question: '¿Qué tiene mejor el pistacho ibérico del que viene de fuera?',
+      question: '¿Qué tiene mejor el pistacho español del que viene de fuera?',
       answer: 'El pistacho nacional ofrece mayor seguridad (controles europeos más estrictos), es más sostenible (se produce localmente, con hasta un 60% en secano) y apoya a familias y empresas de nuestra tierra. Nuestro objetivo no es hacer dinero de la manera más sencilla, queremos ofrecer un producto de calidad con impacto positivo en nuestra región.',
       open: false
     },

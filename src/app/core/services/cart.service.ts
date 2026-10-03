@@ -39,7 +39,12 @@ export class CartService {
     // another service (e.g. AuthService), the synchronous HTTP call here runs
     // through authInterceptor's inject(AuthService) while that service is
     // still mid-construction, triggering NG0200 (circular dependency).
-    setTimeout(() => this.syncFromServer());
+    // Browser-only: the cart is client-side state (localStorage/cookie
+    // session) — on the server this would fire one useless request per
+    // render, with no session header to identify a cart (SSR-10).
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => this.syncFromServer());
+    }
   }
 
   private getCartSessionHeader(): HttpHeaders {

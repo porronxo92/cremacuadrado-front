@@ -13,7 +13,7 @@ import { environment } from '@env/environment';
     <div class="auth-page">
       <div class="auth-card">
         <h1>Iniciar sesión</h1>
-        <p class="auth-subtitle">Bienvenido de nuevo a Cremacuadrado</p>
+        <p class="auth-subtitle">Bienvenido de nuevo a CremaCuadrado</p>
         
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
           <div class="form-group">

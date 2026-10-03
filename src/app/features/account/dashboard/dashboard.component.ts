@@ -13,7 +13,7 @@ import { OrderListItem, User } from '../../../core/models';
     <div class="account-dashboard">
       <div class="welcome-section">
         <h1>Hola, {{ user()?.first_name || '...' }}!</h1>
-        <p>Bienvenido a tu cuenta de Cremacuadrado</p>
+        <p>Bienvenido a tu cuenta de CremaCuadrado</p>
       </div>
 
       <div class="dashboard-grid">

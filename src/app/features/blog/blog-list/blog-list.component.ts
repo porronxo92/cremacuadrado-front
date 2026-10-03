@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { BlogService } from '../../../core/services/blog.service';
+import { SeoService } from '../../../core/services/seo.service';
 import { BlogPostListItem } from '../../../core/models';
 
 // Categorías fijas del Recetario (ver también header.component.ts y app.routes.ts)
@@ -45,7 +46,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
 @Component({
   selector: 'app-blog-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, NgOptimizedImage, RouterModule],
   template: `
     <div class="blog-page">
       <!-- Hero -->
@@ -112,7 +113,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
                 <article class="blog-card">
                   <a [routerLink]="['/el-archivo', post.slug]" class="blog-card__image">
                     @if (post.featured_image_url) {
-                      <img [src]="post.featured_image_url" [alt]="post.title">
+                      <img [ngSrc]="post.featured_image_url" [alt]="post.title" fill>
                     } @else {
                       <div class="placeholder-image">
                         <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -316,13 +317,12 @@ const STATIC_BLOGS: BlogPostListItem[] = [
 
     .blog-card__image {
       display: block;
+      position: relative;
       height: 220px;
       overflow: hidden;
       background: #EDE9DD;
 
       img {
-        width: 100%;
-        height: 100%;
         object-fit: cover;
         transition: transform 0.45s ease;
       }
@@ -455,6 +455,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
 export class BlogListComponent implements OnInit {
   private blogService = inject(BlogService);
   private route = inject(ActivatedRoute);
+  private seo = inject(SeoService);
 
   posts = signal<BlogPostListItem[]>([]);
   loading = signal(true);
@@ -472,7 +473,13 @@ export class BlogListComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      this.categorySlug.set(params.get('categorySlug'));
+      const categorySlug = params.get('categorySlug');
+      this.categorySlug.set(categorySlug);
+      this.seo.set({
+        title: this.pageTitle(),
+        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho manchego — El Archivo de CremaCuadrado.',
+        path: categorySlug ? `/el-archivo/categoria/${categorySlug}` : '/el-archivo',
+      });
       this.loadPosts();
     });
   }

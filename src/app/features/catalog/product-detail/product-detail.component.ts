@@ -2,7 +2,7 @@ import {
   Component, OnInit, OnDestroy, AfterViewInit,
   ViewChild, ElementRef, inject, signal, computed, PLATFORM_ID
 } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule, isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
@@ -10,6 +10,8 @@ import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SeoService } from '../../../core/services/seo.service';
+import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 import { Product, ProductImage, ProductVariant, Review } from '../../../core/models';
 import { FormatSelectorComponent, ProductFormat } from '../components/format-selector/format-selector.component';
 import { PriceDisplayComponent } from '../components/price-display/price-display.component';
@@ -65,7 +67,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
 @Component({
   selector: 'app-product-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, FormatSelectorComponent, PriceDisplayComponent, AudioPlayerComponent],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterModule, FormatSelectorComponent, PriceDisplayComponent, AudioPlayerComponent],
   template: `
     <div class="pd">
       @if (loading()) {
@@ -91,7 +93,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             <!-- Desktop -->
             <div class="pd__gallery-desktop">
               <div class="pd__main-img">
-                <img [src]="selectedImage() || firstImage()" [alt]="product()!.name + ' — crema de pistacho manchego'" loading="eager">
+                <img [ngSrc]="selectedImage() || firstImage()" [alt]="product()!.name + ' — crema de pistacho manchego'" fill priority>
               </div>
               @if (currentImages().length > 1) {
                 <div class="pd__thumbs">
@@ -101,7 +103,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                       [class.is-active]="selectedImage() === img.url || (!selectedImage() && $index === 0)"
                       (click)="selectedImage.set(img.url)"
                       [attr.aria-label]="'Ver imagen ' + ($index + 1)">
-                      <img [src]="img.url" [alt]="product()!.name" loading="lazy">
+                      <img [ngSrc]="img.url" [alt]="product()!.name" width="68" height="68" loading="lazy">
                     </button>
                   }
                 </div>
@@ -112,11 +114,11 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             <div class="pd__gallery-mobile">
               <div class="pd__slides" #slidesEl (scroll)="onGalleryScroll()">
                 @if (currentImages().length) {
-                  @for (img of currentImages(); track img.id) {
-                    <div class="pd__slide"><img [src]="img.url" [alt]="product()!.name" loading="lazy"></div>
+                  @for (img of currentImages(); track img.id; let i = $index) {
+                    <div class="pd__slide"><img [ngSrc]="img.url" [alt]="product()!.name" fill [priority]="i === 0"></div>
                   }
                 } @else {
-                  <div class="pd__slide"><img src="/assets/images/placeholder.jpg" [alt]="product()!.name"></div>
+                  <div class="pd__slide"><img ngSrc="/assets/images/placeholder.jpg" [alt]="product()!.name" fill></div>
                 }
               </div>
               @if (currentImages().length > 1) {
@@ -164,7 +166,17 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               <div class="step-body">
                 <span class="step-label">trilogía del sabor · 30s</span>
                 @if (audioUrl()) {
-                  <app-audio-player [src]="audioUrl()!" />
+                  <!-- El audio solo se carga al interactuar: no aporta nada a
+                       SEO y no debe competir con la hidratación del resto de
+                       la columna de compra (pasos 4-6 son los de conversión). -->
+                  @defer (on interaction) {
+                    <app-audio-player [src]="audioUrl()!" />
+                  } @placeholder {
+                    <div class="pd__audio-placeholder">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                      Cómo obtenemos la crema · toca para reproducir
+                    </div>
+                  }
                 } @else {
                   <div class="pd__audio-placeholder">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -512,8 +524,8 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
     .pd__gallery-desktop { @media (max-width: 768px) { display: none; } }
 
     .pd__main-img {
-      aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: $bg-alt;
-      img { width: 100%; height: 100%; object-fit: cover; }
+      position: relative; aspect-ratio: 1; border-radius: 6px; overflow: hidden; background: $bg-alt;
+      img { object-fit: cover; }
     }
 
     .pd__thumbs { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
@@ -537,8 +549,8 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
     }
 
     .pd__slide {
-      flex: 0 0 100%; scroll-snap-align: start; aspect-ratio: 1; background: $bg-alt;
-      img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      position: relative; flex: 0 0 100%; scroll-snap-align: start; aspect-ratio: 1; background: $bg-alt;
+      img { object-fit: cover; display: block; }
     }
 
     .pd__dots {
@@ -955,6 +967,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   private miniCartService = inject(MiniCartService);
   private toastService = inject(ToastService);
   private platformId = inject(PLATFORM_ID);
+  private seo = inject(SeoService);
+  private responseStatus = inject(RESPONSE_STATUS, { optional: true });
   readonly authService = inject(AuthService);
 
   readonly product = signal<Product | null>(null);
@@ -1050,10 +1064,78 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
         const defaultVariant = variants[1] ?? variants[0] ?? null;
         this.selectedFormat.set(defaultVariant ? formatToSelector(defaultVariant) : null);
         this.loading.set(false);
+        this.updateSeoForProduct(product);
       },
-      error: () => this.loading.set(false),
+      error: (err) => {
+        this.loading.set(false);
+        // Only a genuine "doesn't exist" (404) should produce an HTTP 404 —
+        // a backend outage (5xx/network error) means the product might
+        // still exist, so that's a server error, not a not-found.
+        if (this.responseStatus && err?.status === 404) this.responseStatus.code = 404;
+      },
     });
     this.loadReviews(slug);
+  }
+
+  private toAbsoluteUrl(url: string): string {
+    return url.startsWith('http') ? url : `https://cremacuadrado.com${url}`;
+  }
+
+  private updateSeoForProduct(product: Product): void {
+    const path = `/tienda/${product.slug}`;
+    const description = (product.short_description || product.description || '').slice(0, 155);
+    const images = (product.images ?? []).map(img => this.toAbsoluteUrl(img.url));
+
+    this.seo.set({
+      title: product.name,
+      description: description || `${product.name} — crema de pistacho manchego artesanal. CremaCuadrado.`,
+      path,
+      image: images[0],
+      type: 'product',
+    });
+
+    const variants = product.variants ?? [];
+    this.seo.setJsonLd('ld-product', {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description: description || undefined,
+      image: images.length ? images : undefined,
+      sku: product.sku ?? undefined,
+      brand: { '@type': 'Brand', name: 'CremaCuadrado' },
+      offers: variants.map(v => ({
+        '@type': 'Offer',
+        name: v.format,
+        price: (v.price / 100).toFixed(2),
+        priceCurrency: 'EUR',
+        availability: v.is_in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        url: `https://cremacuadrado.com${path}`,
+        itemCondition: 'https://schema.org/NewCondition',
+      })),
+    });
+
+    this.seo.setJsonLd('ld-breadcrumb', {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://cremacuadrado.com/' },
+        { '@type': 'ListItem', position: 2, name: 'Tienda', item: 'https://cremacuadrado.com/tienda' },
+        { '@type': 'ListItem', position: 3, name: product.name, item: `https://cremacuadrado.com${path}` },
+      ],
+    });
+
+    // Los únicos FAQ reales y visibles de la ficha de producto (tab "El
+    // producto") — no se marca /nuestro-metodo porque ahí no hay ningún
+    // bloque de preguntas y respuestas con el que hacer coincidir el schema.
+    this.seo.setJsonLd('ld-faq', {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: FAQS.map(f => ({
+        '@type': 'Question',
+        name: f.q,
+        acceptedAnswer: { '@type': 'Answer', text: f.a },
+      })),
+    });
   }
 
   private loadReviews(slug: string): void {

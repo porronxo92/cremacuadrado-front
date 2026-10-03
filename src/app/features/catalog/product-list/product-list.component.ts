@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
+import { SeoService } from '../../../core/services/seo.service';
 import { ProductListItem, ProductVariant } from '../../../core/models';
 
 const PRODUCT_SLUGS = ['crema-pistacho-pura', 'crema-pistacho-crunchy'];
@@ -14,7 +15,7 @@ const TAGLINES: Record<string, string> = {
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, NgOptimizedImage, RouterModule],
   template: `
     <section class="tienda">
       <div class="tienda__hero">
@@ -29,14 +30,15 @@ const TAGLINES: Record<string, string> = {
         </div>
       } @else {
         <div class="tienda__grid">
-          @for (p of products(); track p.id) {
+          @for (p of products(); track p.id; let i = $index) {
             <article class="prod-card" [style.--line]="p.badge_color || '#A2BA1C'">
               <a [routerLink]="['/tienda', p.slug]" class="prod-card__image-wrap">
                 <img
-                  [src]="p.primary_image || '/assets/images/placeholder.jpg'"
+                  [ngSrc]="p.primary_image || '/assets/images/placeholder.jpg'"
                   [alt]="p.name"
                   class="prod-card__image"
-                  loading="lazy">
+                  fill
+                  [priority]="i === 0">
                 <span class="prod-card__badge" [style.background]="p.badge_color || '#A2BA1C'">
                   {{ selectedVariant(p)?.format || 'Formato' }}
                 </span>
@@ -331,12 +333,19 @@ const TAGLINES: Record<string, string> = {
 })
 export class ProductListComponent implements OnInit {
   private productService = inject(ProductService);
+  private seo = inject(SeoService);
 
   products = signal<ProductListItem[]>([]);
   loading = signal(true);
   selectedVariants = signal<Record<number, number>>({});
 
   ngOnInit(): void {
+    this.seo.set({
+      title: 'Tienda — Crema de Pistacho Pura y Crunchy',
+      description: 'Compra online crema de pistacho manchego: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envío a toda España.',
+      path: '/tienda',
+    });
+
     this.productService.getProducts({ page_size: 10 }).subscribe({
       next: (response) => {
         const ordered = PRODUCT_SLUGS

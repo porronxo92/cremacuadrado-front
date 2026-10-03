@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-shipping-page',
@@ -808,5 +809,14 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class ShippingPageComponent {
+  private seo = inject(SeoService);
   tocOpen = signal(false);
+
+  constructor() {
+    this.seo.set({
+      title: 'Envíos y Devoluciones',
+      description: 'Plazos de envío, costes y política de devoluciones (14 días) de CremaCuadrado.',
+      path: '/devoluciones',
+    });
+  }
 }

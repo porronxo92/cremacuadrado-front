@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollapsibleBlockComponent } from '../../../shared/components/collapsible-block/collapsible-block.component';
 import { ParaTiendasService } from '../../../core/services/para-tiendas.service';
+import { SeoService } from '../../../core/services/seo.service';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
@@ -730,8 +731,17 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 export class ParaTiendasComponent {
   private fb = inject(FormBuilder);
   private paraTiendasService = inject(ParaTiendasService);
+  private seo = inject(SeoService);
 
   readonly submitState = signal<SubmitState>('idle');
+
+  constructor() {
+    this.seo.set({
+      title: 'Para Tiendas Gourmet',
+      description: 'Lleva la crema de pistacho manchego CremaCuadrado a tu tienda gourmet. Condiciones mayoristas para puntos de venta.',
+      path: '/para-tiendas',
+    });
+  }
 
   readonly form = this.fb.group({
     name: ['', Validators.required],

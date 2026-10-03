@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-privacy-page',
@@ -235,5 +236,14 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class PrivacyPageComponent {
+  private seo = inject(SeoService);
   tocOpen = signal(false);
+
+  constructor() {
+    this.seo.set({
+      title: 'Política de Privacidad',
+      description: 'Política de privacidad y protección de datos de CremaCuadrado, conforme al RGPD.',
+      path: '/privacidad',
+    });
+  }
 }

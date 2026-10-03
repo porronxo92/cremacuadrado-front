@@ -1,4 +1,5 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, of, switchMap, map, BehaviorSubject } from 'rxjs';
@@ -15,6 +16,10 @@ const CART_SESSION_KEY = 'cc_cart_session';
   providedIn: 'root'
 })
 export class AuthService {
+  // Must be declared before currentUserSignal below — field initializers run
+  // in declaration order, and getStoredUser() needs this guard already set.
+  private platformId = inject(PLATFORM_ID);
+
   private apiUrl = `${environment.apiUrl}/auth`;
   private cartService = inject(CartService);
 
@@ -178,47 +183,54 @@ export class AuthService {
    * Get stored access token
    */
   getAccessToken(): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
     return localStorage.getItem(TOKEN_KEY);
   }
-  
+
   /**
    * Get stored refresh token
    */
   private getRefreshToken(): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
-  
+
   /**
    * Store tokens in localStorage
    */
   private storeTokens(tokens: AuthTokens): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     localStorage.setItem(TOKEN_KEY, tokens.access_token);
     localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
   }
-  
+
   /**
    * Store user in localStorage
    */
   private storeUser(user: User): void {
+    if (!isPlatformBrowser(this.platformId)) return;
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   }
-  
+
   /**
    * Get stored user from localStorage
    */
   private getStoredUser(): User | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
     const stored = localStorage.getItem(USER_KEY);
     return stored ? JSON.parse(stored) : null;
   }
-  
+
   /**
    * Clear all auth data
    */
   private clearAuth(): void {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    localStorage.removeItem(CART_SESSION_KEY);
+    if (isPlatformBrowser(this.platformId)) {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(CART_SESSION_KEY);
+    }
     this.currentUserSignal.set(null);
   }
 }

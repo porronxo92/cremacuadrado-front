@@ -1,6 +1,6 @@
 {
+  "version": 2,
   "buildCommand": "npm run build:prod",
-  "outputDirectory": "dist/cremacuadrado/browser",
   "installCommand": "npm install",
   "framework": null,
   "rewrites": [
@@ -8,6 +8,12 @@
       "source": "/api/:path*",
       "destination": "https://cremacuadrado-back.vercel.app/api/:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+    { "source": "/", "destination": "/api" },
+    { "source": "/(.*)", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.mjs": {
+      "includeFiles": "dist/cremacuadrado/**"
+    }
+  }
 }

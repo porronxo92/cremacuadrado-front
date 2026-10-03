@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Meta } from '@angular/platform-browser';
+import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 
 @Component({
   selector: 'app-not-found',
@@ -62,4 +64,10 @@ import { RouterModule } from '@angular/router';
     }
   `]
 })
-export class NotFoundComponent {}
+export class NotFoundComponent {
+  constructor() {
+    const responseStatus = inject(RESPONSE_STATUS, { optional: true });
+    if (responseStatus) responseStatus.code = 404;
+    inject(Meta).updateTag({ name: 'robots', content: 'noindex, nofollow' });
+  }
+}

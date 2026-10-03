@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-cookies-page',
@@ -227,5 +228,14 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class CookiesPageComponent {
+  private seo = inject(SeoService);
   tocOpen = signal(false);
+
+  constructor() {
+    this.seo.set({
+      title: 'Política de Cookies',
+      description: 'Qué cookies usa CremaCuadrado y cómo gestionarlas o rechazarlas desde tu navegador.',
+      path: '/cookies',
+    });
+  }
 }

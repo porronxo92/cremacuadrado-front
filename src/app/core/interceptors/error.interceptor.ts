@@ -10,8 +10,11 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => {
       let errorMessage = 'Ha ocurrido un error';
       
-      if (error.error instanceof ErrorEvent) {
-        // Client-side error
+      if (typeof ErrorEvent !== 'undefined' && error.error instanceof ErrorEvent) {
+        // Client-side error. ErrorEvent is a browser-only DOM API — on the
+        // server (SSR) it doesn't exist, so this guard is required; without
+        // it, this check throws ReferenceError and the real HttpErrorResponse
+        // (with .status) never reaches the subscriber's error callback.
         errorMessage = error.error.message;
       } else {
         // Server-side error

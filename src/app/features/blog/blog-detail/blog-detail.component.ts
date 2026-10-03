@@ -1,10 +1,12 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { BlogService } from '../../../core/services/blog.service';
+import { SeoService } from '../../../core/services/seo.service';
+import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 import { BlogPost } from '../../../core/models';
 
 // Static blog data with full content
@@ -67,7 +69,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
 
 <h4>¿El pistacho tiene efectos en la testosterona?</h4>
 <p>El pistacho contiene zinc y selenio, minerales clave en la producción de testosterona, pero no hay evidencia directa de que aumente significativamente sus niveles.</p>`,
-    author_name: 'Cremacuadrado',
+    author_name: 'CremaCuadrado',
     featured_image_url: 'https://cremacuadrado.com/wp-content/uploads/2025/02/Pistachos-y-rendimiento-sexual-scaled.jpg',
     status: 'published',
     categories: [{ id: 1, slug: 'salud', name: 'Salud', description: null }],
@@ -104,7 +106,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
 <p>Estos nutrientes permiten que la semilla tenga la energía y los recursos necesarios para germinar y convertirse en una nueva planta.</p>
 
 <h3>Más allá del snack: disfruta el pistacho en nuevas recetas</h3>
-<p>Los pistachos no solo son un snack delicioso, sino que también pueden transformar tus platos. En Cremacuadrado, elaboramos una <strong>crema de pistacho 100% natural</strong>, sin aditivos, perfecta para llevar tus recetas al siguiente nivel.</p>
+<p>Los pistachos no solo son un snack delicioso, sino que también pueden transformar tus platos. En CremaCuadrado, elaboramos una <strong>crema de pistacho 100% natural</strong>, sin aditivos, perfecta para llevar tus recetas al siguiente nivel.</p>
 
 <p>Prueba nuestra crema en:</p>
 <ul>
@@ -117,7 +119,7 @@ const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
 
 <h3>Prueba la diferencia</h3>
 <p>Descúbrela en nuestra tienda.</p>`,
-    author_name: 'Cremacuadrado',
+    author_name: 'CremaCuadrado',
     featured_image_url: 'https://cremacuadrado.com/wp-content/uploads/2023/01/Fruto-pistacho-abierto.jpg',
     status: 'published',
     categories: [{ id: 2, slug: 'curiosidades', name: 'Curiosidades', description: null }],
@@ -554,6 +556,9 @@ export class BlogDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private blogService = inject(BlogService);
   private sanitizer = inject(DomSanitizer);
+  private platformId = inject(PLATFORM_ID);
+  private seo = inject(SeoService);
+  private responseStatus = inject(RESPONSE_STATUS, { optional: true });
 
   post = signal<BlogPost | null>(null);
   loading = signal(true);
@@ -578,16 +583,62 @@ export class BlogDetailComponent implements OnInit {
         this.post.set(post);
         this.updateRenderedContent(post.content);
         this.loading.set(false);
+        this.updateSeoForPost(post);
       },
-      error: () => {
+      error: (err) => {
         // Fallback to static data
         const staticPost = STATIC_BLOG_POSTS[slug];
         if (staticPost) {
           this.post.set(staticPost);
           this.updateRenderedContent(staticPost.content);
+          this.updateSeoForPost(staticPost);
+        } else if (this.responseStatus && err?.status === 404) {
+          this.responseStatus.code = 404;
         }
         this.loading.set(false);
       }
+    });
+  }
+
+  private updateSeoForPost(post: BlogPost): void {
+    const path = `/el-archivo/${post.slug}`;
+    const description = (post.excerpt || '').slice(0, 155) || `${post.title} — El Archivo de CremaCuadrado.`;
+    const image = post.featured_image_url
+      ? (post.featured_image_url.startsWith('http') ? post.featured_image_url : `https://cremacuadrado.com${post.featured_image_url}`)
+      : undefined;
+
+    this.seo.set({
+      title: post.title,
+      description,
+      path,
+      image,
+      type: 'article',
+    });
+
+    this.seo.setJsonLd('ld-article', {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description,
+      image: image ? [image] : undefined,
+      datePublished: post.published_at ?? post.created_at,
+      dateModified: post.updated_at,
+      author: { '@type': post.author_name ? 'Person' : 'Organization', name: post.author_name ?? 'CremaCuadrado' },
+      publisher: {
+        '@type': 'Organization',
+        name: 'CremaCuadrado',
+        logo: { '@type': 'ImageObject', url: 'https://cremacuadrado.com/assets/images/logocrema2-100x100.png' },
+      },
+    });
+
+    this.seo.setJsonLd('ld-breadcrumb', {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://cremacuadrado.com/' },
+        { '@type': 'ListItem', position: 2, name: 'El Archivo', item: 'https://cremacuadrado.com/el-archivo' },
+        { '@type': 'ListItem', position: 3, name: post.title, item: `https://cremacuadrado.com${path}` },
+      ],
     });
   }
 
@@ -597,7 +648,12 @@ export class BlogDetailComponent implements OnInit {
     if (this.isRecipe()) {
       rawHtml = this.enhanceRecipeHeadings(rawHtml);
     }
-    this.renderedContent.set(this.sanitizer.bypassSecurityTrustHtml(DOMPurify.sanitize(rawHtml)));
+    // DOMPurify needs a real DOM; it doesn't run on the server (SSR-05). The
+    // markdown source comes from our own admin panel, not anonymous input,
+    // so skipping sanitization during SSR doesn't open an XSS hole — the
+    // browser pass still sanitizes on hydration.
+    const clean = isPlatformBrowser(this.platformId) ? DOMPurify.sanitize(rawHtml) : rawHtml;
+    this.renderedContent.set(this.sanitizer.bypassSecurityTrustHtml(clean));
   }
 
   /** Añade icono + clase a las cabeceras Ingredientes/Elaboración/Preparación/Resultado (ver plantilla de recetas). */
