@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -8,14 +8,33 @@ import { RouterModule } from '@angular/router';
   imports: [CommonModule, RouterModule],
   template: `
     <div class="admin-layout">
+      <!-- Top bar (mobile / tablet) -->
+      <header class="admin-topbar">
+        <button class="menu-toggle" type="button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen()" aria-label="Abrir menú de administración">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="topbar-title">Admin <small>Cremacuadrado</small></span>
+      </header>
+
+      @if (menuOpen()) {
+        <div class="sidebar-backdrop" (click)="closeMenu()"></div>
+      }
+
       <!-- Sidebar -->
-      <aside class="admin-sidebar">
+      <aside class="admin-sidebar" [class.open]="menuOpen()">
         <div class="sidebar-header">
-          <h1>Admin</h1>
-          <span>Cremacuadrado</span>
+          <div>
+            <h1>Admin</h1>
+            <span>Cremacuadrado</span>
+          </div>
+          <button class="menu-close" type="button" (click)="closeMenu()" aria-label="Cerrar menú">×</button>
         </div>
         
-        <nav class="sidebar-nav">
+        <nav class="sidebar-nav" (click)="closeMenu()">
           <a routerLink="/admin" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
@@ -95,7 +114,7 @@ import { RouterModule } from '@angular/router';
           </a>
         </nav>
         
-        <div class="sidebar-footer">
+        <div class="sidebar-footer" (click)="closeMenu()">
           <a routerLink="/" class="back-to-store">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
@@ -130,17 +149,92 @@ import { RouterModule } from '@angular/router';
       left: 0;
       bottom: 0;
       z-index: 100;
+      transition: transform 0.3s ease;
       
-      @media (max-width: 768px) {
-        width: 100%;
-        position: relative;
-        height: auto;
+      @media (max-width: 1024px) {
+        transform: translateX(-100%);
+        width: min(280px, 85vw);
+        z-index: 1100;
+        
+        &.open {
+          transform: translateX(0);
+          box-shadow: 4px 0 16px rgba(0,0,0,0.3);
+        }
+      }
+    }
+
+    .admin-topbar {
+      display: none;
+      
+      @media (max-width: 1024px) {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        padding: 0 1rem;
+        background: #1a1a2e;
+        color: #fff;
+        z-index: 90;
+      }
+      
+      .topbar-title {
+        font-weight: 700;
+        color: #4a7c4e;
+        
+        small {
+          margin-left: 0.4rem;
+          font-weight: 400;
+          font-size: 0.8rem;
+          color: #fff;
+          opacity: 0.7;
+        }
+      }
+    }
+
+    .menu-toggle, .menu-close {
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .menu-close {
+      display: none;
+      font-size: 2rem;
+      line-height: 1;
+      
+      @media (max-width: 1024px) {
+        display: inline-flex;
+      }
+    }
+
+    .sidebar-backdrop {
+      display: none;
+      
+      @media (max-width: 1024px) {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
       }
     }
     
     .sidebar-header {
       padding: 1.5rem;
       border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       
       h1 {
         margin: 0;
@@ -201,15 +295,31 @@ import { RouterModule } from '@angular/router';
     
     .admin-content {
       flex: 1;
+      min-width: 0;
       margin-left: 250px;
       padding: 2rem;
       background: #f5f5f5;
       min-height: 100vh;
       
-      @media (max-width: 768px) {
+      @media (max-width: 1024px) {
         margin-left: 0;
+        padding: 4.5rem 1.5rem 1.5rem;
+      }
+      
+      @media (max-width: 480px) {
+        padding: 4.5rem 1rem 1rem;
       }
     }
   `]
 })
-export class AdminLayoutComponent {}
+export class AdminLayoutComponent {
+  menuOpen = signal(false);
+
+  toggleMenu(): void {
+    this.menuOpen.update(v => !v);
+  }
+
+  closeMenu(): void {
+    this.menuOpen.set(false);
+  }
+}

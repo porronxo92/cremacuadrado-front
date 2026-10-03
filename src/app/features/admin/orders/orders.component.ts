@@ -46,6 +46,7 @@ import { Order } from '../../../core/models';
                 <th>Fecha</th>
                 <th>Total</th>
                 <th>Estado</th>
+                <th>Seguimiento</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -65,6 +66,13 @@ import { Order } from '../../../core/models';
                     <span class="status-badge" [class]="'status--' + order.status">
                       {{ getStatusLabel(order.status) }}
                     </span>
+                  </td>
+                  <td>
+                    @if (order.tracking_number) {
+                      <span class="tracking-number">{{ order.tracking_number }}</span>
+                    } @else {
+                      <span class="tracking-empty">—</span>
+                    }
                   </td>
                   <td class="actions">
                     <button class="btn btn--icon" (click)="viewOrder(order)" title="Ver detalles">
@@ -87,7 +95,7 @@ import { Order } from '../../../core/models';
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="6" class="empty">No hay pedidos</td>
+                  <td colspan="7" class="empty">No hay pedidos</td>
                 </tr>
               }
             </tbody>
@@ -415,6 +423,16 @@ import { Order } from '../../../core/models';
       border: 1px solid #ddd;
       border-radius: 4px;
       font-size: 0.8rem;
+    }
+    
+    .tracking-number {
+      font-family: monospace;
+      font-size: 0.85rem;
+      color: #333;
+    }
+    
+    .tracking-empty {
+      color: #ccc;
     }
     
     .pagination {

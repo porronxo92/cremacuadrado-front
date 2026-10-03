@@ -289,6 +289,55 @@ interface DashboardStats {
       padding: 3rem;
       color: #666;
     }
+
+    @media (max-width: 1024px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .admin-dashboard h1 {
+        font-size: 1.5rem;
+        margin-bottom: 1.25rem;
+      }
+
+      .stats-grid {
+        grid-template-columns: 1fr;
+        margin-bottom: 1.25rem;
+      }
+
+      .stat-card {
+        padding: 1rem;
+      }
+
+      .stat-info .stat-value {
+        font-size: 1.3rem;
+      }
+
+      .today-stats, .quick-actions {
+        padding: 1rem;
+      }
+
+      .today-stats {
+        margin-bottom: 1.25rem;
+      }
+
+      .today-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .actions-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .action-card {
+        flex-direction: row;
+        padding: 1rem;
+        min-height: 48px;
+      }
+    }
   `]
 })
 export class AdminDashboardComponent implements OnInit {
