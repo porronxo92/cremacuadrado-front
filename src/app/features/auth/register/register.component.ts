@@ -1,5 +1,5 @@
-import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
@@ -289,6 +289,8 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  // window/Google SDK only exist in the browser, not during SSR
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   registerForm: FormGroup;
   loading = signal(false);
@@ -309,7 +311,7 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (!this.googleEnabled) return;
+    if (!this.isBrowser || !this.googleEnabled) return;
     const google = (window as any).google;
     if (!google?.accounts?.id) return;
 
@@ -324,6 +326,7 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (!this.isBrowser) return;
     const google = (window as any).google;
     google?.accounts?.id?.cancel();
   }
