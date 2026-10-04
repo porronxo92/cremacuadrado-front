@@ -17,7 +17,7 @@ import { RouterModule } from '@angular/router';
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
-        <span class="topbar-title">Admin <small>Cremacuadrado</small></span>
+        <span class="topbar-title">Admin <small>CremaCuadrado</small></span>
       </header>
 
       @if (menuOpen()) {
@@ -29,7 +29,7 @@ import { RouterModule } from '@angular/router';
         <div class="sidebar-header">
           <div>
             <h1>Admin</h1>
-            <span>Cremacuadrado</span>
+            <span>CremaCuadrado</span>
           </div>
           <button class="menu-close" type="button" (click)="closeMenu()" aria-label="Cerrar menú">×</button>
         </div>

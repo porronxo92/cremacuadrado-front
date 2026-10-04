@@ -28,7 +28,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/pages/privacy/privacy.component').then(m => m.PrivacyPageComponent),
   },
   {
-    path: 'condiciones-venta',
+    // El contenido de ConditionsPageComponent es Aviso Legal (titular del
+    // sitio, NIF, jurisdicción, propiedad intelectual) — vivía montado en
+    // /condiciones-venta, que es una página legal distinta y obligatoria
+    // (CLAUDE.md) que de momento no existe. Esta ruta la cubre de verdad;
+    // /condiciones-venta pasa a ser un 301 más abajo.
+    path: 'aviso-legal',
     loadComponent: () => import('./features/pages/conditions/conditions.component').then(m => m.ConditionsPageComponent),
   },
   {
@@ -95,11 +100,12 @@ export const routes: Routes = [
   { path: 'blog', redirectTo: '/el-archivo', pathMatch: 'full' },
   { path: 'blog/:slug', redirectTo: '/el-archivo/:slug', pathMatch: 'full' },
   { path: 'checkout/success', redirectTo: '/gracias', pathMatch: 'full' },
+  { path: 'condiciones-venta', redirectTo: '/aviso-legal', pathMatch: 'full' },
   { path: 'pages/sobre-nosotros', redirectTo: '/nuestro-metodo', pathMatch: 'full' },
   { path: 'nosotros', redirectTo: '/nuestro-metodo', pathMatch: 'full' },
   { path: 'pages/contacto', redirectTo: '/contacto', pathMatch: 'full' },
   { path: 'pages/politica-privacidad', redirectTo: '/privacidad', pathMatch: 'full' },
-  { path: 'pages/condiciones', redirectTo: '/condiciones-venta', pathMatch: 'full' },
+  { path: 'pages/condiciones', redirectTo: '/aviso-legal', pathMatch: 'full' },
   { path: 'pages/cookies', redirectTo: '/cookies', pathMatch: 'full' },
   { path: 'pages/envios', redirectTo: '/devoluciones', pathMatch: 'full' },
   { path: 'pages/puntos-de-venta', redirectTo: '/puntos-de-venta', pathMatch: 'full' },
@@ -134,11 +140,15 @@ export const routes: Routes = [
     ],
   },
   
-  // Account (protected)
+  // Account (protected) — data.preload:false on every entry, parent and
+  // children: SelectivePreloadingStrategy skips these (SSR-12). The router
+  // preloader evaluates each child route independently, not just the
+  // parent, so the flag has to be on all of them, not only 'account'.
   {
     path: 'account',
     canActivate: [authGuard],
     loadComponent: () => import('./features/account/account-layout.component').then(m => m.AccountLayoutComponent),
+    data: { preload: false },
     children: [
       {
         path: '',
@@ -156,14 +166,15 @@ export const routes: Routes = [
         path: 'addresses',
         loadComponent: () => import('./features/account/addresses/addresses.component').then(m => m.AccountAddressesComponent),
       },
-    ],
+    ].map(route => ({ ...route, data: { preload: false } })),
   },
-  
-  // Admin (protected)
+
+  // Admin (protected) — same no-preload treatment as account, above.
   {
     path: 'admin',
     canActivate: [adminGuard],
     loadComponent: () => import('./features/admin/admin-layout.component').then(m => m.AdminLayoutComponent),
+    data: { preload: false },
     children: [
       {
         path: '',
@@ -213,7 +224,7 @@ export const routes: Routes = [
         path: 'clientes',
         loadComponent: () => import('./features/admin/users/users.component').then(m => m.AdminUsersComponent),
       },
-    ],
+    ].map(route => ({ ...route, data: { preload: false } })),
   },
   
   // 404

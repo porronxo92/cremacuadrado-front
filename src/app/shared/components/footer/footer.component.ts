@@ -12,9 +12,9 @@ import { RouterModule } from '@angular/router';
         <div class="footer__grid">
           <!-- About -->
           <div class="footer__section">
-            <h3 class="footer__title">Cremacuadrado</h3>
+            <h3 class="footer__title">CremaCuadrado</h3>
             <p class="footer__text">
-              Crema de pistacho artesanal elaborada con los mejores pistachos ibéricos de Ciudad Real. 
+              Crema de pistacho artesanal elaborada con los mejores pistachos manchegos de Ciudad Real.
               100% natural, sin aditivos. El sabor auténtico del pistacho.
             </p>
           </div>
@@ -36,7 +36,7 @@ import { RouterModule } from '@angular/router';
             <h3 class="footer__title">Legal</h3>
             <nav class="footer__nav">
               <a routerLink="/privacidad">Política de privacidad</a>
-              <a routerLink="/condiciones-venta">Condiciones de uso</a>
+              <a routerLink="/aviso-legal">Aviso Legal</a>
               <a routerLink="/cookies">Política de cookies</a>
             </nav>
           </div>
@@ -85,7 +85,7 @@ import { RouterModule } from '@angular/router';
         </div>
         
         <div class="footer__bottom">
-          <p>&copy; {{ currentYear }} Cremacuadrado. Todos los derechos reservados.</p>
+          <p>&copy; {{ currentYear }} CremaCuadrado. Todos los derechos reservados.</p>
         </div>
       </div>
     </footer>

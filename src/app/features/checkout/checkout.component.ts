@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CartService } from '../../core/services/cart.service';
@@ -270,7 +270,7 @@ import { Address } from '../../core/models';
               
               <p class="terms-notice">
                 Al realizar el pedido, aceptas nuestros
-                <a routerLink="/condiciones-venta">Términos y condiciones</a> y
+                <a routerLink="/aviso-legal">Términos y condiciones</a> y
                 <a routerLink="/privacidad">Política de privacidad</a>.
               </p>
             </div>
@@ -762,6 +762,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
   private stripeService = inject(StripeService);
   private userService = inject(UserService);
+  private document = inject(DOCUMENT);
 
   cartService = inject(CartService);
   authService = inject(AuthService);
@@ -972,7 +973,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       }).subscribe({ error: () => {} });
     }
 
-    const returnUrl = `${window.location.origin}/gracias?order=${this.orderNumber}`;
+    const returnUrl = `${this.document.location.origin}/gracias?order=${this.orderNumber}`;
     const result = await this.stripeService.confirmPayment(returnUrl);
 
     if (result.error) {

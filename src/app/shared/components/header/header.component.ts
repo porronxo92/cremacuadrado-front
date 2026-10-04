@@ -1,6 +1,8 @@
 ﻿import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter, map } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '../../../core/services/auth.service';
 import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
@@ -16,9 +18,9 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
 
           <!-- Logo -->
           <a routerLink="/" class="header__logo">
-            <img src="/assets/images/logocrema2-100x100.png" alt="Cremacuadrado" class="header__logo-img">
+            <img src="/assets/images/logocrema2-100x100.png" alt="CremaCuadrado" class="header__logo-img">
             <div class="header__logo-texts">
-              <span class="header__logo-text">Cremacuadrado</span>
+              <span class="header__logo-text">CremaCuadrado</span>
               <span class="header__logo-tagline">Crema de pistacho artesanal</span>
             </div>
           </a>
@@ -749,18 +751,29 @@ export class HeaderComponent {
   authService = inject(AuthService);
   cartService = inject(CartService);
   miniCartService = inject(MiniCartService);
+  private router = inject(Router);
 
   showUserMenu = false;
   showMobileMenu = false;
   showShopMobile = false;
   showArchiveMobile = false;
 
+  // Router-based instead of window.location: identical on server and client,
+  // and updates on navigation without a page reload (SSR-04).
+  private readonly currentUrl = toSignal(
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+      map(event => event.urlAfterRedirects)
+    ),
+    { initialValue: this.router.url }
+  );
+
   isShopActive(): boolean {
-    return window.location.pathname.startsWith('/tienda');
+    return this.currentUrl().startsWith('/tienda');
   }
 
   isArchiveActive(): boolean {
-    return window.location.pathname.startsWith('/el-archivo');
+    return this.currentUrl().startsWith('/el-archivo');
   }
 
   toggleUserMenu(): void {

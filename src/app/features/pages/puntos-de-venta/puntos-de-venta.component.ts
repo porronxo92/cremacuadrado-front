@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
 import { PointOfSaleService } from '../../../core/services/point-of-sale.service';
+import { SeoService } from '../../../core/services/seo.service';
 import { PointOfSale } from '../../../core/models';
 
 @Component({
@@ -25,7 +26,7 @@ import { PointOfSale } from '../../../core/models';
           <div class="pdv-hero__content">
             <span class="pdv-hero__badge">📍 Dónde encontrarnos</span>
             <h1>Puntos de Venta</h1>
-            <p>Encuentra Cremacuadrado en tiendas especializadas, herboristerías y delicatessen cerca de ti.</p>
+            <p>Encuentra CremaCuadrado en tiendas especializadas, herboristerías y delicatessen cerca de ti.</p>
           </div>
         </div>
       </section>
@@ -61,16 +62,22 @@ import { PointOfSale } from '../../../core/models';
             </div>
           </div>
 
-          <!-- Mapa -->
+          <!-- Mapa: el iframe no aporta nada a SEO (la lista de texto de abajo
+               es la fuente indexable) y retrasa la hidratación si se carga de
+               inmediato — se difiere hasta que entra en el viewport. -->
           <div class="pdv-map-wrapper">
-            <iframe
-              class="pdv-map"
-              loading="lazy"
-              allowfullscreen
-              referrerpolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1571052.1823547506!2d-4.5!3d39.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd6a5c8ef6a9d6c7%3A0xd0c1b6e1c4bc5e55!2sCiudad%20Real%2C%20Spain!5e0!3m2!1ses!2ses!4v1700000000000!5m2!1ses!2ses"
-              title="Mapa de puntos de venta Cremacuadrado"
-            ></iframe>
+            @defer (on viewport) {
+              <iframe
+                class="pdv-map"
+                loading="lazy"
+                allowfullscreen
+                referrerpolicy="no-referrer-when-downgrade"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1571052.1823547506!2d-4.5!3d39.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd6a5c8ef6a9d6c7%3A0xd0c1b6e1c4bc5e55!2sCiudad%20Real%2C%20Spain!5e0!3m2!1ses!2ses!4v1700000000000!5m2!1ses!2ses"
+                title="Mapa de puntos de venta CremaCuadrado"
+              ></iframe>
+            } @placeholder {
+              <div class="pdv-map pdv-map--skeleton"></div>
+            }
             <div class="pdv-map__overlay-tip">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               Para una experiencia óptima, abre el mapa completo
@@ -385,6 +392,10 @@ import { PointOfSale } from '../../../core/models';
       @media (max-width: 768px) { height: 280px; }
     }
 
+    .pdv-map--skeleton {
+      background: var(--color-card-bg, #EDE9DF);
+    }
+
     .pdv-map__overlay-tip {
       position: absolute;
       bottom: 0;
@@ -690,6 +701,7 @@ import { PointOfSale } from '../../../core/models';
 export class PuntosDeVentaComponent implements OnInit {
   private toastService = inject(ToastService);
   private pointOfSaleService = inject(PointOfSaleService);
+  private seo = inject(SeoService);
 
   stores = signal<PointOfSale[]>([]);
   availableCities = computed(() => Array.from(new Set(this.stores().map(s => s.city))));
@@ -698,8 +710,25 @@ export class PuntosDeVentaComponent implements OnInit {
   activeCity = signal<string | null>(null);
 
   ngOnInit(): void {
+    this.seo.set({
+      title: 'Puntos de Venta',
+      description: 'Encuentra crema de pistacho manchego CremaCuadrado en tiendas gourmet de toda España. Mapa y listado de puntos de venta.',
+      path: '/puntos-de-venta',
+    });
+
     this.pointOfSaleService.getAll().subscribe({
-      next: (stores) => this.stores.set(stores),
+      next: (stores) => {
+        this.stores.set(stores);
+        this.seo.setJsonLd('ld-localbusiness', {
+          '@context': 'https://schema.org',
+          '@graph': stores.map(s => ({
+            '@type': 'LocalBusiness',
+            name: s.name,
+            address: { '@type': 'PostalAddress', addressLocality: s.city, addressCountry: 'ES' },
+            url: s.instagram_url || undefined,
+          })),
+        });
+      },
       error: () => this.toastService.error('No se han podido cargar los puntos de venta.'),
     });
   }

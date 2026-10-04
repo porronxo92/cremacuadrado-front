@@ -1,13 +1,15 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { MiniCartService } from '../../core/services/mini-cart.service';
 import { ToastService } from '../../core/services/toast.service';
+import { SeoService } from '../../core/services/seo.service';
 import { ProductListItem, ProductVariant } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
 import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-block.component';
+import { environment } from '@env/environment';
 
 const REVIEWS = [
   { name: 'Ana M.', location: 'Madrid', text: 'Increíble sabor, mi favorita para el desayuno. Ya he pedido tres veces.', rating: 5, product: 'Crema Pura 100%' },
@@ -19,7 +21,7 @@ const REVIEWS = [
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeroBlockComponent, TrilogiaBlockComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterModule, HeroBlockComponent, TrilogiaBlockComponent],
   template: `
     <!-- Bloque 1: Hero + Trilogía -->
     <app-hero-block videoSrc="assets/videos/crema-pistacho-artesanal-hero.mp4" />
@@ -43,9 +45,9 @@ const REVIEWS = [
               <article class="product-card">
                 <a [routerLink]="['/tienda', product.slug]" class="product-card__img-wrap">
                   <img
-                    [src]="product.primary_image || '/assets/images/placeholder.jpg'"
+                    [ngSrc]="product.primary_image || '/assets/images/placeholder.jpg'"
                     [alt]="product.name + ' — crema de pistacho manchego'"
-                    loading="lazy">
+                    fill>
                   @if (product.compare_price && product.compare_price > (getSelectedVariant(product)?.price ?? 0)) {
                     <span class="product-card__badge">Oferta</span>
                   }
@@ -669,6 +671,7 @@ export class HomeComponent implements OnInit {
   private miniCartService = inject(MiniCartService);
   private toastService = inject(ToastService);
   private router = inject(Router);
+  private seo = inject(SeoService);
 
   readonly featuredProducts = signal<ProductListItem[]>([]);
   readonly loadingProducts = signal(true);
@@ -676,6 +679,25 @@ export class HomeComponent implements OnInit {
   readonly selectedVariants = new Map<number, ProductVariant>();
 
   ngOnInit(): void {
+    this.seo.set({
+      title: 'Crema de Pistacho Manchego Artesanal',
+      description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Descubre Pura (100% pistacho) y Crunchy. Envío a toda España.',
+      path: '/',
+    });
+    this.seo.setJsonLd('ld-organization', {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: 'CremaCuadrado',
+      url: `${environment.siteUrl}`,
+      logo: `${environment.siteUrl}/assets/images/logocrema2-100x100.png`,
+    });
+    this.seo.setJsonLd('ld-website', {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: 'CremaCuadrado',
+      url: `${environment.siteUrl}`,
+    });
+
     this.productService.getFeaturedProducts().subscribe({
       next: (products) => {
         const featured = products.slice(0, 2);

@@ -1,0 +1,11 @@
+/
+/nuestro-metodo
+/tienda
+/para-tiendas
+/contacto
+/privacidad
+/aviso-legal
+/cookies
+/devoluciones
+/tienda/crema-pistacho-pura
+/tienda/crema-pistacho-crunchy

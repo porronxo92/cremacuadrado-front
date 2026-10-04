@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
   selector: 'app-conditions-page',
@@ -216,5 +217,14 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class ConditionsPageComponent {
+  private seo = inject(SeoService);
   tocOpen = signal(false);
+
+  constructor() {
+    this.seo.set({
+      title: 'Aviso Legal',
+      description: 'Aviso legal de CremaCuadrado: titular del sitio, ley aplicable, propiedad intelectual y condiciones de uso de cremacuadrado.com.',
+      path: '/aviso-legal',
+    });
+  }
 }

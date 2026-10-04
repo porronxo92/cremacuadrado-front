@@ -45,7 +45,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 })
 export class AppComponent {
   private router = inject(Router);
-  title = 'Cremacuadrado';
+  title = 'CremaCuadrado';
   
   isAdminRoute = toSignal(
     this.router.events.pipe(
