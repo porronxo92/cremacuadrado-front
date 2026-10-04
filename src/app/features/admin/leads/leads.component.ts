@@ -1,159 +1,249 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { AdminApiService } from '../shared/admin-api.service';
+import { POS_LEAD_STATUS, statusInfo } from '../shared/admin-labels';
+import { adminListState } from '../shared/admin-list-state';
+import { ADMIN_UI } from '../shared/admin-ui.components';
 
 type LeadTab = 'newsletter' | 'pos' | 'contact';
 
-const POS_STATUSES = ['new', 'contacted', 'sample_sent', 'closed_won', 'closed_lost'] as const;
+interface NewsletterLead { id: number; email: string; source: string; coupon_code: string | null; converted_at: string | null; created_at: string }
+interface PosLead {
+  id: number; name: string; establishment_name: string; city: string; establishment_type: string;
+  email: string; phone: string; stage: string; status: string; notes: string | null; created_at: string;
+}
+interface ContactLead { id: number; name: string; email: string; message: string; accepts_marketing: boolean; source: string; created_at: string }
 
 @Component({
   selector: 'app-admin-leads',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ...ADMIN_UI],
   template: `
-    <div class="admin-leads">
-      <div class="page-header">
-        <h1>Leads</h1>
-        <button class="btn btn--secondary" (click)="exportCsv()">⬇ Exportar CSV</button>
-      </div>
+    <div class="adm-page">
+      <header class="adm-page-header">
+        <div>
+          <h1>Leads</h1>
+          <p>Contactos captados por la newsletter, la landing B2B y el formulario de contacto</p>
+        </div>
+        <div class="adm-page-actions">
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="exportCsv()">Exportar CSV</button>
+        </div>
+      </header>
 
-      <div class="tabs">
-        <button class="tab" [class.active]="tab() === 'newsletter'" (click)="switchTab('newsletter')">Newsletter</button>
-        <button class="tab" [class.active]="tab() === 'pos'" (click)="switchTab('pos')">Para tiendas (B2B)</button>
-        <button class="tab" [class.active]="tab() === 'contact'" (click)="switchTab('contact')">Contacto</button>
+      <nav class="adm-tabs" role="tablist">
+        <button type="button" role="tab" [class.is-active]="f.tab === 'newsletter'" (click)="switchTab('newsletter')">Newsletter</button>
+        <button type="button" role="tab" [class.is-active]="f.tab === 'pos'" (click)="switchTab('pos')">Tiendas (B2B)</button>
+        <button type="button" role="tab" [class.is-active]="f.tab === 'contact'" (click)="switchTab('contact')">Contacto</button>
+      </nav>
+
+      <div class="adm-filters">
+        <label class="adm-field adm-field--search">
+          <span>Buscar</span>
+          <input type="search" [(ngModel)]="f.search" (input)="state.typed()" placeholder="Email, nombre…">
+        </label>
+        @if (f.tab === 'newsletter') {
+          <label class="adm-field">
+            <span>¿Se registró?</span>
+            <select [(ngModel)]="f.converted" (change)="state.apply()">
+              <option value="">Todos</option>
+              <option value="true">Sí, ya es cliente</option>
+              <option value="false">No, aún no</option>
+            </select>
+          </label>
+        }
+        @if (f.tab === 'pos') {
+          <label class="adm-field">
+            <span>Estado</span>
+            <select [(ngModel)]="f.status" (change)="state.apply()">
+              <option value="">Todos</option>
+              @for (s of posStatuses; track s) { <option [value]="s">{{ posLabel(s).label }}</option> }
+            </select>
+          </label>
+        }
       </div>
 
       @if (loading()) {
-        <div class="loading">Cargando…</div>
-      } @else if (items().length === 0) {
-        <div class="empty">No hay leads todavía.</div>
+        <div class="adm-loading">Cargando…</div>
       } @else {
-        <div class="leads-table-container">
-          @if (tab() === 'newsletter') {
-            <table class="leads-table">
-              <thead><tr><th>Email</th><th>Origen</th><th>Cupón</th><th>Registrado</th><th>Fecha</th></tr></thead>
-              <tbody>
-                @for (item of items(); track item.id) {
-                  <tr>
-                    <td>{{ item.email }}</td>
-                    <td>{{ item.source }}</td>
-                    <td>{{ item.coupon_code || '—' }}</td>
-                    <td>{{ item.converted_at ? 'Sí' : 'No' }}</td>
-                    <td>{{ item.created_at | date:'dd/MM/yyyy' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-          @if (tab() === 'pos') {
-            <table class="leads-table">
-              <thead><tr><th>Nombre</th><th>Establecimiento</th><th>Ciudad</th><th>Contacto</th><th>Estado</th><th>Fecha</th></tr></thead>
-              <tbody>
-                @for (item of items(); track item.id) {
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.establishment_name }} <small>({{ item.establishment_type }})</small></td>
-                    <td>{{ item.city }}</td>
-                    <td>{{ item.email }}<br><small>{{ item.phone }}</small></td>
-                    <td>
-                      <select [ngModel]="item.status" (ngModelChange)="updatePosStatus(item, $event)">
-                        @for (s of posStatuses; track s) {
-                          <option [value]="s">{{ s }}</option>
-                        }
-                      </select>
-                    </td>
-                    <td>{{ item.created_at | date:'dd/MM/yyyy' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          }
-          @if (tab() === 'contact') {
-            <table class="leads-table">
-              <thead><tr><th>Nombre</th><th>Email</th><th>Mensaje</th><th>Marketing</th><th>Fecha</th></tr></thead>
-              <tbody>
-                @for (item of items(); track item.id) {
-                  <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.email }}</td>
-                    <td class="message-cell">{{ item.message }}</td>
-                    <td>{{ item.accepts_marketing ? 'Sí' : 'No' }}</td>
-                    <td>{{ item.created_at | date:'dd/MM/yyyy' }}</td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+        <div class="adm-table-wrap is-responsive">
+          @switch (f.tab) {
+            @case ('newsletter') {
+              <table class="adm-table is-responsive">
+                <thead><tr><th>Email</th><th>Origen</th><th>Cupón</th><th>¿Cliente?</th><th>Fecha</th></tr></thead>
+                <tbody>
+                  @for (l of newsletter(); track l.id) {
+                    <tr>
+                      <td class="is-primary" data-label="Email">{{ l.email }}</td>
+                      <td data-label="Origen">{{ l.source }}</td>
+                      <td data-label="Cupón">{{ l.coupon_code || '—' }}</td>
+                      <td data-label="¿Cliente?">
+                        @if (l.converted_at) { <adm-badge tone="success">Sí · {{ l.converted_at | date:'dd/MM/yy' }}</adm-badge> }
+                        @else { <adm-badge tone="warning">No</adm-badge> }
+                      </td>
+                      <td data-label="Fecha">{{ l.created_at | date:'dd/MM/yy HH:mm' }}</td>
+                    </tr>
+                  } @empty { <tr><td colspan="5" class="adm-empty">Sin leads</td></tr> }
+                </tbody>
+              </table>
+            }
+            @case ('pos') {
+              <table class="adm-table is-responsive">
+                <thead><tr><th>Establecimiento</th><th>Contacto</th><th>Ciudad</th><th>Estado</th><th>Fecha</th><th class="actions"></th></tr></thead>
+                <tbody>
+                  @for (l of pos(); track l.id) {
+                    <tr>
+                      <td class="is-primary" data-label="Establecimiento">
+                        <div><strong>{{ l.establishment_name }}</strong><span class="sub">{{ l.establishment_type }}</span></div>
+                      </td>
+                      <td data-label="Contacto">
+                        <div>{{ l.name }}<span class="sub">{{ l.email }} · {{ l.phone }}</span></div>
+                      </td>
+                      <td data-label="Ciudad">{{ l.city }}</td>
+                      <td data-label="Estado">
+                        <select class="adm-input inline-select" [ngModel]="l.status" (ngModelChange)="updatePos(l, { status: $event })"
+                                [attr.aria-label]="'Estado de ' + l.establishment_name">
+                          @for (s of posStatuses; track s) { <option [value]="s">{{ posLabel(s).label }}</option> }
+                        </select>
+                      </td>
+                      <td data-label="Fecha">{{ l.created_at | date:'dd/MM/yy' }}</td>
+                      <td class="actions" data-label="">
+                        <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost" (click)="openNotes(l)">
+                          {{ l.notes ? 'Notas ✎' : 'Añadir nota' }}
+                        </button>
+                      </td>
+                    </tr>
+                  } @empty { <tr><td colspan="6" class="adm-empty">Sin leads B2B</td></tr> }
+                </tbody>
+              </table>
+            }
+            @case ('contact') {
+              <table class="adm-table is-responsive">
+                <thead><tr><th>Contacto</th><th>Mensaje</th><th>Marketing</th><th>Fecha</th></tr></thead>
+                <tbody>
+                  @for (l of contact(); track l.id) {
+                    <tr>
+                      <td class="is-primary" data-label="Contacto"><div>{{ l.name }}<span class="sub">{{ l.email }}</span></div></td>
+                      <td data-label="Mensaje" class="message">
+                        <button type="button" class="adm-link msg-btn" (click)="message.set(l)">{{ l.message | slice:0:120 }}{{ l.message.length > 120 ? '…' : '' }}</button>
+                      </td>
+                      <td data-label="Marketing"><adm-badge [tone]="l.accepts_marketing ? 'success' : 'neutral'">{{ l.accepts_marketing ? 'Sí' : 'No' }}</adm-badge></td>
+                      <td data-label="Fecha">{{ l.created_at | date:'dd/MM/yy HH:mm' }}</td>
+                    </tr>
+                  } @empty { <tr><td colspan="4" class="adm-empty">Sin mensajes</td></tr> }
+                </tbody>
+              </table>
+            }
           }
         </div>
+        <adm-pagination [page]="state.page()" [pageSize]="state.pageSize()" [total]="state.total()"
+                        [totalPages]="state.totalPages()" (pageChange)="state.goTo($event)"
+                        (pageSizeChange)="state.setPageSize($event)" />
       }
     </div>
+
+    @if (notesLead(); as l) {
+      <adm-modal [title]="'Notas · ' + l.establishment_name" size="sm" (closed)="notesLead.set(null)">
+        <label class="adm-field">
+          <span>Notas internas</span>
+          <textarea [(ngModel)]="notesDraft" rows="6" placeholder="Llamada el 12/10, quieren muestra de 1 kg…"></textarea>
+        </label>
+        <div modal-footer>
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="notesLead.set(null)">Cancelar</button>
+          <button type="button" class="adm-btn adm-btn--primary" (click)="saveNotes(l)">Guardar</button>
+        </div>
+      </adm-modal>
+    }
+
+    @if (message(); as m) {
+      <adm-modal [title]="'Mensaje de ' + m.name" (closed)="message.set(null)">
+        <p class="adm-muted">{{ m.email }} · {{ m.created_at | date:'dd/MM/yyyy HH:mm' }}</p>
+        <p class="full-msg">{{ m.message }}</p>
+        <div modal-footer>
+          <span class="adm-muted">Responde desde tu correo a {{ m.email }}</span>
+        </div>
+      </adm-modal>
+    }
   `,
   styles: [`
-    .admin-leads { padding: 2rem; font-family: 'Poppins', sans-serif; }
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-    .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; }
-    .btn { border: none; border-radius: 3px; padding: 0.5rem 1rem; font-size: 0.85rem; cursor: pointer; }
-    .btn--secondary { background: #F4F1E9; color: #1A1208; }
-    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; }
-    .tab { border: 1px solid #d8d0bd; background: #fff; padding: 0.5rem 1.1rem; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
-    .tab.active { background: #7B1716; color: #E6C15A; border-color: #7B1716; }
-    .loading, .empty { padding: 3rem; text-align: center; color: #8C7F6A; }
-    .leads-table-container { background: #fff; border-radius: 4px; overflow-x: auto; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
-    .leads-table { width: 100%; border-collapse: collapse; }
-    .leads-table th { text-align: left; font-size: 0.75rem; text-transform: uppercase; color: #8C7F6A; padding: 0.75rem 1rem; border-bottom: 1px solid #eee; }
-    .leads-table td { padding: 0.75rem 1rem; border-bottom: 1px solid #f2f2f2; vertical-align: top; }
-    .message-cell { max-width: 320px; white-space: pre-wrap; }
-    select { border: 1px solid #d8d0bd; border-radius: 3px; padding: 0.3rem 0.5rem; }
+    .inline-select { width: auto; min-height: 34px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+    .message { max-width: 380px; }
+    .msg-btn { text-align: left; font-weight: 400; color: var(--adm-ink); }
+    .full-msg { white-space: pre-wrap; line-height: 1.6; margin: 0; }
   `],
 })
 export class AdminLeadsComponent implements OnInit {
-  private http = inject(HttpClient);
+  private api = inject(AdminApiService);
   private toast = inject(ToastService);
 
-  tab = signal<LeadTab>('newsletter');
-  items = signal<any[]>([]);
+  readonly posStatuses = Object.keys(POS_LEAD_STATUS);
+
+  state = adminListState({ tab: 'newsletter', search: '', converted: '', status: '' }, () => this.load());
+  f = this.state.filters;
+
+  newsletter = signal<NewsletterLead[]>([]);
+  pos = signal<PosLead[]>([]);
+  contact = signal<ContactLead[]>([]);
   loading = signal(true);
-  posStatuses = POS_STATUSES;
+
+  notesLead = signal<PosLead | null>(null);
+  notesDraft = '';
+  message = signal<ContactLead | null>(null);
 
   ngOnInit(): void {
     this.load();
   }
 
+  posLabel(s: string) { return statusInfo(POS_LEAD_STATUS, s); }
+
   switchTab(tab: LeadTab): void {
-    this.tab.set(tab);
-    this.load();
+    Object.assign(this.f, { tab, search: '', converted: '', status: '' });
+    this.state.apply();
   }
 
   load(): void {
     this.loading.set(true);
-    this.http.get<{ items: any[] }>(`${environment.apiUrl}/admin/leads/${this.tab()}?page_size=100`).subscribe({
-      next: (res) => { this.items.set(res.items); this.loading.set(false); },
-      error: () => this.loading.set(false),
+    const { tab, ...query } = this.state.query();
+    this.api.page<NewsletterLead | PosLead | ContactLead>(`/leads/${tab}`, query).subscribe({
+      next: res => {
+        if (tab === 'pos') this.pos.set(res.items as PosLead[]);
+        else if (tab === 'contact') this.contact.set(res.items as ContactLead[]);
+        else this.newsletter.set(res.items as NewsletterLead[]);
+        this.state.setPage(res);
+        this.loading.set(false);
+      },
+      error: err => {
+        this.loading.set(false);
+        this.toast.error(err.message || 'Error al cargar los leads');
+      },
     });
   }
 
-  updatePosStatus(item: any, status: string): void {
-    this.http.patch(`${environment.apiUrl}/admin/leads/pos/${item.id}/status?status=${status}`, {}).subscribe({
-      next: () => this.toast.success('Estado actualizado'),
-      error: (err) => this.toast.error(err.error?.detail || 'Error al actualizar'),
+  updatePos(lead: PosLead, changes: { status?: string; notes?: string }, after?: () => void): void {
+    this.api.patch(`/leads/pos/${lead.id}`, changes).subscribe({
+      next: () => {
+        this.pos.update(list => list.map(l => (l.id === lead.id ? { ...l, ...changes } : l)));
+        this.toast.success('Lead actualizado');
+        after?.();
+      },
+      error: err => this.toast.error(err.message || 'Error al actualizar'),
     });
+  }
+
+  openNotes(lead: PosLead): void {
+    this.notesDraft = lead.notes || '';
+    this.notesLead.set(lead);
+  }
+
+  saveNotes(lead: PosLead): void {
+    this.updatePos(lead, { notes: this.notesDraft }, () => this.notesLead.set(null));
   }
 
   exportCsv(): void {
-    const url = `${environment.apiUrl}/admin/leads/export/csv?type=${this.tab()}`;
-    this.http.get(url, { responseType: 'blob' }).subscribe({
-      next: (blob) => {
-        const objectUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = objectUrl;
-        a.download = `leads_${this.tab()}.csv`;
-        a.click();
-        URL.revokeObjectURL(objectUrl);
-      },
-      error: () => this.toast.error('Error al exportar el CSV'),
+    const tab = this.f.tab;
+    this.api.download('/leads/export/csv', { type: tab }, `leads_${tab}_${new Date().toISOString().slice(0, 10)}.csv`).subscribe({
+      error: err => this.toast.error(err.message || 'Error al exportar el CSV'),
     });
   }
 }

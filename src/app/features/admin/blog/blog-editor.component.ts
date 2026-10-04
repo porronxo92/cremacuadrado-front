@@ -147,6 +147,16 @@ function slugify(text: string): string {
     .status-badge.published { background: #E9F3DC; color: #4a7c2c; }
     .error { color: #b00020; font-size: 0.85rem; }
     .loading { padding: 3rem; text-align: center; color: #8C7F6A; }
+
+    @media (max-width: 1024px) {
+      .content-grid, .editor-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    }
+    .list-panel { min-width: 0; overflow-x: auto; }
+    @media (max-width: 768px) {
+      .admin-blog, .admin-categories, .admin-pos, .admin-coupons, .blog-editor { padding: 0 !important; }
+      table th, table td { padding: 0.6rem 0.5rem !important; }
+      button, .btn, select, input { min-height: 40px; }
+    }
   `],
 })
 export class AdminBlogEditorComponent implements OnInit {
@@ -288,7 +298,7 @@ export class AdminBlogEditorComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.formError.set(err.error?.detail || 'Error al guardar el artículo');
+        this.formError.set(err.message || 'Error al guardar el artículo');
       },
     });
   }

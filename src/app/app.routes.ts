@@ -224,6 +224,22 @@ export const routes: Routes = [
         path: 'clientes',
         loadComponent: () => import('./features/admin/users/users.component').then(m => m.AdminUsersComponent),
       },
+      {
+        path: 'clientes/:id',
+        loadComponent: () => import('./features/admin/users/user-detail.component').then(m => m.AdminUserDetailComponent),
+      },
+      {
+        path: 'carritos',
+        loadComponent: () => import('./features/admin/carts/carts.component').then(m => m.AdminCartsComponent),
+      },
+      {
+        path: 'pagos',
+        loadComponent: () => import('./features/admin/payments/payments.component').then(m => m.AdminPaymentsComponent),
+      },
+      {
+        path: 'envios',
+        loadComponent: () => import('./features/admin/shipments/shipments.component').then(m => m.AdminShipmentsComponent),
+      },
     ].map(route => ({ ...route, data: { preload: false } })),
   },
   

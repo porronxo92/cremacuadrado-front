@@ -116,6 +116,10 @@ src/
 | `/admin` | `AdminLayoutComponent` + hijos | `adminGuard` |
 | `/admin/orders` | `AdminOrdersComponent` | `adminGuard` |
 | `/admin/products` | `AdminProductsComponent` | `adminGuard` |
+| `/admin/clientes` · `/admin/clientes/:id` | `AdminUsersComponent` · `AdminUserDetailComponent` (ficha 360º) | `adminGuard` |
+| `/admin/cupones` | `AdminCouponsComponent` (incluye quién usó cada cupón) | `adminGuard` |
+| `/admin/carritos` · `/admin/pagos` · `/admin/envios` | Carritos abandonados · Pagos/reembolsos/webhooks · Envíos Correos | `adminGuard` |
+| `/admin/resenas` · `/admin/leads` · `/admin/blog` · `/admin/categorias` · `/admin/puntos-de-venta` | Moderación y contenido | `adminGuard` |
 | `/**` | `NotFoundComponent` | — |
 
 Hay redirects de compatibilidad para rutas antiguas en inglés (`/catalog`, `/cart`, `/blog`…).
@@ -199,6 +203,14 @@ readonly currentImages = computed<ProductImage[]>(() => {
 - Al cambiar formato (`onFormatChange`) se resetea `selectedImage` y el scroll del carrusel vuelve al inicio
 
 ---
+
+## 🧩 Base compartida del panel admin (`features/admin/shared/`)
+
+- `admin-api.service.ts` — único punto de acceso a `/admin/*` (listados devuelven `Page<T>` = `items/total/page/page_size/total_pages`).
+- `admin-list-state.ts` — `adminListState(filtros, recarga)`: filtros, página, tamaño y orden sincronizados con la URL (query params).
+- `admin-ui.components.ts` — `adm-badge`, `adm-pagination`, `adm-modal` (bottom-sheet en móvil, Esc y foco atrapado), `adm-stat` y `AdminConfirmService` (sustituye a `window.confirm`).
+- `admin-shell.scss` + `admin-shell-data.scss` — sistema visual `adm-*`, cargado por el layout con `ViewEncapsulation.None` y acotado bajo `.adm-shell`. Tablas responsive: `<table class="adm-table is-responsive">` + `data-label` en cada `td` → tarjetas en ≤768px.
+- Errores HTTP: el `errorInterceptor` devuelve `{ status, message }` → usar `err.message` (no `err.error.detail`).
 
 ## 🛠️ Panel Admin de Productos (`/admin/products`)
 

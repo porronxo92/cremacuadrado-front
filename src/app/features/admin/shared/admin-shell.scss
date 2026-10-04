@@ -1,0 +1,150 @@
+// =============================================================================
+// Admin design system — loaded once by AdminLayoutComponent (encapsulation: None).
+// Everything is scoped under .adm-shell so it never leaks into the storefront.
+// Breakpoints: ≤1024 (drawer nav, 1-col forms) · ≤768 (tables → cards) · ≤480
+// =============================================================================
+
+body.adm-scroll-lock { overflow: hidden; }
+
+.adm-shell {
+  --adm-bg: #F4F1E9;
+  --adm-surface: #FFFDF8;
+  --adm-surface-alt: #EDE9DF;
+  --adm-ink: #1C1A14;
+  --adm-muted: #6B6456;
+  --adm-border: rgba(28, 26, 20, 0.12);
+  --adm-brand: #7B1716;
+  --adm-brand-soft: rgba(123, 23, 22, 0.08);
+  --adm-accent: #E6C15A;
+  --adm-success: #3F6B12;
+  --adm-success-bg: #E8F0D6;
+  --adm-warning: #8A5A00;
+  --adm-warning-bg: #FBEFCF;
+  --adm-danger: #A01C1C;
+  --adm-danger-bg: #F8DEDA;
+  --adm-info: #1A5A86;
+  --adm-info-bg: #DCEAF4;
+  --adm-radius: 6px;
+  --adm-shadow: 0 1px 3px rgba(28, 26, 20, 0.06), 0 4px 12px -6px rgba(28, 26, 20, 0.12);
+
+  font-family: 'Poppins', system-ui, sans-serif;
+  color: var(--adm-ink);
+  font-size: 0.9rem;
+
+  *, *::before, *::after { box-sizing: border-box; }
+
+  // ── Page structure ──────────────────────────────────────────────────────
+  .adm-page { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+
+  .adm-page-header {
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 0.75rem;
+
+    h1 {
+      margin: 0; font-family: 'Teko', sans-serif; font-weight: 700; font-size: 2.25rem;
+      line-height: 1; letter-spacing: -0.02em; text-transform: uppercase; color: var(--adm-brand);
+    }
+    p { margin: 0.25rem 0 0; color: var(--adm-muted); font-size: 0.85rem; }
+  }
+  .adm-page-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+
+  .adm-card {
+    background: var(--adm-surface); border: 1px solid var(--adm-border);
+    border-radius: var(--adm-radius); box-shadow: var(--adm-shadow); padding: 1.25rem; min-width: 0;
+
+    > h2, > h3 { margin: 0 0 0.85rem; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--adm-muted); font-weight: 600; }
+    &--flush { padding: 0; }
+  }
+
+  .adm-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .adm-grid--2 { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adm-grid--stats { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+
+  // List + side form (coupons, categories, POS…) — collapses under 1024px
+  .adm-split { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+  .adm-split__aside { position: sticky; top: 1rem; }
+
+  // ── Buttons ─────────────────────────────────────────────────────────────
+  .adm-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    min-height: 40px; padding: 0.5rem 1rem; border-radius: 20px;
+    border: 1.5px solid var(--adm-brand); background: var(--adm-surface); color: var(--adm-brand);
+    font: 600 0.85rem 'Poppins', sans-serif; cursor: pointer; text-decoration: none; white-space: nowrap;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+    &:hover:not(:disabled) { background: var(--adm-brand); color: #F4F1E9; }
+    &:disabled { opacity: 0.45; cursor: not-allowed; }
+    &:focus-visible { outline: 2px solid var(--adm-accent); outline-offset: 2px; }
+
+    &--primary { background: var(--adm-brand); color: #F4F1E9; &:hover:not(:disabled) { background: #5f1110; } }
+    &--ghost { border-color: var(--adm-border); color: var(--adm-ink); background: transparent;
+      &:hover:not(:disabled) { background: var(--adm-surface-alt); color: var(--adm-ink); } }
+    &--danger { border-color: var(--adm-danger); color: var(--adm-danger);
+      &:hover:not(:disabled) { background: var(--adm-danger); color: #fff; } }
+    &--sm { min-height: 32px; padding: 0.25rem 0.7rem; font-size: 0.8rem; }
+    &--block { width: 100%; }
+  }
+
+  .adm-icon-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; border-radius: 50%; border: none; background: transparent;
+    color: var(--adm-muted); cursor: pointer; font-size: 1.4rem; line-height: 1;
+    &:hover { background: var(--adm-surface-alt); color: var(--adm-ink); }
+    &:focus-visible { outline: 2px solid var(--adm-accent); }
+    svg { width: 18px; height: 18px; }
+  }
+
+  .adm-link { color: var(--adm-brand); font-weight: 600; text-decoration: none; cursor: pointer; background: none; border: 0; padding: 0; font: inherit;
+    &:hover { text-decoration: underline; } }
+
+  // ── Forms ───────────────────────────────────────────────────────────────
+  .adm-field {
+    display: flex; flex-direction: column; gap: 0.3rem; min-width: 0;
+    > span, > label { font-size: 0.75rem; font-weight: 600; color: var(--adm-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+    small { color: var(--adm-muted); font-size: 0.75rem; }
+  }
+  .adm-input, .adm-field input:not([type=checkbox]):not([type=radio]), .adm-field select, .adm-field textarea,
+  .adm-filters input:not([type=checkbox]), .adm-filters select {
+    width: 100%; min-height: 40px; padding: 0.5rem 0.75rem; border: 1px solid var(--adm-border);
+    border-radius: var(--adm-radius); background: #fff; color: var(--adm-ink); font: 0.875rem 'Poppins', sans-serif;
+    &:focus { outline: none; border-color: var(--adm-brand); box-shadow: 0 0 0 3px var(--adm-brand-soft); }
+    &:disabled { background: var(--adm-surface-alt); color: var(--adm-muted); }
+  }
+  .adm-field textarea { min-height: 96px; resize: vertical; }
+  .adm-form { display: grid; gap: 0.9rem; grid-template-columns: repeat(2, minmax(0, 1fr));
+    .adm-field--full { grid-column: 1 / -1; } }
+  .adm-check { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 40px; cursor: pointer; font-size: 0.875rem;
+    input { width: 18px; height: 18px; accent-color: var(--adm-brand); } }
+  .adm-error { color: var(--adm-danger); font-size: 0.8rem; margin: 0; }
+
+  // ── Filters bar ─────────────────────────────────────────────────────────
+  .adm-filters {
+    display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.75rem;
+    background: var(--adm-surface); border: 1px solid var(--adm-border); border-radius: var(--adm-radius); padding: 0.85rem;
+    .adm-field { flex: 1 1 160px; }
+    .adm-field--search { flex: 2 1 240px; }
+  }
+  .adm-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .adm-chip {
+    min-height: 34px; padding: 0.3rem 0.85rem; border-radius: 17px; border: 1px solid var(--adm-border);
+    background: var(--adm-surface); color: var(--adm-ink); font: 500 0.8rem 'Poppins', sans-serif; cursor: pointer;
+    &.is-active { background: var(--adm-brand); border-color: var(--adm-brand); color: #F4F1E9; }
+    .count { opacity: 0.7; margin-left: 0.25rem; }
+  }
+
+  // ── Tabs ────────────────────────────────────────────────────────────────
+  .adm-tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--adm-border); overflow-x: auto; scrollbar-width: none;
+    button { flex: none; min-height: 44px; padding: 0 1rem; border: 0; border-bottom: 3px solid transparent; background: none;
+      font: 600 0.85rem 'Poppins', sans-serif; color: var(--adm-muted); cursor: pointer;
+      &.is-active { color: var(--adm-brand); border-bottom-color: var(--adm-brand); } } }
+
+  // ── Badges ──────────────────────────────────────────────────────────────
+  .adm-badge {
+    display: inline-flex; align-items: center; padding: 0.15rem 0.55rem; border-radius: 10px;
+    font-size: 0.72rem; font-weight: 600; white-space: nowrap; background: var(--adm-surface-alt); color: var(--adm-muted);
+    &[data-tone=success] { background: var(--adm-success-bg); color: var(--adm-success); }
+    &[data-tone=warning] { background: var(--adm-warning-bg); color: var(--adm-warning); }
+    &[data-tone=danger] { background: var(--adm-danger-bg); color: var(--adm-danger); }
+    &[data-tone=info] { background: var(--adm-info-bg); color: var(--adm-info); }
+    &[data-tone=brand] { background: var(--adm-brand-soft); color: var(--adm-brand); }
+  }
+}

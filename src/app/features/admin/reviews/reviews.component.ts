@@ -1,139 +1,200 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { ToastService } from '../../../core/services/toast.service';
-
-type ReviewStatus = 'pending' | 'approved' | 'rejected';
+import { AdminApiService } from '../shared/admin-api.service';
+import { REVIEW_STATUS, statusInfo } from '../shared/admin-labels';
+import { adminListState } from '../shared/admin-list-state';
+import { ADMIN_UI } from '../shared/admin-ui.components';
 
 interface AdminReview {
   id: number;
+  product_id: number;
   product_name: string;
+  user_id: number | null;
   user_name: string;
+  user_email: string | null;
   rating: number;
   title: string | null;
   comment: string | null;
   is_verified_purchase: boolean;
-  status: ReviewStatus;
+  status: 'pending' | 'approved' | 'rejected';
+  admin_response: string | null;
   created_at: string;
 }
 
 @Component({
   selector: 'app-admin-reviews',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
   template: `
-    <div class="admin-reviews">
-      <div class="page-header">
-        <h1>Moderación de reseñas</h1>
+    <div class="adm-page">
+      <header class="adm-page-header">
+        <div>
+          <h1>Reseñas</h1>
+          <p>Modera lo que publican los clientes</p>
+        </div>
+      </header>
+
+      <div class="adm-chips" role="tablist">
+        @for (s of statuses; track s.id) {
+          <button type="button" class="adm-chip" [class.is-active]="f.status === s.id" (click)="f.status = s.id; state.apply()">{{ s.label }}</button>
+        }
       </div>
 
-      <div class="filter-tabs">
-        <button class="chip" [class.active]="statusFilter() === 'pending'" (click)="setStatus('pending')">Pendientes</button>
-        <button class="chip" [class.active]="statusFilter() === 'approved'" (click)="setStatus('approved')">Aprobadas</button>
-        <button class="chip" [class.active]="statusFilter() === 'rejected'" (click)="setStatus('rejected')">Rechazadas</button>
+      <div class="adm-filters">
+        <label class="adm-field adm-field--search">
+          <span>Buscar</span>
+          <input type="search" [(ngModel)]="f.search" (input)="state.typed()" placeholder="Texto o email del cliente">
+        </label>
+        <label class="adm-field">
+          <span>Valoración</span>
+          <select [(ngModel)]="f.rating" (change)="state.apply()">
+            <option value="">Todas</option>
+            @for (r of [5, 4, 3, 2, 1]; track r) { <option [value]="r">{{ r }} ★</option> }
+          </select>
+        </label>
       </div>
 
       @if (loading()) {
-        <div class="loading">Cargando…</div>
-      } @else if (reviews().length === 0) {
-        <div class="empty">
-          @if (statusFilter() === 'pending') {
-            No hay reseñas pendientes de moderar. 🎉
-          } @else {
-            No hay reseñas {{ statusFilter() === 'approved' ? 'aprobadas' : 'rechazadas' }}.
-          }
-        </div>
+        <div class="adm-loading">Cargando reseñas…</div>
       } @else {
-        <div class="review-list">
-          @for (review of reviews(); track review.id) {
-            <div class="review-card">
-              <div class="review-card__header">
+        <div class="list">
+          @for (r of reviews(); track r.id) {
+            <article class="adm-card review">
+              <header>
                 <div>
-                  <strong>{{ review.product_name }}</strong>
-                  <span class="stars">{{ '★'.repeat(review.rating) }}{{ '☆'.repeat(5 - review.rating) }}</span>
-                  @if (review.is_verified_purchase) {
-                    <span class="verified">Compra verificada</span>
-                  }
+                  <strong>{{ r.product_name }}</strong>
+                  <span class="stars" [attr.aria-label]="r.rating + ' de 5 estrellas'">{{ '★'.repeat(r.rating) }}{{ '☆'.repeat(5 - r.rating) }}</span>
+                  @if (r.is_verified_purchase) { <adm-badge tone="success">Compra verificada</adm-badge> }
+                  <adm-badge [tone]="st(r.status).tone">{{ st(r.status).label }}</adm-badge>
                 </div>
-                <small>{{ review.created_at | date:'dd/MM/yyyy' }}</small>
-              </div>
-              <p class="review-author">{{ review.user_name }}</p>
-              @if (review.title) { <p class="review-title">{{ review.title }}</p> }
-              <p class="review-comment">{{ review.comment }}</p>
-              <div class="review-actions">
-                @if (review.status !== 'approved') {
-                  <button class="btn btn--approve" (click)="approve(review)">✓ Aprobar</button>
+                <span class="adm-muted">{{ r.created_at | date:'dd/MM/yyyy' }}</span>
+              </header>
+              <p class="author">
+                @if (r.user_id) {
+                  <a class="adm-link" [routerLink]="['/admin/clientes', r.user_id]">{{ r.user_name }}</a> · {{ r.user_email }}
+                } @else { {{ r.user_name }} }
+              </p>
+              @if (r.title) { <p class="title">{{ r.title }}</p> }
+              @if (r.comment) { <p class="comment">{{ r.comment }}</p> }
+              @if (r.admin_response) {
+                <p class="response"><strong>Nota de la tienda:</strong> {{ r.admin_response }}</p>
+              }
+              <div class="actions">
+                @if (r.status !== 'approved') {
+                  <button type="button" class="adm-btn adm-btn--sm adm-btn--primary" (click)="moderate(r, 'approve')">Aprobar</button>
                 }
-                @if (review.status !== 'rejected') {
-                  <button class="btn btn--reject" (click)="reject(review)">✕ Rechazar</button>
+                @if (r.status !== 'rejected') {
+                  <button type="button" class="adm-btn adm-btn--sm adm-btn--danger" (click)="moderate(r, 'reject')">Rechazar</button>
                 }
+                <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost" (click)="openResponse(r)">
+                  {{ r.admin_response ? 'Editar nota' : 'Añadir nota' }}
+                </button>
               </div>
+            </article>
+          } @empty {
+            <div class="adm-empty-state">
+              {{ f.status === 'pending' ? 'No hay reseñas pendientes de moderar 🎉' : 'No hay reseñas con estos filtros' }}
             </div>
           }
         </div>
+        <adm-pagination [page]="state.page()" [pageSize]="state.pageSize()" [total]="state.total()"
+                        [totalPages]="state.totalPages()" (pageChange)="state.goTo($event)"
+                        (pageSizeChange)="state.setPageSize($event)" />
       }
     </div>
+
+    @if (responding(); as r) {
+      <adm-modal title="Nota de la tienda" size="sm" (closed)="responding.set(null)">
+        <p class="adm-muted">Se guarda junto a la reseña. De momento no se muestra en la web pública.</p>
+        <label class="adm-field">
+          <span>Texto</span>
+          <textarea [(ngModel)]="responseDraft" rows="5" maxlength="2000"></textarea>
+        </label>
+        <div modal-footer>
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="responding.set(null)">Cancelar</button>
+          <button type="button" class="adm-btn adm-btn--primary" (click)="saveResponse(r)">Guardar</button>
+        </div>
+      </adm-modal>
+    }
   `,
   styles: [`
-    .admin-reviews { padding: 2rem; font-family: 'Poppins', sans-serif; max-width: 900px; }
-    .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; margin-bottom: 1.5rem; }
-    .filter-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
-    .chip { border: 1px solid #D9D3C5; background: #fff; color: #5A4F3E; border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; }
-    .chip.active { background: #7B1716; color: #E6C15A; border-color: #7B1716; }
-    .loading, .empty { padding: 3rem; text-align: center; color: #8C7F6A; }
-    .review-list { display: flex; flex-direction: column; gap: 1rem; }
-    .review-card { background: #fff; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.1rem 1.3rem; }
-    .review-card__header { display: flex; justify-content: space-between; align-items: center; }
-    .stars { color: #E6C15A; margin-left: 0.5rem; }
-    .verified { margin-left: 0.5rem; font-size: 0.7rem; background: #E9F3DC; color: #4a7c2c; padding: 0.15rem 0.5rem; border-radius: 10px; }
-    .review-author { font-size: 0.8rem; color: #8C7F6A; margin: 0.3rem 0; }
-    .review-title { font-weight: 600; margin: 0.2rem 0; }
-    .review-comment { color: #1A1208; line-height: 1.5; margin-bottom: 0.75rem; }
-    .review-actions { display: flex; gap: 0.5rem; }
-    .btn { border: none; border-radius: 3px; padding: 0.45rem 1rem; font-size: 0.8rem; cursor: pointer; }
-    .btn--approve { background: #E9F3DC; color: #4a7c2c; }
-    .btn--reject { background: #FBE7E7; color: #b00020; }
+    .list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .review header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem;
+      > div { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; } }
+    .stars { color: #C88A1A; letter-spacing: 1px; }
+    .author { margin: 0.35rem 0; font-size: 0.82rem; color: var(--adm-muted); }
+    .title { margin: 0.35rem 0 0; font-weight: 600; }
+    .comment { margin: 0.35rem 0 0; line-height: 1.6; }
+    .response { margin: 0.75rem 0 0; padding: 0.6rem 0.8rem; background: var(--adm-surface-alt); border-left: 3px solid var(--adm-accent); font-size: 0.85rem; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
   `],
 })
 export class AdminReviewsComponent implements OnInit {
-  private http = inject(HttpClient);
+  private api = inject(AdminApiService);
   private toast = inject(ToastService);
+
+  readonly statuses = [
+    { id: 'pending', label: 'Pendientes' },
+    { id: 'approved', label: 'Aprobadas' },
+    { id: 'rejected', label: 'Rechazadas' },
+    { id: 'all', label: 'Todas' },
+  ];
+
+  state = adminListState({ status: 'pending', search: '', rating: '' }, () => this.load());
+  f = this.state.filters;
 
   reviews = signal<AdminReview[]>([]);
   loading = signal(true);
-  statusFilter = signal<ReviewStatus>('pending');
+  responding = signal<AdminReview | null>(null);
+  responseDraft = '';
 
   ngOnInit(): void {
     this.load();
   }
 
-  setStatus(status: ReviewStatus): void {
-    this.statusFilter.set(status);
-    this.load();
-  }
+  st(s: string) { return statusInfo(REVIEW_STATUS, s); }
 
   load(): void {
     this.loading.set(true);
-    this.http.get<{ items: AdminReview[] }>(
-      `${environment.apiUrl}/admin/reviews?status=${this.statusFilter()}&page_size=100`
-    ).subscribe({
-      next: (res) => { this.reviews.set(res.items); this.loading.set(false); },
-      error: () => this.loading.set(false),
+    this.api.page<AdminReview>('/reviews', this.state.query()).subscribe({
+      next: res => {
+        this.reviews.set(res.items);
+        this.state.setPage(res);
+        this.loading.set(false);
+      },
+      error: err => {
+        this.loading.set(false);
+        this.toast.error(err.message || 'Error al cargar las reseñas');
+      },
     });
   }
 
-  approve(review: AdminReview): void {
-    this.http.put(`${environment.apiUrl}/admin/reviews/${review.id}/approve`, {}).subscribe({
-      next: () => { this.toast.success('Reseña aprobada'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al aprobar'),
+  moderate(r: AdminReview, action: 'approve' | 'reject'): void {
+    this.api.put(`/reviews/${r.id}/${action}`, {}).subscribe({
+      next: () => {
+        this.toast.success(action === 'approve' ? 'Reseña aprobada' : 'Reseña rechazada');
+        this.load();
+      },
+      error: err => this.toast.error(err.message || 'No se pudo moderar'),
     });
   }
 
-  reject(review: AdminReview): void {
-    this.http.put(`${environment.apiUrl}/admin/reviews/${review.id}/reject`, {}).subscribe({
-      next: () => { this.toast.success('Reseña rechazada'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al rechazar'),
+  openResponse(r: AdminReview): void {
+    this.responseDraft = r.admin_response || '';
+    this.responding.set(r);
+  }
+
+  saveResponse(r: AdminReview): void {
+    this.api.put(`/reviews/${r.id}/response`, { admin_response: this.responseDraft }).subscribe({
+      next: () => {
+        this.reviews.update(list => list.map(x => (x.id === r.id ? { ...x, admin_response: this.responseDraft.trim() || null } : x)));
+        this.responding.set(null);
+        this.toast.success('Nota guardada');
+      },
+      error: err => this.toast.error(err.message || 'No se pudo guardar'),
     });
   }
 }

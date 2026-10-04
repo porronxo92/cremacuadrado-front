@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
 
 interface BlogCategoryLite {
   id: number;
@@ -25,7 +26,7 @@ interface AdminBlogPost {
 @Component({
   selector: 'app-admin-blog-list',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, ...ADMIN_UI],
   template: `
     <div class="admin-blog">
       <div class="page-header">
@@ -93,6 +94,8 @@ interface AdminBlogPost {
             </tbody>
           </table>
         </div>
+        <adm-pagination [page]="page()" [pageSize]="pageSize()" [total]="total()" [totalPages]="totalPages()"
+                        (pageChange)="goTo($event)" (pageSizeChange)="setPageSize($event)" />
       }
     </div>
   `,
@@ -119,11 +122,24 @@ interface AdminBlogPost {
     .status-badge { font-size: 0.75rem; padding: 0.2rem 0.6rem; border-radius: 12px; background: #eee; color: #666; }
     .status-badge.published { background: #E9F3DC; color: #4a7c2c; }
     .actions { white-space: nowrap; }
+
+    @media (max-width: 1024px) {
+      .content-grid, .editor-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    }
+    .list-panel { min-width: 0; overflow-x: auto; }
+    @media (max-width: 768px) {
+      .admin-blog, .admin-categories, .admin-pos, .admin-coupons, .blog-editor { padding: 0 !important; }
+      table th, table td { padding: 0.6rem 0.5rem !important; }
+      button, .btn, select, input { min-height: 40px; }
+    }
+    .filters { flex-wrap: wrap; }
+    .filters .search { flex: 1 1 200px; min-width: 0; }
   `],
 })
 export class AdminBlogListComponent implements OnInit {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
+  private confirm = inject(AdminConfirmService);
 
   posts = signal<AdminBlogPost[]>([]);
   loading = signal(true);
@@ -135,8 +151,25 @@ export class AdminBlogListComponent implements OnInit {
     this.load();
   }
 
+  page = signal(1);
+  pageSize = signal(20);
+  total = signal(0);
+  totalPages = signal(0);
+
   setStatus(status: string | null): void {
     this.statusFilter.set(status);
+    this.page.set(1);
+    this.load();
+  }
+
+  goTo(page: number): void {
+    this.page.set(page);
+    this.load();
+  }
+
+  setPageSize(size: number): void {
+    this.pageSize.set(size);
+    this.page.set(1);
     this.load();
   }
 
@@ -144,18 +177,20 @@ export class AdminBlogListComponent implements OnInit {
     const value = (event.target as HTMLInputElement).value;
     this.search.set(value);
     clearTimeout(this.searchTimeout);
-    this.searchTimeout = setTimeout(() => this.load(), 350);
+    this.searchTimeout = setTimeout(() => { this.page.set(1); this.load(); }, 350);
   }
 
   load(): void {
     this.loading.set(true);
-    let params = '?page_size=100';
+    let params = `?page=${this.page()}&page_size=${this.pageSize()}`;
     if (this.statusFilter()) params += `&status=${this.statusFilter()}`;
     if (this.search()) params += `&search=${encodeURIComponent(this.search())}`;
 
-    this.http.get<{ items: AdminBlogPost[] }>(`${environment.apiUrl}/admin/blog/posts${params}`).subscribe({
+    this.http.get<{ items: AdminBlogPost[]; total: number; total_pages: number }>(`${environment.apiUrl}/admin/blog/posts${params}`).subscribe({
       next: (res) => {
         this.posts.set(res.items);
+        this.total.set(res.total);
+        this.totalPages.set(res.total_pages);
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
@@ -165,22 +200,27 @@ export class AdminBlogListComponent implements OnInit {
   publish(post: AdminBlogPost): void {
     this.http.patch(`${environment.apiUrl}/admin/blog/posts/${post.id}/publish`, {}).subscribe({
       next: () => { this.toast.success('Artículo publicado'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al publicar'),
+      error: (err) => this.toast.error(err.message || 'Error al publicar'),
     });
   }
 
   unpublish(post: AdminBlogPost): void {
     this.http.patch(`${environment.apiUrl}/admin/blog/posts/${post.id}/unpublish`, {}).subscribe({
       next: () => { this.toast.success('Artículo pasado a borrador'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al despublicar'),
+      error: (err) => this.toast.error(err.message || 'Error al despublicar'),
     });
   }
 
-  deletePost(post: AdminBlogPost): void {
-    if (!confirm(`¿Eliminar "${post.title}"? Esta acción no se puede deshacer.`)) return;
+  async deletePost(post: AdminBlogPost): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `¿Eliminar "${post.title}"?`,
+      message: 'Esta acción no se puede deshacer. Si solo quieres ocultarlo, pásalo a borrador.',
+      confirmText: 'Eliminar', danger: true,
+    });
+    if (!ok) return;
     this.http.delete(`${environment.apiUrl}/admin/blog/posts/${post.id}`).subscribe({
       next: () => { this.toast.success('Artículo eliminado'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al eliminar'),
+      error: (err) => this.toast.error(err.message || 'Error al eliminar'),
     });
   }
 }

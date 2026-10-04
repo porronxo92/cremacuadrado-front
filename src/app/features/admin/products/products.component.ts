@@ -5,6 +5,9 @@ import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
 import { Category, ProductImage, ProductNutrition } from '../../../core/models';
+import { AdminApiService } from '../shared/admin-api.service';
+import { adminListState } from '../shared/admin-list-state';
+import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
 
 interface AdminVariant {
   id: number;
@@ -53,67 +56,95 @@ function slugify(text: string): string {
 @Component({
   selector: 'app-admin-products',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, ...ADMIN_UI],
   template: `
-    <div class="admin-products">
-      <div class="page-header">
-        <h1>Gestión de Productos</h1>
-        <button class="btn btn--primary" (click)="openForm()">+ Nuevo producto</button>
+    <div class="admin-products adm-page">
+      <header class="adm-page-header">
+        <div>
+          <h1>Productos</h1>
+          <p>{{ state.total() }} productos · despliega uno para ver y editar sus variantes</p>
+        </div>
+        <div class="adm-page-actions">
+          <button type="button" class="adm-btn adm-btn--primary" (click)="openForm()">+ Nuevo producto</button>
+        </div>
+      </header>
+
+      <div class="adm-filters">
+        <label class="adm-field adm-field--search">
+          <span>Buscar</span>
+          <input type="search" [(ngModel)]="f.search" (input)="state.typed()" placeholder="Nombre o SKU">
+        </label>
+        <label class="adm-field">
+          <span>Categoría</span>
+          <select [(ngModel)]="f.category" (change)="state.apply()">
+            <option value="">Todas</option>
+            @for (c of categories(); track c.id) { <option [value]="c.slug">{{ c.name }}</option> }
+          </select>
+        </label>
+        <label class="adm-field">
+          <span>Estado</span>
+          <select [(ngModel)]="f.include_inactive" (change)="state.apply()">
+            <option value="true">Activos e inactivos</option>
+            <option value="false">Solo activos</option>
+          </select>
+        </label>
       </div>
       
       @if (loading()) {
         <div class="loading">Cargando productos...</div>
       } @else {
-        <div class="products-table-container">
-          <table class="products-table">
+        <div class="adm-table-wrap is-responsive">
+          <table class="adm-table is-responsive products-table">
             <thead>
               <tr>
                 <th>Imagen</th>
                 <th>Nombre</th>
-                <th>Precio (desde)</th>
-                <th>Stock total</th>
+                <th class="num">Precio (desde)</th>
+                <th class="num">Stock total</th>
                 <th>Categoría</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th class="actions">Acciones</th>
               </tr>
             </thead>
             <tbody>
               @for (product of products(); track product.id) {
                 <tr>
-                  <td>
+                  <td class="thumb-cell" data-label="">
                     <img [src]="primaryImage(product) || '/assets/images/placeholder.jpg'" [alt]="product.name" class="product-thumb">
                   </td>
-                  <td>
-                    <strong>{{ product.name }}</strong>
-                    <small>{{ product.sku }}</small>
+                  <td class="is-primary" data-label="Nombre">
+                    <div>
+                      <strong>{{ product.name }}</strong>
+                      <small>{{ product.sku }}</small>
+                    </div>
                   </td>
-                  <td>
+                  <td class="num" data-label="Precio desde">
                     <strong>{{ minPrice(product) | currency:'EUR' }}</strong>
                   </td>
-                  <td>
-                    <span [class.low-stock]="totalStock(product) <= 5">{{ totalStock(product) }}</span>
+                  <td class="num" data-label="Stock total">
+                    <span [class.low-stock]="hasLowStock(product)">{{ totalStock(product) }}</span>
                   </td>
-                  <td>{{ product.category?.name || '-' }}</td>
-                  <td>
-                    <span class="status-badge" [class.active]="product.is_active">
-                      {{ product.is_active ? 'Activo' : 'Inactivo' }}
-                    </span>
+                  <td data-label="Categoría">{{ product.category?.name || '-' }}</td>
+                  <td data-label="Estado">
+                    <adm-badge [tone]="product.is_active ? 'success' : 'neutral'">{{ product.is_active ? 'Activo' : 'Inactivo' }}</adm-badge>
+                    @if (product.is_featured) { <adm-badge tone="brand">Destacado</adm-badge> }
                   </td>
-                  <td class="actions">
+                  <td class="actions" data-label="">
                     <button class="btn btn--icon" (click)="toggleVariants(product.id)" title="Variantes"
+                      [attr.aria-label]="'Variantes de ' + product.name" [attr.aria-expanded]="expandedProduct() === product.id"
                       [class.active]="expandedProduct() === product.id">
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
                         <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
                       </svg>
                     </button>
-                    <button class="btn btn--icon" (click)="editProduct(product)" title="Editar">
+                    <button class="btn btn--icon" (click)="editProduct(product)" title="Editar" [attr.aria-label]="'Editar ' + product.name">
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                       </svg>
                     </button>
-                    <button class="btn btn--icon btn--danger" (click)="deleteProduct(product.id)" title="Eliminar">
+                    <button class="btn btn--icon btn--danger" (click)="deleteProduct(product)" title="Eliminar" [attr.aria-label]="'Desactivar ' + product.name">
                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6"></polyline>
                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -121,9 +152,9 @@ function slugify(text: string): string {
                     </button>
                   </td>
                 </tr>
-                @if (expandedProduct() === product.id && product.variants?.length) {
+                @if (expandedProduct() === product.id) {
                   <tr class="variants-row">
-                    <td colspan="7">
+                    <td colspan="7" data-label="">
                       <div class="variants-panel">
                         <div class="variants-panel__header">
                           <h4>Variantes de {{ product.name }}</h4>
@@ -132,7 +163,7 @@ function slugify(text: string): string {
                             <button class="btn btn--secondary btn--sm" (click)="openNewVariant(product)">+ Nueva variante</button>
                           </div>
                         </div>
-                        <table class="variants-table">
+                        <table class="adm-table is-responsive variants-table">
                           <thead>
                             <tr>
                               <th>Imagen</th>
@@ -148,32 +179,30 @@ function slugify(text: string): string {
                           <tbody>
                             @for (v of product.variants; track v.id) {
                               <tr>
-                                <td>
-                                  <img [src]="v.images?.at(0)?.url || '/assets/images/placeholder.jpg'"
+                                <td class="thumb-cell" data-label="">
+                                  <img [src]="v.images.at(0)?.url || '/assets/images/placeholder.jpg'"
                                     [alt]="product.name + ' ' + v.format" class="product-thumb">
                                 </td>
-                                <td><strong>{{ v.format }}</strong></td>
-                                <td><small>{{ v.sku || '-' }}</small></td>
-                                <td>{{ v.price | currency:'EUR' }}</td>
-                                <td>
+                                <td class="is-primary" data-label="Formato"><strong>{{ v.format }}</strong></td>
+                                <td data-label="SKU"><small>{{ v.sku || '-' }}</small></td>
+                                <td data-label="Precio">{{ v.price | currency:'EUR' }}</td>
+                                <td data-label="Precio anterior">
                                   @if (v.compare_price) {
                                     <small class="compare-price">{{ v.compare_price | currency:'EUR' }}</small>
                                   } @else { - }
                                 </td>
-                                <td><span [class.low-stock]="v.is_low_stock">{{ v.stock }}</span></td>
-                                <td>
-                                  <span class="status-badge" [class.active]="v.is_active">
-                                    {{ v.is_active ? 'Activo' : 'Inactivo' }}
-                                  </span>
+                                <td data-label="Stock"><span [class.low-stock]="v.is_low_stock">{{ v.stock }}</span></td>
+                                <td data-label="Estado">
+                                  <adm-badge [tone]="v.is_active ? 'success' : 'neutral'">{{ v.is_active ? 'Activo' : 'Inactivo' }}</adm-badge>
                                 </td>
-                                <td class="actions">
-                                  <button class="btn btn--icon" (click)="editVariant(product, v)" title="Editar variante">
+                                <td class="actions" data-label="">
+                                  <button class="btn btn--icon" (click)="editVariant(product, v)" title="Editar variante" [attr.aria-label]="'Editar variante ' + v.format">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                     </svg>
                                   </button>
-                                  <button class="btn btn--icon btn--danger" (click)="deleteVariant(product, v)" title="Eliminar variante">
+                                  <button class="btn btn--icon btn--danger" (click)="deleteVariant(product, v)" title="Eliminar variante" [attr.aria-label]="'Eliminar variante ' + v.format">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                       <polyline points="3 6 5 6 21 6"></polyline>
                                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -181,6 +210,8 @@ function slugify(text: string): string {
                                   </button>
                                 </td>
                               </tr>
+                            } @empty {
+                              <tr><td colspan="8" class="adm-empty">Sin variantes. Crea la primera con “+ Nueva variante”.</td></tr>
                             }
                           </tbody>
                         </table>
@@ -190,12 +221,15 @@ function slugify(text: string): string {
                 }
               } @empty {
                 <tr>
-                  <td colspan="7" class="empty">No hay productos</td>
+                  <td colspan="7" class="adm-empty">No hay productos que coincidan</td>
                 </tr>
               }
             </tbody>
           </table>
         </div>
+        <adm-pagination [page]="state.page()" [pageSize]="state.pageSize()" [total]="state.total()"
+                        [totalPages]="state.totalPages()" (pageChange)="state.goTo($event)"
+                        (pageSizeChange)="state.setPageSize($event)" />
       }
       
       <!-- Variant create/edit modal -->
@@ -477,43 +511,7 @@ function slugify(text: string): string {
     .admin-products {
     }
     
-    .page-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 2rem;
-      
-      h1 {
-        margin: 0;
-        color: #333;
-      }
-    }
-    
-    .products-table-container {
-      background: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .products-table {
-      width: 100%;
-      border-collapse: collapse;
-      
-      th, td {
-        padding: 1rem;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-      }
-      
-      th {
-        background: #f9f9f9;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: #666;
-        text-transform: uppercase;
-      }
-      
+    .products-table, .variants-table {
       td {
         vertical-align: middle;
         
@@ -625,6 +623,21 @@ function slugify(text: string): string {
       color: #666;
     }
     
+    td adm-badge + adm-badge { margin-left: 0.25rem; }
+    .variants-row > td { background: #FAF7F0; }
+    .variants-table { margin-top: 0.5rem; }
+
+    @media (max-width: 768px) {
+      .thumb-cell { justify-content: center !important; }
+      .thumb-cell .product-thumb { width: 72px; height: 72px; }
+      .variants-row > td { display: block !important; padding: 0.5rem !important; }
+      .variants-panel__header { flex-wrap: wrap; gap: 0.5rem; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      .modal { max-width: none !important; max-height: 92vh; border-radius: 14px 14px 0 0 !important; }
+      .form-row { grid-template-columns: 1fr !important; }
+      .modal-footer { flex-wrap: wrap; button { flex: 1 1 auto; min-height: 44px; } }
+    }
+
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -936,7 +949,11 @@ export class AdminProductsComponent implements OnInit {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
   private toastService = inject(ToastService);
-  
+  private confirm = inject(AdminConfirmService);
+
+  state = adminListState({ search: '', category: '', include_inactive: 'true' }, () => this.loadProducts());
+  f = this.state.filters;
+
   products = signal<AdminProduct[]>([]);
   categories = signal<Category[]>([]);
   loading = signal(true);
@@ -1005,6 +1022,10 @@ export class AdminProductsComponent implements OnInit {
     return product.variants.reduce((sum, v) => sum + v.stock, 0);
   }
 
+  hasLowStock(product: AdminProduct): boolean {
+    return product.variants.some(v => v.is_active && v.is_low_stock);
+  }
+
   initVariantForm(): void {
     this.variantForm = this.fb.group({
       format: ['100g'],
@@ -1042,9 +1063,13 @@ export class AdminProductsComponent implements OnInit {
   }
   
   loadProducts(): void {
-    this.http.get<{items: AdminProduct[]}>(`${environment.apiUrl}/admin/products`).subscribe({
+    const params = AdminApiService.params(this.state.query());
+    this.http.get<{ items: AdminProduct[]; total: number; page: number; total_pages: number }>(
+      `${environment.apiUrl}/admin/products`, { params },
+    ).subscribe({
       next: (response) => {
         this.products.set(response.items);
+        this.state.setPage(response);
         this.loading.set(false);
         // Keep the currently-open modal's product data in sync after a reload
         const editing = this.editingProduct();
@@ -1155,18 +1180,22 @@ export class AdminProductsComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.formError.set(err.error?.detail || 'Error al guardar el producto');
+        this.formError.set(err.message || 'Error al guardar el producto');
       }
     });
   }
   
-  deleteProduct(productId: number): void {
-    if (confirm('¿Estás seguro de que quieres eliminar este producto?')) {
-      this.http.delete(`${environment.apiUrl}/admin/products/${productId}`).subscribe({
-        next: () => this.loadProducts(),
-        error: (err) => this.toastService.error('Error: ' + (err.error?.detail || 'Error al eliminar'))
-      });
-    }
+  async deleteProduct(product: AdminProduct): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `¿Desactivar ${product.name}?`,
+      message: 'El producto dejará de verse en la tienda. Sus pedidos y datos se conservan y puedes reactivarlo editándolo.',
+      confirmText: 'Desactivar', danger: true,
+    });
+    if (!ok) return;
+    this.http.delete(`${environment.apiUrl}/admin/products/${product.id}`).subscribe({
+      next: () => { this.toastService.success('Producto desactivado'); this.loadProducts(); },
+      error: (err) => this.toastService.error(err.message || 'Error al desactivar'),
+    });
   }
 
   // ── Product gallery management ──────────────────────────────────────────────
@@ -1195,13 +1224,13 @@ export class AdminProductsComponent implements OnInit {
           },
           error: (err) => {
             this.productUploadingImage.set(false);
-            this.toastService.error(err.error?.detail || 'Error al guardar la imagen');
+            this.toastService.error(err.message || 'Error al guardar la imagen');
           },
         });
       },
       error: (err) => {
         this.productUploadingImage.set(false);
-        this.toastService.error('Error al subir imagen: ' + (err.error?.detail || 'Error desconocido'));
+        this.toastService.error('Error al subir imagen: ' + (err.message || 'Error desconocido'));
       },
     });
     input.value = '';
@@ -1212,17 +1241,17 @@ export class AdminProductsComponent implements OnInit {
     if (!product) return;
     this.http.put(`${environment.apiUrl}/admin/products/${product.id}/images/${image.id}`, { is_primary: true }).subscribe({
       next: () => this.loadProducts(),
-      error: (err) => this.toastService.error(err.error?.detail || 'Error al actualizar la imagen'),
+      error: (err) => this.toastService.error(err.message || 'Error al actualizar la imagen'),
     });
   }
 
-  removeProductImage(image: ProductImage): void {
+  async removeProductImage(image: ProductImage): Promise<void> {
     const product = this.editingProduct();
     if (!product) return;
-    if (!confirm('¿Eliminar esta imagen?')) return;
+    if (!(await this.confirm.ask({ title: '¿Eliminar esta imagen?', message: 'Se quitará de la galería del producto.', confirmText: 'Eliminar', danger: true }))) return;
     this.http.delete(`${environment.apiUrl}/admin/products/${product.id}/images/${image.id}`).subscribe({
       next: () => this.loadProducts(),
-      error: (err) => this.toastService.error(err.error?.detail || 'Error al eliminar la imagen'),
+      error: (err) => this.toastService.error(err.message || 'Error al eliminar la imagen'),
     });
   }
 
@@ -1242,12 +1271,12 @@ export class AdminProductsComponent implements OnInit {
         this.productForm.patchValue({ audioUrl: res.url });
         this.http.put(`${environment.apiUrl}/admin/products/${product.id}`, { audio_url: res.url }).subscribe({
           next: () => { this.uploadingAudio.set(false); this.toastService.success('Audio actualizado'); this.loadProducts(); },
-          error: (err) => { this.uploadingAudio.set(false); this.toastService.error(err.error?.detail || 'Error al guardar el audio'); },
+          error: (err) => { this.uploadingAudio.set(false); this.toastService.error(err.message || 'Error al guardar el audio'); },
         });
       },
       error: (err) => {
         this.uploadingAudio.set(false);
-        this.toastService.error('Error al subir audio: ' + (err.error?.detail || 'Error desconocido'));
+        this.toastService.error('Error al subir audio: ' + (err.message || 'Error desconocido'));
       },
     });
     input.value = '';
@@ -1282,7 +1311,7 @@ export class AdminProductsComponent implements OnInit {
       },
       error: (err) => {
         this.savingNutrition.set(false);
-        this.nutritionFormError.set(err.error?.detail || 'Error al guardar la nutrición');
+        this.nutritionFormError.set(err.message || 'Error al guardar la nutrición');
       },
     });
   }
@@ -1327,11 +1356,16 @@ export class AdminProductsComponent implements OnInit {
     this.variantImagePreview.set(null);
   }
 
-  deleteVariant(product: AdminProduct, variant: AdminVariant): void {
-    if (!confirm(`¿Eliminar la variante ${variant.format}? Si tiene pedidos asociados, desactívala en su lugar.`)) return;
+  async deleteVariant(product: AdminProduct, variant: AdminVariant): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `¿Eliminar la variante ${variant.format}?`,
+      message: 'Si tiene pedidos asociados, mejor desactívala en lugar de eliminarla.',
+      confirmText: 'Eliminar', danger: true,
+    });
+    if (!ok) return;
     this.http.delete(`${environment.apiUrl}/admin/products/${product.id}/variants/${variant.id}`).subscribe({
       next: () => { this.toastService.success('Variante eliminada'); this.loadProducts(); },
-      error: (err) => this.toastService.error(err.error?.detail || 'Error al eliminar la variante'),
+      error: (err) => this.toastService.error(err.message || 'Error al eliminar la variante'),
     });
   }
 
@@ -1362,7 +1396,7 @@ export class AdminProductsComponent implements OnInit {
       },
       error: (err) => {
         this.savingVariant.set(false);
-        this.variantFormError.set(err.error?.detail || 'Error al guardar la variante');
+        this.variantFormError.set(err.message || 'Error al guardar la variante');
       },
     });
   }
@@ -1391,7 +1425,7 @@ export class AdminProductsComponent implements OnInit {
       },
       error: (err) => {
         this.variantUploadingImage.set(false);
-        this.toastService.error('Error al subir imagen: ' + (err.error?.detail || 'Error desconocido'));
+        this.toastService.error('Error al subir imagen: ' + (err.message || 'Error desconocido'));
       },
     });
     input.value = '';

@@ -1,727 +1,525 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { environment } from '../../../../environments/environment';
+import { RouterModule } from '@angular/router';
+import { forkJoin, of, catchError } from 'rxjs';
 import { ToastService } from '../../../core/services/toast.service';
-import { Order } from '../../../core/models';
+import { AdminApiService } from '../shared/admin-api.service';
+import { AdminOrder, OrderPayments, OrderShipment } from '../shared/admin.models';
+import { ORDER_STATUS, ORDER_STATUS_EDITABLE, PAYMENT_STATUS, SHIPMENT_STATUS, statusInfo } from '../shared/admin-labels';
+import { adminListState } from '../shared/admin-list-state';
+import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
 
 @Component({
   selector: 'app-admin-orders',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
   template: `
-    <div class="admin-orders">
-      <h1>Gestión de Pedidos</h1>
-      
+    <div class="adm-page">
+      <header class="adm-page-header">
+        <div>
+          <h1>Pedidos</h1>
+          <p>{{ state.total() }} pedidos{{ hasFilters() ? ' con los filtros aplicados' : '' }}</p>
+        </div>
+        <div class="adm-page-actions">
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="exportCsv()" [disabled]="exporting()">
+            {{ exporting() ? 'Exportando…' : 'Exportar CSV' }}
+          </button>
+        </div>
+      </header>
+
       <!-- Filters -->
-      <div class="filters">
-        <div class="filter-group">
-          <label>Estado:</label>
-          <select [(ngModel)]="statusFilter" (change)="loadOrders()">
+      <div class="adm-filters">
+        <label class="adm-field adm-field--search">
+          <span>Buscar</span>
+          <input type="search" [(ngModel)]="f.search" (input)="state.typed()"
+                 placeholder="Nº pedido, email, nombre, tracking…">
+        </label>
+        <label class="adm-field">
+          <span>Estado</span>
+          <select [(ngModel)]="f.status" (change)="state.apply()">
             <option value="">Todos</option>
-            <option value="pending">Pendientes</option>
-            <option value="processing">En proceso</option>
-            <option value="shipped">Enviados</option>
-            <option value="delivered">Entregados</option>
-            <option value="cancelled">Cancelados</option>
+            <option value="paid,processing">Por preparar</option>
+            @for (s of statusOptions; track s) { <option [value]="s">{{ label(s) }}</option> }
+            <option value="payment_failed">Pago fallido</option>
+            <option value="partially_refunded">Reembolso parcial</option>
           </select>
-        </div>
-        
-        <div class="filter-group">
-          <label>Buscar:</label>
-          <input type="text" [(ngModel)]="searchTerm" placeholder="Nº pedido o email..." (keyup.enter)="loadOrders()">
-        </div>
+        </label>
+        <label class="adm-field">
+          <span>Desde</span>
+          <input type="date" [(ngModel)]="f.date_from" (change)="state.apply()">
+        </label>
+        <label class="adm-field">
+          <span>Hasta</span>
+          <input type="date" [(ngModel)]="f.date_to" (change)="state.apply()">
+        </label>
+        <label class="adm-field">
+          <span>Cupón</span>
+          <input type="text" [(ngModel)]="f.coupon_code" (input)="state.typed()" placeholder="Código">
+        </label>
+        @if (hasFilters()) {
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="state.reset()">Limpiar</button>
+        }
       </div>
-      
+
+      @if (f.user_id) {
+        <div class="adm-callout adm-callout--info">
+          Mostrando solo los pedidos del cliente #{{ f.user_id }}.
+          <button type="button" class="adm-link" (click)="f.user_id = ''; state.apply()">Ver todos</button>
+        </div>
+      }
+
       @if (loading()) {
-        <div class="loading">Cargando pedidos...</div>
+        <div class="adm-loading">Cargando pedidos…</div>
       } @else {
-        <div class="orders-table-container">
-          <table class="orders-table">
+        <div class="adm-table-wrap is-responsive">
+          <table class="adm-table is-responsive">
             <thead>
               <tr>
-                <th>Pedido</th>
+                <th class="is-sortable" (click)="state.sortBy('order_number')">Pedido{{ state.sortIcon('order_number') }}</th>
                 <th>Cliente</th>
-                <th>Fecha</th>
-                <th>Total</th>
+                <th class="is-sortable" (click)="state.sortBy('created_at')">Fecha{{ state.sortIcon('created_at') }}</th>
+                <th class="num is-sortable" (click)="state.sortBy('total')">Total{{ state.sortIcon('total') }}</th>
                 <th>Estado</th>
                 <th>Seguimiento</th>
-                <th>Acciones</th>
+                <th class="actions">Acciones</th>
               </tr>
             </thead>
             <tbody>
               @for (order of orders(); track order.id) {
                 <tr>
-                  <td>
-                    <strong>{{ order.order_number }}</strong>
-                    <small>{{ order.item_count }} artículos</small>
+                  <td class="is-primary" data-label="Pedido">
+                    <div>
+                      <button type="button" class="adm-link mono" (click)="openDetail(order)">{{ order.order_number }}</button>
+                      <span class="sub">{{ order.item_count }} artículo{{ order.item_count === 1 ? '' : 's' }}</span>
+                    </div>
                   </td>
-                  <td>
-                    <span>{{ order.shipping_address.first_name }} {{ order.shipping_address.last_name }}</span>
+                  <td data-label="Cliente">
+                    <div>
+                      @if (order.user_id) {
+                        <a class="adm-link" [routerLink]="['/admin/clientes', order.user_id]">{{ order.customer_name || order.customer_email }}</a>
+                      } @else {
+                        {{ order.customer_name || '—' }} <adm-badge>Invitado</adm-badge>
+                      }
+                      <span class="sub">{{ order.customer_email }}</span>
+                    </div>
                   </td>
-                  <td>{{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
-                  <td><strong>{{ order.total | currency:'EUR' }}</strong></td>
-                  <td>
-                    <span class="status-badge" [class]="'status--' + order.status">
-                      {{ getStatusLabel(order.status) }}
-                    </span>
+                  <td data-label="Fecha">{{ order.created_at | date:'dd/MM/yy HH:mm' }}</td>
+                  <td class="num" data-label="Total">
+                    <div>
+                      <strong>{{ order.total | currency:'EUR' }}</strong>
+                      @if (order.coupon_code) { <span class="sub">🏷 {{ order.coupon_code }}</span> }
+                    </div>
                   </td>
-                  <td>
-                    @if (order.tracking_number) {
-                      <span class="tracking-number">{{ order.tracking_number }}</span>
-                    } @else {
-                      <span class="tracking-empty">—</span>
-                    }
-                  </td>
-                  <td class="actions">
-                    <button class="btn btn--icon" (click)="viewOrder(order)" title="Ver detalles">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    </button>
-                    <select 
-                      class="status-select"
-                      [value]="order.status"
-                      (change)="onStatusChange(order, $event)">
-                      <option value="pending">Pendiente</option>
-                      <option value="processing">En proceso</option>
-                      <option value="shipped">Enviado</option>
-                      <option value="delivered">Entregado</option>
-                      <option value="cancelled">Cancelado</option>
+                  <td data-label="Estado"><adm-badge [tone]="status(order.status).tone">{{ status(order.status).label }}</adm-badge></td>
+                  <td data-label="Seguimiento"><span class="mono">{{ order.tracking_number || '—' }}</span></td>
+                  <td class="actions" data-label="">
+                    <select class="adm-input status-select" [value]="order.status" (change)="onStatusChange(order, $event)"
+                            [attr.aria-label]="'Cambiar estado del pedido ' + order.order_number">
+                      @for (s of statusOptions; track s) { <option [value]="s" [selected]="s === order.status">{{ label(s) }}</option> }
+                      @if (!statusOptions.includes(order.status)) { <option [value]="order.status" selected>{{ label(order.status) }}</option> }
                     </select>
+                    <button type="button" class="adm-btn adm-btn--sm" (click)="openDetail(order)">Ver</button>
                   </td>
                 </tr>
               } @empty {
-                <tr>
-                  <td colspan="7" class="empty">No hay pedidos</td>
-                </tr>
+                <tr><td colspan="7" class="adm-empty">No hay pedidos que coincidan con los filtros</td></tr>
               }
             </tbody>
           </table>
         </div>
-        
-        <!-- Pagination -->
-        @if (totalPages() > 1) {
-          <div class="pagination">
-            <button (click)="goToPage(currentPage() - 1)" [disabled]="currentPage() === 1">Anterior</button>
-            <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
-            <button (click)="goToPage(currentPage() + 1)" [disabled]="currentPage() === totalPages()">Siguiente</button>
-          </div>
-        }
-      }
-      
-      <!-- Order detail modal -->
-      @if (selectedOrder()) {
-        <div class="modal-overlay" (click)="closeModal()">
-          <div class="modal" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h2>Pedido {{ selectedOrder()!.order_number }}</h2>
-              <button class="close-btn" (click)="closeModal()">×</button>
-            </div>
-            
-            <div class="modal-body">
-              <div class="order-grid">
-                <div class="order-section">
-                  <h3>Cliente</h3>
-                  <p>
-                    {{ selectedOrder()!.shipping_address.first_name }} {{ selectedOrder()!.shipping_address.last_name }}<br>
-                    Email: {{ selectedOrder()!.customer_email || '—' }}<br>
-                    Tel: {{ selectedOrder()!.shipping_address.phone }}
-                  </p>
-                </div>
-                
-                <div class="order-section">
-                  <h3>Dirección de envío</h3>
-                  <p>
-                    {{ selectedOrder()!.shipping_address.street }}<br>
-                    {{ selectedOrder()!.shipping_address.postal_code }} {{ selectedOrder()!.shipping_address.city }}<br>
-                    {{ selectedOrder()!.shipping_address.province }}, {{ selectedOrder()!.shipping_address.country }}
-                  </p>
-                </div>
-              </div>
-              
-              <div class="order-section">
-                <h3>Productos</h3>
-                <table class="items-table">
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th>Precio</th>
-                      <th>Cantidad</th>
-                      <th>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of selectedOrder()!.items; track item.id) {
-                      <tr>
-                        <td>{{ item.product_name }}</td>
-                        <td>{{ item.unit_price | currency:'EUR' }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ item.total | currency:'EUR' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-              
-              <div class="order-totals">
-                <div class="total-row">
-                  <span>Subtotal</span>
-                  <span>{{ selectedOrder()!.subtotal | currency:'EUR' }}</span>
-                </div>
-                <div class="total-row">
-                  <span>Envío</span>
-                  <span>{{ selectedOrder()!.shipping_cost | currency:'EUR' }}</span>
-                </div>
-                @if (selectedOrder()!.discount > 0) {
-                  <div class="total-row discount">
-                    <span>Descuento</span>
-                    <span>-{{ selectedOrder()!.discount | currency:'EUR' }}</span>
-                  </div>
-                }
-                <div class="total-row grand-total">
-                  <span>Total</span>
-                  <span>{{ selectedOrder()!.total | currency:'EUR' }}</span>
-                </div>
-              </div>
-              
-              @if (selectedOrder()!.customer_notes) {
-                <div class="order-section">
-                  <h3>Notas del cliente</h3>
-                  <p class="notes">{{ selectedOrder()!.customer_notes }}</p>
-                </div>
-              }
-            </div>
-          </div>
-        </div>
-      }
 
-      <!-- Tracking modal -->
-      @if (trackingOrder()) {
-        <div class="modal-overlay" (click)="closeTrackingModal()">
-          <div class="modal modal--small" (click)="$event.stopPropagation()">
-            <div class="modal-header">
-              <h2>Marcar como enviado</h2>
-              <button class="close-btn" (click)="closeTrackingModal()">×</button>
-            </div>
-            <div class="modal-body">
-              <p class="tracking-help">
-                Introduce el nº de seguimiento del pedido <strong>{{ trackingOrder()!.order_number }}</strong>.
-                Se enviará un email de "pedido enviado" al cliente.
-              </p>
-              <input
-                type="text"
-                class="tracking-input"
-                [(ngModel)]="trackingNumber"
-                placeholder="Nº de seguimiento"
-                maxlength="100"
-                (keyup.enter)="confirmShipped()">
-              <div class="tracking-actions">
-                <button class="btn-secondary" (click)="closeTrackingModal()" [disabled]="savingTracking()">Cancelar</button>
-                <button class="btn-primary" (click)="confirmShipped()" [disabled]="!trackingNumber.trim() || savingTracking()">
-                  {{ savingTracking() ? 'Guardando...' : 'Confirmar envío' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <adm-pagination [page]="state.page()" [pageSize]="state.pageSize()" [total]="state.total()"
+                        [totalPages]="state.totalPages()" (pageChange)="state.goTo($event)"
+                        (pageSizeChange)="state.setPageSize($event)" />
       }
     </div>
+
+    <!-- Order detail -->
+    @if (detail(); as o) {
+      <adm-modal [title]="'Pedido ' + o.order_number" size="lg" (closed)="detail.set(null)">
+        <div class="detail-head">
+          <adm-badge [tone]="status(o.status).tone">{{ status(o.status).label }}</adm-badge>
+          <span class="adm-muted">Creado {{ o.created_at | date:'dd/MM/yyyy HH:mm' }}</span>
+          @if (o.paid_at) { <span class="adm-muted">· Pagado {{ o.paid_at | date:'dd/MM/yyyy HH:mm' }}</span> }
+          @if (o.shipped_at) { <span class="adm-muted">· Enviado {{ o.shipped_at | date:'dd/MM/yyyy' }}</span> }
+          @if (o.delivered_at) { <span class="adm-muted">· Entregado {{ o.delivered_at | date:'dd/MM/yyyy' }}</span> }
+        </div>
+
+        <div class="adm-grid--2">
+          <section class="adm-card">
+            <h3>Cliente</h3>
+            <dl class="adm-dl">
+              <dt>Nombre</dt><dd>{{ o.customer_name || '—' }}</dd>
+              <dt>Email</dt><dd>{{ o.customer_email || '—' }}</dd>
+              <dt>Teléfono</dt><dd>{{ o.shipping_address.phone || '—' }}</dd>
+              <dt>Cuenta</dt>
+              <dd>
+                @if (o.user_id) {
+                  <a class="adm-link" [routerLink]="['/admin/clientes', o.user_id]" (click)="detail.set(null)">Ver ficha del cliente →</a>
+                } @else { Compra como invitado }
+              </dd>
+            </dl>
+          </section>
+          <section class="adm-card">
+            <h3>Dirección de envío</h3>
+            <p class="addr">
+              {{ o.shipping_address.first_name }} {{ o.shipping_address.last_name }}<br>
+              {{ o.shipping_address.street }}@if (o.shipping_address.street_2) {, {{ o.shipping_address.street_2 }}}<br>
+              {{ o.shipping_address.postal_code }} {{ o.shipping_address.city }} ({{ o.shipping_address.province }})<br>
+              {{ o.shipping_address.country }}
+            </p>
+            @if (o.billing_address) {
+              <h3>Facturación</h3>
+              <p class="addr">
+                {{ o.billing_address.first_name }} {{ o.billing_address.last_name }}<br>
+                {{ o.billing_address.street }}, {{ o.billing_address.postal_code }} {{ o.billing_address.city }}
+              </p>
+            }
+          </section>
+        </div>
+
+        <section class="adm-card adm-card--flush">
+          <div class="adm-table-wrap">
+            <table class="adm-table">
+              <thead><tr><th>Producto</th><th class="num">Precio</th><th class="num">Uds.</th><th class="num">Total</th></tr></thead>
+              <tbody>
+                @for (item of o.items; track item.id) {
+                  <tr>
+                    <td>{{ item.product_name }} @if (item.product_sku) { <span class="sub mono">{{ item.product_sku }}</span> }</td>
+                    <td class="num">{{ item.unit_price | currency:'EUR' }}</td>
+                    <td class="num">{{ item.quantity }}</td>
+                    <td class="num">{{ item.total | currency:'EUR' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <dl class="adm-dl totals">
+            <dt>Subtotal</dt><dd>{{ o.subtotal | currency:'EUR' }}</dd>
+            <dt>Envío</dt><dd>{{ o.shipping_cost | currency:'EUR' }}</dd>
+            @if (o.discount > 0) {
+              <dt>Descuento @if (o.coupon_code) { (<a class="adm-link" [routerLink]="['/admin/cupones']" [queryParams]="{ search: o.coupon_code }" (click)="detail.set(null)">{{ o.coupon_code }}</a>) }</dt>
+              <dd class="discount">−{{ o.discount | currency:'EUR' }}</dd>
+            }
+            <dt><strong>Total</strong></dt><dd><strong>{{ o.total | currency:'EUR' }}</strong></dd>
+          </dl>
+        </section>
+
+        <div class="adm-grid--2">
+          <section class="adm-card">
+            <h3>Pago</h3>
+            @if (detailLoading()) {
+              <p class="adm-muted">Cargando…</p>
+            } @else {
+              <dl class="adm-dl">
+                <dt>Método</dt><dd>{{ o.payment_method || '—' }}</dd>
+                <dt>Stripe PI</dt><dd class="mono">{{ o.payment_intent_id || '—' }}</dd>
+              </dl>
+              @for (pi of payments()?.payment_intents ?? []; track pi.id) {
+                <p class="line"><adm-badge [tone]="payStatus(pi.status).tone">{{ payStatus(pi.status).label }}</adm-badge>
+                  {{ pi.amount | currency:'EUR' }} · {{ pi.payment_method_type || 'card' }} · {{ pi.created_at | date:'dd/MM HH:mm' }}</p>
+              }
+              @for (r of payments()?.refunds ?? []; track r.id) {
+                <p class="line"><adm-badge tone="neutral">Reembolso {{ r.status }}</adm-badge>
+                  −{{ r.amount | currency:'EUR' }} · {{ r.reason || 'sin motivo' }} · {{ r.created_at | date:'dd/MM HH:mm' }}</p>
+              }
+            }
+          </section>
+          <section class="adm-card">
+            <h3>Envío</h3>
+            <dl class="adm-dl">
+              <dt>Seguimiento</dt><dd class="mono">{{ o.tracking_number || '—' }}</dd>
+              @if (shipment()?.shipment; as sh) {
+                <dt>Correos</dt><dd><adm-badge [tone]="shipStatus(sh.status).tone">{{ shipStatus(sh.status).label }}</adm-badge></dd>
+                @if (sh.error) { <dt>Error</dt><dd class="adm-error">{{ sh.error }}</dd> }
+                @if (sh.correos_tracking_url) { <dt>Web</dt><dd><a class="adm-link" [href]="sh.correos_tracking_url" target="_blank" rel="noopener">Ver en Correos ↗</a></dd> }
+              }
+            </dl>
+            @if (shipment()?.shipment?.events?.length) {
+              <ol class="timeline">
+                @for (ev of shipment()!.shipment!.events; track ev.id) {
+                  <li><strong>{{ ev.description || ev.code }}</strong> <span class="adm-muted">{{ ev.occurred_at | date:'dd/MM HH:mm' }}</span></li>
+                }
+              </ol>
+            }
+            <div class="row-actions">
+              @if (!o.tracking_number) {
+                <button type="button" class="adm-btn adm-btn--sm" (click)="askTracking(o)">Marcar como enviado</button>
+              } @else {
+                <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost" (click)="askTracking(o)">Cambiar tracking</button>
+              }
+              @if (shipment()?.shipment?.localizador) {
+                <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost" (click)="syncTracking(o)" [disabled]="syncing()">
+                  {{ syncing() ? 'Consultando…' : 'Actualizar tracking' }}
+                </button>
+                <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost" (click)="downloadLabel(o)">Etiqueta PDF</button>
+              }
+            </div>
+          </section>
+        </div>
+
+        @if (o.customer_notes) {
+          <section class="adm-card">
+            <h3>Notas del cliente</h3>
+            <p class="quote">{{ o.customer_notes }}</p>
+          </section>
+        }
+
+        <section class="adm-card">
+          <h3>Notas internas <small class="adm-muted">(no las ve el cliente)</small></h3>
+          <label class="adm-field">
+            <textarea [(ngModel)]="notesDraft" rows="3" placeholder="Ej.: llamó para cambiar la dirección…"></textarea>
+          </label>
+          <div class="row-actions">
+            <button type="button" class="adm-btn adm-btn--sm adm-btn--primary" (click)="saveNotes(o)"
+                    [disabled]="savingNotes() || notesDraft === (o.admin_notes || '')">
+              {{ savingNotes() ? 'Guardando…' : 'Guardar notas' }}
+            </button>
+          </div>
+        </section>
+      </adm-modal>
+    }
+
+    <!-- Tracking -->
+    @if (trackingOrder(); as t) {
+      <adm-modal title="Número de seguimiento" size="sm" (closed)="closeTracking()" [closable]="!savingTracking()">
+        <p class="adm-muted">
+          Pedido <strong>{{ t.order_number }}</strong>.
+          @if (!t.tracking_number) { Se marcará como enviado y el cliente recibirá el email "pedido enviado". }
+        </p>
+        <label class="adm-field">
+          <span>Nº de seguimiento</span>
+          <input type="text" [(ngModel)]="trackingNumber" maxlength="100" (keyup.enter)="confirmTracking()">
+        </label>
+        <div modal-footer>
+          <button type="button" class="adm-btn adm-btn--ghost" (click)="closeTracking()" [disabled]="savingTracking()">Cancelar</button>
+          <button type="button" class="adm-btn adm-btn--primary" (click)="confirmTracking()" [disabled]="!trackingNumber.trim() || savingTracking()">
+            {{ savingTracking() ? 'Guardando…' : 'Confirmar' }}
+          </button>
+        </div>
+      </adm-modal>
+    }
   `,
   styles: [`
-    .modal--small {
-      max-width: 440px;
-    }
-
-    .tracking-help {
-      margin: 0 0 1rem;
-      color: #333;
-      line-height: 1.5;
-    }
-
-    .tracking-input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 0.6rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 0.95rem;
-    }
-
-    .tracking-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.75rem;
-      margin-top: 1.25rem;
-
-      button {
-        padding: 0.5rem 1rem;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9rem;
-
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-      }
-
-      .btn-secondary {
-        background: #fff;
-        border: 1px solid #ddd;
-        color: #333;
-      }
-
-      .btn-primary {
-        background: #7B1716;
-        border: 1px solid #7B1716;
-        color: #fff;
-      }
-    }
-
-    .admin-orders {
-      h1 {
-        margin: 0 0 2rem;
-        color: #333;
-      }
-    }
-    
-    .filters {
-      display: flex;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-    }
-    
-    .filter-group {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      
-      label {
-        font-size: 0.9rem;
-        color: #666;
-      }
-      
-      select, input {
-        padding: 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 0.9rem;
-      }
-      
-      input {
-        width: 200px;
-      }
-    }
-    
-    .orders-table-container {
-      background: #fff;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-    }
-    
-    .orders-table {
-      width: 100%;
-      border-collapse: collapse;
-      
-      th, td {
-        padding: 1rem;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-      }
-      
-      th {
-        background: #f9f9f9;
-        font-weight: 600;
-        font-size: 0.85rem;
-        color: #666;
-        text-transform: uppercase;
-      }
-      
-      td {
-        strong {
-          display: block;
-          color: #333;
-        }
-        
-        small {
-          color: #999;
-          font-size: 0.8rem;
-        }
-        
-        span {
-          display: block;
-        }
-      }
-      
-      .empty {
-        text-align: center;
-        color: #666;
-        padding: 2rem;
-      }
-    }
-    
-    .status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      
-      &.status--pending {
-        background: #fff3cd;
-        color: #856404;
-      }
-      
-      &.status--processing {
-        background: #cce5ff;
-        color: #004085;
-      }
-      
-      &.status--shipped {
-        background: #d4edda;
-        color: #155724;
-      }
-      
-      &.status--delivered {
-        background: #d4edda;
-        color: #155724;
-      }
-      
-      &.status--cancelled {
-        background: #f8d7da;
-        color: #721c24;
-      }
-    }
-    
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    
-    .btn--icon {
-      background: none;
-      border: none;
-      padding: 0.5rem;
-      cursor: pointer;
-      color: #666;
-      border-radius: 4px;
-      
-      &:hover {
-        background: #f5f5f5;
-        color: #333;
-      }
-    }
-    
-    .status-select {
-      padding: 0.25rem 0.5rem;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 0.8rem;
-    }
-    
-    .tracking-number {
-      font-family: monospace;
-      font-size: 0.85rem;
-      color: #333;
-    }
-    
-    .tracking-empty {
-      color: #ccc;
-    }
-    
-    .pagination {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 1.5rem;
-      
-      button {
-        padding: 0.5rem 1rem;
-        border: 1px solid #ddd;
-        background: #fff;
-        border-radius: 4px;
-        cursor: pointer;
-        
-        &:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-        
-        &:hover:not(:disabled) {
-          border-color: #4a7c4e;
-          color: #4a7c4e;
-        }
-      }
-    }
-    
-    .loading {
-      text-align: center;
-      padding: 3rem;
-      color: #666;
-    }
-    
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-    
-    .modal {
-      background: #fff;
-      border-radius: 8px;
-      width: 100%;
-      max-width: 700px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.5rem;
-      border-bottom: 1px solid #eee;
-      
-      h2 {
-        margin: 0;
-        font-size: 1.2rem;
-      }
-      
-      .close-btn {
-        background: none;
-        border: none;
-        font-size: 1.5rem;
-        cursor: pointer;
-        color: #666;
-      }
-    }
-    
-    .modal-body {
-      padding: 1.5rem;
-    }
-    
-    .order-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.5rem;
-      margin-bottom: 1.5rem;
-      
-      @media (max-width: 500px) {
-        grid-template-columns: 1fr;
-      }
-    }
-    
-    .order-section {
-      margin-bottom: 1.5rem;
-      
-      h3 {
-        font-size: 0.85rem;
-        color: #666;
-        text-transform: uppercase;
-        margin: 0 0 0.5rem;
-      }
-      
-      p {
-        margin: 0;
-        color: #333;
-        line-height: 1.6;
-      }
-      
-      .notes {
-        background: #f9f9f9;
-        padding: 0.75rem;
-        border-radius: 4px;
-        font-style: italic;
-      }
-    }
-    
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      
-      th, td {
-        padding: 0.75rem;
-        text-align: left;
-        border-bottom: 1px solid #eee;
-        font-size: 0.9rem;
-      }
-      
-      th {
-        background: #f9f9f9;
-        font-weight: 500;
-        color: #666;
-      }
-    }
-    
-    .order-totals {
-      background: #f9f9f9;
-      padding: 1rem;
-      border-radius: 4px;
-      margin-top: 1rem;
-    }
-    
-    .total-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-      
-      &.discount {
-        color: #27ae60;
-      }
-      
-      &.grand-total {
-        font-weight: 700;
-        font-size: 1.1rem;
-        border-top: 1px solid #ddd;
-        padding-top: 0.75rem;
-        margin-top: 0.5rem;
-      }
-    }
-  `]
+    .status-select { width: auto; min-height: 34px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
+    .actions { display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center; }
+    .detail-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; font-size: 0.8rem; }
+    .addr { margin: 0 0 0.75rem; line-height: 1.6; }
+    .totals { padding: 1rem 1.25rem; grid-template-columns: 1fr auto; dd { text-align: right; } .discount { color: var(--adm-success); } }
+    .line { margin: 0.4rem 0 0; font-size: 0.82rem; display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+    .timeline { margin: 0.75rem 0 0; padding-left: 1.1rem; font-size: 0.82rem; display: flex; flex-direction: column; gap: 0.3rem; }
+    .row-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
+    .quote { margin: 0; padding: 0.75rem; background: var(--adm-surface-alt); border-radius: 6px; font-style: italic; }
+    @media (max-width: 768px) { .actions { width: 100%; } .status-select { flex: 1; } }
+  `],
 })
 export class AdminOrdersComponent implements OnInit {
-  private http = inject(HttpClient);
-  private toastService = inject(ToastService);
-  
-  orders = signal<Order[]>([]);
+  private api = inject(AdminApiService);
+  private toast = inject(ToastService);
+  private confirm = inject(AdminConfirmService);
+
+  readonly statusOptions = ORDER_STATUS_EDITABLE;
+
+  state = adminListState(
+    { search: '', status: '', date_from: '', date_to: '', coupon_code: '', user_id: '' },
+    () => this.load(),
+    { sort: 'created_at' },
+  );
+  f = this.state.filters;
+
+  orders = signal<AdminOrder[]>([]);
   loading = signal(true);
-  currentPage = signal(1);
-  totalPages = signal(1);
-  selectedOrder = signal<Order | null>(null);
-  trackingOrder = signal<Order | null>(null);
-  savingTracking = signal(false);
+  exporting = signal(false);
+
+  detail = signal<AdminOrder | null>(null);
+  detailLoading = signal(false);
+  payments = signal<OrderPayments | null>(null);
+  shipment = signal<OrderShipment | null>(null);
+  notesDraft = '';
+  savingNotes = signal(false);
+  syncing = signal(false);
+
+  trackingOrder = signal<AdminOrder | null>(null);
   trackingNumber = '';
-  
-  statusFilter = '';
-  searchTerm = '';
-  
+  savingTracking = signal(false);
+
   ngOnInit(): void {
-    this.loadOrders();
+    this.load();
   }
-  
-  loadOrders(): void {
+
+  hasFilters(): boolean {
+    return Object.values(this.f).some(v => !!v);
+  }
+
+  load(): void {
     this.loading.set(true);
-    
-    let url = `${environment.apiUrl}/admin/orders?page=${this.currentPage()}&limit=20`;
-    if (this.statusFilter) {
-      url += `&status=${this.statusFilter}`;
-    }
-    if (this.searchTerm) {
-      url += `&search=${this.searchTerm}`;
-    }
-    
-    this.http.get<{items: Order[], pages: number}>(url).subscribe({
-      next: (response) => {
-        this.orders.set(response.items);
-        this.totalPages.set(response.pages);
+    this.api.orders(this.state.query()).subscribe({
+      next: res => {
+        this.orders.set(res.items);
+        this.state.setPage(res);
         this.loading.set(false);
       },
-      error: () => {
+      error: err => {
         this.loading.set(false);
-      }
+        this.toast.error(err.message || 'Error al cargar los pedidos');
+      },
     });
   }
-  
-  goToPage(page: number): void {
-    this.currentPage.set(page);
-    this.loadOrders();
-  }
-  
-  viewOrder(order: Order): void {
-    this.selectedOrder.set(order);
-  }
-  
-  closeModal(): void {
-    this.selectedOrder.set(null);
-  }
-  
-  onStatusChange(order: Order, event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const status = select.value;
 
-    if (status === 'shipped' && order.status !== 'shipped') {
-      // El estado se aplica al confirmar el nº de seguimiento
-      select.value = order.status;
-      this.trackingNumber = order.tracking_number ?? '';
-      this.trackingOrder.set(order);
+  label(s: string): string { return statusInfo(ORDER_STATUS, s).label; }
+  status(s: string) { return statusInfo(ORDER_STATUS, s); }
+  payStatus(s: string) { return statusInfo(PAYMENT_STATUS, s); }
+  shipStatus(s: string) { return statusInfo(SHIPMENT_STATUS, s); }
+
+  // ── Detail ─────────────────────────────────────────────────────────────
+  openDetail(order: AdminOrder): void {
+    this.detail.set(order);
+    this.notesDraft = order.admin_notes || '';
+    this.payments.set(null);
+    this.shipment.set(null);
+    this.detailLoading.set(true);
+    forkJoin({
+      order: this.api.order(order.id).pipe(catchError(() => of(order))),
+      payments: this.api.orderPayments(order.id).pipe(catchError(() => of(null))),
+      shipment: this.api.orderShipment(order.id).pipe(catchError(() => of(null))),
+    }).subscribe(({ order: fresh, payments, shipment }) => {
+      if (this.detail()?.id !== order.id) return;
+      this.detail.set(fresh);
+      this.notesDraft = fresh.admin_notes || '';
+      this.payments.set(payments);
+      this.shipment.set(shipment);
+      this.detailLoading.set(false);
+    });
+  }
+
+  saveNotes(order: AdminOrder): void {
+    this.savingNotes.set(true);
+    this.api.updateOrderNotes(order.id, this.notesDraft).subscribe({
+      next: updated => {
+        this.savingNotes.set(false);
+        this.detail.set(updated);
+        this.replaceRow(updated);
+        this.toast.success('Notas guardadas');
+      },
+      error: err => {
+        this.savingNotes.set(false);
+        this.toast.error(err.message || 'No se pudieron guardar las notas');
+      },
+    });
+  }
+
+  syncTracking(order: AdminOrder): void {
+    this.syncing.set(true);
+    this.api.syncOrderTracking(order.id).subscribe({
+      next: () => {
+        this.syncing.set(false);
+        this.api.orderShipment(order.id).subscribe(sh => this.shipment.set(sh));
+        this.toast.success('Tracking actualizado');
+      },
+      error: err => {
+        this.syncing.set(false);
+        this.toast.error(err.message || 'No se pudo consultar Correos');
+      },
+    });
+  }
+
+  downloadLabel(order: AdminOrder): void {
+    this.api.download(`/orders/${order.id}/label`, {}, `etiqueta_${order.order_number}.pdf`).subscribe({
+      error: err => this.toast.error(err.message || 'No se pudo descargar la etiqueta'),
+    });
+  }
+
+  // ── Status ─────────────────────────────────────────────────────────────
+  async onStatusChange(order: AdminOrder, event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const next = select.value;
+    select.value = order.status; // the row updates once the API confirms
+
+    if (next === 'shipped' && !order.tracking_number) {
+      this.askTracking(order);
       return;
     }
+    if (['cancelled', 'refunded'].includes(next)) {
+      const ok = await this.confirm.ask({
+        title: `¿Marcar como ${this.label(next).toLowerCase()}?`,
+        message: `El pedido ${order.order_number} pasará a "${this.label(next)}" y el cliente recibirá un email.` +
+          (next === 'refunded' ? '\n\nOjo: esto NO devuelve el dinero en Stripe; hazlo desde el panel de Stripe.' : ''),
+        confirmText: 'Sí, cambiar',
+        danger: true,
+      });
+      if (!ok) return;
+    }
 
-    this.updateStatus(order.id, status);
+    this.api.updateOrderStatus(order.id, next).subscribe({
+      next: updated => {
+        this.replaceRow(updated);
+        this.toast.success(`Pedido ${order.order_number}: ${this.label(next)}`);
+      },
+      error: err => this.toast.error(err.message || 'Error al actualizar el estado'),
+    });
   }
 
-  closeTrackingModal(): void {
+  askTracking(order: AdminOrder): void {
+    this.trackingNumber = order.tracking_number ?? '';
+    this.trackingOrder.set(order);
+  }
+
+  closeTracking(): void {
     if (this.savingTracking()) return;
     this.trackingOrder.set(null);
     this.trackingNumber = '';
   }
 
-  confirmShipped(): void {
+  confirmTracking(): void {
     const order = this.trackingOrder();
     const tracking = this.trackingNumber.trim();
     if (!order || !tracking || this.savingTracking()) return;
-
     this.savingTracking.set(true);
-    const params = new HttpParams().set('tracking_number', tracking);
-    const base = `${environment.apiUrl}/admin/orders/${order.id}`;
 
-    // El tracking envía el email de "pedido enviado" la primera vez que se asigna
-    this.http.patch(`${base}/tracking`, null, { params }).subscribe({
-      next: () => {
-        this.http.patch(`${base}/status`, { status: 'shipped' }).subscribe({
-          next: () => {
+    // Setting the tracking sends the "shipped" email the first time
+    this.api.updateOrderTracking(order.id, tracking).subscribe({
+      next: withTracking => {
+        const done = (o: AdminOrder) => {
+          this.savingTracking.set(false);
+          this.trackingOrder.set(null);
+          this.replaceRow(o);
+          if (this.detail()?.id === o.id) this.detail.set(o);
+          this.toast.success('Seguimiento guardado');
+        };
+        if (['shipped', 'delivered'].includes(withTracking.status)) {
+          done(withTracking);
+          return;
+        }
+        this.api.updateOrderStatus(order.id, 'shipped').subscribe({
+          next: done,
+          error: err => {
             this.savingTracking.set(false);
-            this.closeTrackingModal();
-            this.toastService.success('Pedido marcado como enviado');
-            this.loadOrders();
+            this.toast.error(err.message || 'Error al marcar como enviado');
           },
-          error: (err) => {
-            this.savingTracking.set(false);
-            this.toastService.error('Error al actualizar el estado: ' + err.message);
-          }
         });
       },
-      error: (err) => {
+      error: err => {
         this.savingTracking.set(false);
-        this.toastService.error('Error al guardar el nº de seguimiento: ' + err.message);
-      }
+        this.toast.error(err.message || 'Error al guardar el seguimiento');
+      },
     });
   }
 
-  updateStatus(orderId: number, status: string): void {
-    this.http.patch(`${environment.apiUrl}/admin/orders/${orderId}/status`, { status }).subscribe({
-      next: () => {
-        this.loadOrders();
+  exportCsv(): void {
+    this.exporting.set(true);
+    const { page, page_size, ...filters } = this.state.query();
+    const stamp = new Date().toISOString().slice(0, 10);
+    this.api.download('/orders/export/csv', filters, `pedidos_${stamp}.csv`).subscribe({
+      next: () => this.exporting.set(false),
+      error: err => {
+        this.exporting.set(false);
+        this.toast.error(err.message || 'No se pudo exportar');
       },
-      error: (err) => {
-        this.toastService.error('Error al actualizar el estado: ' + err.message);
-      }
     });
   }
-  
-  getStatusLabel(status: string): string {
-    const labels: Record<string, string> = {
-      'pending': 'Pendiente',
-      'processing': 'En proceso',
-      'shipped': 'Enviado',
-      'delivered': 'Entregado',
-      'cancelled': 'Cancelado'
-    };
-    return labels[status] || status;
+
+  private replaceRow(updated: AdminOrder): void {
+    this.orders.update(list => list.map(o => (o.id === updated.id ? updated : o)));
   }
 }

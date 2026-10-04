@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { AdminConfirmService } from '../shared/admin-ui.components';
 
 interface PointOfSale {
   id: number;
@@ -100,11 +101,22 @@ interface PointOfSale {
     .status-badge.active { background: #E9F3DC; color: #4a7c2c; }
     .error { color: #b00020; font-size: 0.8rem; }
     .loading { color: #8C7F6A; padding: 2rem; text-align: center; }
+
+    @media (max-width: 1024px) {
+      .content-grid, .editor-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    }
+    .list-panel { min-width: 0; overflow-x: auto; }
+    @media (max-width: 768px) {
+      .admin-blog, .admin-categories, .admin-pos, .admin-coupons, .blog-editor { padding: 0 !important; }
+      table th, table td { padding: 0.6rem 0.5rem !important; }
+      button, .btn, select, input { min-height: 40px; }
+    }
   `],
 })
 export class AdminPointsOfSaleComponent implements OnInit {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
+  private confirm = inject(AdminConfirmService);
 
   stores = signal<PointOfSale[]>([]);
   loading = signal(true);
@@ -183,16 +195,21 @@ export class AdminPointsOfSaleComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.formError.set(err.error?.detail || 'Error al guardar');
+        this.formError.set(err.message || 'Error al guardar');
       },
     });
   }
 
-  remove(store: PointOfSale): void {
-    if (!confirm(`¿Eliminar "${store.name}" (${store.city})?`)) return;
+  async remove(store: PointOfSale): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `¿Eliminar "${store.name}"?`,
+      message: `Dejará de aparecer en /puntos-de-venta (${store.city}). Si es temporal, mejor desactívalo.`,
+      confirmText: 'Eliminar', danger: true,
+    });
+    if (!ok) return;
     this.http.delete(`${environment.apiUrl}/admin/points-of-sale/${store.id}`).subscribe({
       next: () => { this.toast.success('Eliminado'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al eliminar'),
+      error: (err) => this.toast.error(err.message || 'Error al eliminar'),
     });
   }
 }
