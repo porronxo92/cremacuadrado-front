@@ -1,12 +1,13 @@
 export const environment = {
   production: true,
-  apiUrl: '/api/v1',
-  // Absolute backend URL used only when rendering on the server (SSR) — a
-  // relative apiUrl can't be resolved from Node, it only works in-browser
-  // via the Vercel rewrite in vercel.json (SSR-01). Update this if/when the
-  // backend moves off Vercel (e.g. to Hostinger) — not verifiable from this
-  // repo alone.
-  serverApiUrl: 'https://cremacuadrado-back.vercel.app/api/v1',
+  // Absolute so each environment (this one, environment.staging.ts) talks to
+  // its own backend directly; a relative URL + a fixed rewrite in vercel.json
+  // could only ever point at one backend. Requires the backend's CORS_ORIGINS
+  // to include this site's origin (allow_credentials is on).
+  apiUrl: 'https://api.cremacuadrado.com/api/v1',
+  // Same value as apiUrl: an absolute URL resolves from Node too, so SSR
+  // doesn't need to rewrite anything (see server-api-url.interceptor.ts).
+  serverApiUrl: 'https://api.cremacuadrado.com/api/v1',
   mediaUrl: '',
   siteName: 'CremaCuadrado',
   siteDescription: 'Cremas de pistacho artesanales de La Mancha',
