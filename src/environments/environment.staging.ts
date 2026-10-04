@@ -3,6 +3,8 @@
 // de pruebas). Se selecciona en el build mediante scripts/build-vercel.mjs.
 export const environment = {
   production: true,
+  siteUrl: 'https://staging.cremacuadrado.com',
+  allowIndexing: false,
   apiUrl: 'https://api-stg.cremacuadrado.com/api/v1',
   // Idéntico a apiUrl: al ser absoluta, el SSR no necesita reescribirla.
   serverApiUrl: 'https://api-stg.cremacuadrado.com/api/v1',

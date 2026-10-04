@@ -8,6 +8,7 @@ import { BlogService } from '../../../core/services/blog.service';
 import { SeoService } from '../../../core/services/seo.service';
 import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 import { BlogPost } from '../../../core/models';
+import { environment } from '@env/environment';
 
 // Static blog data with full content
 const STATIC_BLOG_POSTS: Record<string, BlogPost> = {
@@ -604,7 +605,7 @@ export class BlogDetailComponent implements OnInit {
     const path = `/el-archivo/${post.slug}`;
     const description = (post.excerpt || '').slice(0, 155) || `${post.title} — El Archivo de CremaCuadrado.`;
     const image = post.featured_image_url
-      ? (post.featured_image_url.startsWith('http') ? post.featured_image_url : `https://cremacuadrado.com${post.featured_image_url}`)
+      ? (post.featured_image_url.startsWith('http') ? post.featured_image_url : `${environment.siteUrl}${post.featured_image_url}`)
       : undefined;
 
     this.seo.set({
@@ -627,7 +628,7 @@ export class BlogDetailComponent implements OnInit {
       publisher: {
         '@type': 'Organization',
         name: 'CremaCuadrado',
-        logo: { '@type': 'ImageObject', url: 'https://cremacuadrado.com/assets/images/logocrema2-100x100.png' },
+        logo: { '@type': 'ImageObject', url: `${environment.siteUrl}/assets/images/logocrema2-100x100.png` },
       },
     });
 
@@ -635,9 +636,9 @@ export class BlogDetailComponent implements OnInit {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://cremacuadrado.com/' },
-        { '@type': 'ListItem', position: 2, name: 'El Archivo', item: 'https://cremacuadrado.com/el-archivo' },
-        { '@type': 'ListItem', position: 3, name: post.title, item: `https://cremacuadrado.com${path}` },
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${environment.siteUrl}/` },
+        { '@type': 'ListItem', position: 2, name: 'El Archivo', item: `${environment.siteUrl}/el-archivo` },
+        { '@type': 'ListItem', position: 3, name: post.title, item: `${environment.siteUrl}${path}` },
       ],
     });
   }

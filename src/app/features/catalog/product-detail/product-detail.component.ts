@@ -16,6 +16,7 @@ import { Product, ProductImage, ProductVariant, Review } from '../../../core/mod
 import { FormatSelectorComponent, ProductFormat } from '../components/format-selector/format-selector.component';
 import { PriceDisplayComponent } from '../components/price-display/price-display.component';
 import { AudioPlayerComponent } from '../components/audio-player/audio-player.component';
+import { environment } from '@env/environment';
 
 type Tab = 'producto' | 'ingredientes' | 'nutricion' | 'como-usarlo';
 type PurchaseType = 'once' | 'sub';
@@ -1078,7 +1079,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   private toAbsoluteUrl(url: string): string {
-    return url.startsWith('http') ? url : `https://cremacuadrado.com${url}`;
+    return url.startsWith('http') ? url : `${environment.siteUrl}${url}`;
   }
 
   private updateSeoForProduct(product: Product): void {
@@ -1109,7 +1110,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
         price: (v.price / 100).toFixed(2),
         priceCurrency: 'EUR',
         availability: v.is_in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        url: `https://cremacuadrado.com${path}`,
+        url: `${environment.siteUrl}${path}`,
         itemCondition: 'https://schema.org/NewCondition',
       })),
     });
@@ -1118,9 +1119,9 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://cremacuadrado.com/' },
-        { '@type': 'ListItem', position: 2, name: 'Tienda', item: 'https://cremacuadrado.com/tienda' },
-        { '@type': 'ListItem', position: 3, name: product.name, item: `https://cremacuadrado.com${path}` },
+        { '@type': 'ListItem', position: 1, name: 'Inicio', item: `${environment.siteUrl}/` },
+        { '@type': 'ListItem', position: 2, name: 'Tienda', item: `${environment.siteUrl}/tienda` },
+        { '@type': 'ListItem', position: 3, name: product.name, item: `${environment.siteUrl}${path}` },
       ],
     });
 

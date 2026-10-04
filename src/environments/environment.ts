@@ -1,5 +1,7 @@
 export const environment = {
   production: false,
+  siteUrl: 'http://localhost:4200',
+  allowIndexing: false,
   apiUrl: 'http://localhost:8000/api/v1',
   // Used instead of apiUrl when rendering on the server (SSR). In dev apiUrl
   // is already absolute, so this is identical — only environment.prod.ts

@@ -9,6 +9,7 @@ import { SeoService } from '../../core/services/seo.service';
 import { ProductListItem, ProductVariant } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
 import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-block.component';
+import { environment } from '@env/environment';
 
 const REVIEWS = [
   { name: 'Ana M.', location: 'Madrid', text: 'Increíble sabor, mi favorita para el desayuno. Ya he pedido tres veces.', rating: 5, product: 'Crema Pura 100%' },
@@ -687,14 +688,14 @@ export class HomeComponent implements OnInit {
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'CremaCuadrado',
-      url: 'https://cremacuadrado.com',
-      logo: 'https://cremacuadrado.com/assets/images/logocrema2-100x100.png',
+      url: `${environment.siteUrl}`,
+      logo: `${environment.siteUrl}/assets/images/logocrema2-100x100.png`,
     });
     this.seo.setJsonLd('ld-website', {
       '@context': 'https://schema.org',
       '@type': 'WebSite',
       name: 'CremaCuadrado',
-      url: 'https://cremacuadrado.com',
+      url: `${environment.siteUrl}`,
     });
 
     this.productService.getFeaturedProducts().subscribe({

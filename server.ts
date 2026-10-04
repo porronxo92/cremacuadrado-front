@@ -7,7 +7,7 @@ import bootstrap from './src/main.server';
 import { environment } from '@env/environment';
 import { RESPONSE_STATUS, ResponseStatus } from './src/app/core/tokens/response-status.token';
 
-const SITE_ORIGIN = 'https://cremacuadrado.com';
+const SITE_ORIGIN = environment.siteUrl;
 
 // Legacy English routes (app.routes.ts:92-105) — those are client-side
 // Angular Router redirects, which means a crawler sees a 200 and never
@@ -95,12 +95,14 @@ export function app(): express.Express {
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
 
-  // Preview/staging must never be indexed; production must never carry this
-  // header. VERCEL_ENV is unset locally, which also resolves to "not
-  // production" — correct, since there's no case where localhost should be
-  // crawled either.
+  // Preview/staging must never be indexed, and neither must a production
+  // deployment that isn't the public site yet (environment.allowIndexing is
+  // false while it is served from prd.cremacuadrado.com). VERCEL_ENV is unset
+  // locally, which also resolves to "not production" — correct, since there's
+  // no case where localhost should be crawled either.
+  const indexable = process.env['VERCEL_ENV'] === 'production' && environment.allowIndexing;
   server.use((req, res, next) => {
-    if (process.env['VERCEL_ENV'] !== 'production') {
+    if (!indexable) {
       res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     }
     next();

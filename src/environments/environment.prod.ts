@@ -1,5 +1,14 @@
 export const environment = {
   production: true,
+  // Public origin of this site: used for canonical/OG URLs, JSON-LD and the
+  // sitemap. Today production is served from prd.cremacuadrado.com while the
+  // legacy WooCommerce shop still owns cremacuadrado.com.
+  // CUTOVER: set siteUrl to 'https://cremacuadrado.com' and allowIndexing to
+  // true in the same PR that moves the domain to this project.
+  siteUrl: 'https://prd.cremacuadrado.com',
+  // false → the server sends `X-Robots-Tag: noindex, nofollow` even on the
+  // production deployment (see server.ts).
+  allowIndexing: false,
   // Absolute so each environment (this one, environment.staging.ts) talks to
   // its own backend directly; a relative URL + a fixed rewrite in vercel.json
   // could only ever point at one backend. Requires the backend's CORS_ORIGINS

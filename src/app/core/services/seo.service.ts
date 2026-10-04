@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { Title, Meta } from '@angular/platform-browser';
+import { environment } from '@env/environment';
 
 export interface SeoConfig {
   /** Page title, without the brand suffix — set() appends " | CremaCuadrado". */
@@ -15,7 +16,7 @@ export interface SeoConfig {
   type?: string;
 }
 
-const DEFAULT_IMAGE = 'https://cremacuadrado.com/assets/images/logocrema2-100x100.png';
+const DEFAULT_IMAGE = `${environment.siteUrl}/assets/images/logocrema2-100x100.png`;
 
 @Injectable({ providedIn: 'root' })
 export class SeoService {
@@ -23,11 +24,12 @@ export class SeoService {
   private meta = inject(Meta);
   private document = inject(DOCUMENT);
 
-  // Canonical/OG URLs always point at the production domain, regardless of
-  // which host actually served the request (localhost, the Vercel preview,
-  // or production itself) — otherwise a preview deploy would consolidate
-  // link authority onto itself instead of the real site.
-  private readonly siteOrigin = 'https://cremacuadrado.com';
+  // Canonical/OG URLs use the environment's configured public origin
+  // (environment.siteUrl), regardless of which host actually served the
+  // request (a Vercel deployment URL, a preview alias…). Non-production
+  // environments are also served with noindex (server.ts), so they never
+  // compete with the real site.
+  private readonly siteOrigin = environment.siteUrl;
 
   set(config: SeoConfig): void {
     const fullTitle = `${config.title} | CremaCuadrado`;
