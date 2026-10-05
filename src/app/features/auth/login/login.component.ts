@@ -5,6 +5,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AuthService } from '../../../core/services/auth.service';
 import { environment } from '@env/environment';
 
+import { GoogleIdentityService } from '../../../core/services/google-identity.service';
+import { CookieConsentService } from '../../../core/services/cookie-consent.service';
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -85,6 +88,12 @@ import { environment } from '@env/environment';
         
         @if (googleEnabled) {
           <div class="divider"><span>o</span></div>
+          @if (!googleLoaded()) {
+            <button type="button" class="google-placeholder" (click)="loadGoogle()" [disabled]="googleLoading()">
+              {{ googleLoading() ? 'Cargando Google…' : 'Continuar con Google' }}
+            </button>
+            <p class="google-note">Al pulsar se cargará el servicio de Google, que instala sus propias cookies.</p>
+          }
           <div id="google-signin-btn" class="google-btn-wrapper"></div>
         }
 
@@ -268,6 +277,13 @@ import { environment } from '@env/environment';
       span { color: #999; font-size: 0.85rem; white-space: nowrap; }
     }
 
+    .google-placeholder {
+      display: block; width: 100%; max-width: 340px; margin: 0 auto; min-height: 48px;
+      border: 1px solid #dadce0; border-radius: 4px; background: #fff; color: #3c4043;
+      font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer;
+    }
+    .google-note { text-align: center; font-size: 0.72rem; color: #6B6456; margin: 0.5rem 0 0; }
+
     .google-btn-wrapper {
       display: flex;
       justify-content: center;
@@ -309,6 +325,10 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   showPassword = signal(false);
 
   readonly googleEnabled = !!environment.googleClientId;
+  readonly googleLoaded = signal(false);
+  readonly googleLoading = signal(false);
+  private googleIdentity = inject(GoogleIdentityService);
+  private cookieConsent = inject(CookieConsentService);
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -320,17 +340,27 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     if (!this.isBrowser || !this.googleEnabled) return;
-    const google = (window as any).google;
-    if (!google?.accounts?.id) return;
+    // Solo se carga sin clic si el usuario ya aceptó los servicios externos
+    if (this.cookieConsent.external()) this.loadGoogle();
+  }
 
-    google.accounts.id.initialize({
-      client_id: environment.googleClientId,
-      callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+  loadGoogle(): void {
+    this.googleLoading.set(true);
+    this.googleIdentity.load().then(google => {
+      google.accounts.id.initialize({
+        client_id: environment.googleClientId,
+        callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+      });
+      this.googleLoaded.set(true);
+      this.googleLoading.set(false);
+      setTimeout(() => google.accounts.id.renderButton(
+        document.getElementById('google-signin-btn'),
+        { theme: 'outline', size: 'large', width: 340, text: 'signin_with' }
+      ));
+    }).catch(() => {
+      this.googleLoading.set(false);
+      this.error.set('No se pudo cargar el inicio de sesión con Google');
     });
-    google.accounts.id.renderButton(
-      document.getElementById('google-signin-btn'),
-      { theme: 'outline', size: 'large', width: 340, text: 'signin_with' }
-    );
   }
 
   ngOnDestroy(): void {

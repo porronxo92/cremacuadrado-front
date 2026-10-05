@@ -19,6 +19,46 @@ export interface AdminOrder extends Order {
   payment_intent_id: string | null;
   shipping_status: string | null;
   updated_at: string | null;
+  invoices?: OrderInvoiceRef[];
+}
+
+// ── Invoices ─────────────────────────────────────────────────────────────
+export type InvoiceType = 'simplified' | 'full' | 'corrective';
+
+export interface OrderInvoiceRef {
+  id: number;
+  invoice_number: string;
+  invoice_type: InvoiceType;
+  issued_at: string;
+  total: number;
+}
+
+export interface AdminInvoice {
+  id: number;
+  invoice_number: string;
+  invoice_type: InvoiceType;
+  issued_at: string;
+  order_id: number;
+  order_number: string | null;
+  user_id: number | null;
+  buyer_name: string | null;
+  buyer_nif: string | null;
+  buyer_email: string | null;
+  tax_base: number;
+  tax_rate: number;
+  tax_amount: number;
+  total: number;
+  rectifies_number: string | null;
+  pdf_status: 'pending' | 'stored' | 'failed';
+  sent_count: number;
+  last_sent_at: string | null;
+}
+
+export interface AdminInvoiceTotals {
+  count: number;
+  tax_base: number;
+  tax_amount: number;
+  total: number;
 }
 
 export interface OrderPayments {

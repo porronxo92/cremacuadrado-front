@@ -1,13 +1,14 @@
-import { Component, Input, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Component, HostListener, Input, OnInit, OnDestroy, AfterViewInit, ViewChild, ElementRef, signal, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { NewsletterService } from '../../../../core/services/newsletter.service';
+import { PrivacyNoticeComponent } from '../../../../shared/components/privacy-notice/privacy-notice.component';
 
 @Component({
   selector: 'app-hero-block',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PrivacyNoticeComponent],
   template: `
     <section class="hero">
       <video
@@ -21,10 +22,6 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
       <div class="hero__overlay" aria-hidden="true"></div>
 
       <div class="hero__content">
-        <div class="hero__review">
-          <span class="hero__stars">★★★★★</span>
-          <span class="hero__review-text">"La mejor crema de frutos secos que he probado"</span>
-        </div>
         <h1 class="hero__h1">CREMA DE<br>PISTACHO<br>MANCHEGO</h1>
         <p class="hero__tagline">100% natural · sin aditivos · Ciudad Real</p>
         <div class="hero__ctas">
@@ -45,9 +42,10 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
           </button>
           <p class="hero__popup-label">SOLO PARA SUSCRIPTORES</p>
           <p class="hero__popup-title">−10% en tu<br>primer pedido</p>
-          <p class="hero__popup-sub">Únete a más de 400 clientes que ya disfrutan de la crema</p>
+          <p class="hero__popup-sub">Recetas, novedades y un 10% de descuento en tu primer pedido</p>
           <form class="hero__popup-form" (submit)="submitEmail($event)">
             <input
+              #popupInput
               type="email"
               class="hero__popup-input"
               placeholder="tu@email.com"
@@ -55,11 +53,16 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
               name="popupEmail"
               required
               aria-label="Tu email">
-            <button type="submit" class="hero__popup-btn" [disabled]="submitting()">
+            <button type="submit" class="hero__popup-btn" [disabled]="submitting() || !popupConsent">
               {{ submitting() ? 'Enviando...' : 'Quiero el descuento' }}
             </button>
           </form>
-          <p class="hero__popup-legal">Sin spam. Baja cuando quieras.</p>
+          <label class="hero__popup-consent">
+            <input type="checkbox" [(ngModel)]="popupConsent" name="popupConsent">
+            <span>Acepto recibir recetas, novedades y ofertas de CremaCuadrado por email. Puedo darme de baja cuando quiera.</span>
+          </label>
+          @if (popupError()) { <p class="hero__popup-error" role="alert">{{ popupError() }}</p> }
+          <app-privacy-notice purpose="enviarte comunicaciones comerciales y tu cupón de bienvenida" legalBasis="tu consentimiento" />
         </div>
       }
 
@@ -70,8 +73,8 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
           <div class="hero__popup-check">✓</div>
-          <p class="hero__popup-title">¡Listo!</p>
-          <p class="hero__popup-sub">Revisa tu email. Tu código de descuento llegará en breve.</p>
+          <p class="hero__popup-title">Revisa tu email</p>
+          <p class="hero__popup-sub">Te hemos enviado un enlace para confirmar la suscripción. Al confirmarla recibirás tu código de descuento.</p>
         </div>
       }
 
@@ -88,6 +91,9 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
     </section>
   `,
   styles: [`
+    .hero__popup-consent { display: flex; gap: 0.5rem; align-items: flex-start; margin-top: 0.75rem; font-size: 0.75rem; line-height: 1.45; text-align: left; cursor: pointer;
+      input { margin-top: 0.15rem; width: 16px; height: 16px; flex-shrink: 0; } }
+    .hero__popup-error { color: #ffd2d2; font-size: 0.8rem; margin: 0.5rem 0 0; }
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;
@@ -390,6 +396,7 @@ import { NewsletterService } from '../../../../core/services/newsletter.service'
 export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
   @Input() videoSrc = '';
   @ViewChild('videoEl') videoEl?: ElementRef<HTMLVideoElement>;
+  @ViewChild('popupInput') popupInput?: ElementRef<HTMLInputElement>;
 
   private platformId = inject(PLATFORM_ID);
   private newsletterService = inject(NewsletterService);
@@ -398,7 +405,9 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly emailSubmitted = signal(false);
   readonly alreadyClaimed = signal(false);
   readonly submitting = signal(false);
+  readonly popupError = signal<string | null>(null);
   popupEmail = '';
+  popupConsent = false;
 
   private scrollCount = 0;
   private dismissed = false;
@@ -410,14 +419,14 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.popupTimer = setTimeout(() => {
       if (!this.dismissed && !this.showPopup() && !this.emailSubmitted() && !this.alreadyClaimed()) {
-        this.showPopup.set(true);
+        this.openPopup();
       }
     }, 30000);
 
     this.scrollHandler = () => {
       this.scrollCount++;
       if (this.scrollCount >= 2 && !this.dismissed && !this.showPopup() && !this.emailSubmitted() && !this.alreadyClaimed()) {
-        this.showPopup.set(true);
+        this.openPopup();
       }
     };
     window.addEventListener('scroll', this.scrollHandler, { passive: true });
@@ -428,6 +437,10 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
     const video = this.videoEl?.nativeElement;
     if (video) {
       video.muted = true;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        video.pause();  // WCAG 2.2.2 / 2.3.3: sin vídeo en bucle si el usuario pide menos movimiento
+        return;
+      }
       video.play().catch(() => {});
     }
   }
@@ -437,6 +450,12 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.scrollHandler) {
       window.removeEventListener('scroll', this.scrollHandler);
     }
+  }
+
+  /** Abre el aviso y lleva el foco al campo de email (accesibilidad de diálogos). */
+  private openPopup(): void {
+    this.showPopup.set(true);
+    setTimeout(() => this.popupInput?.nativeElement.focus());
   }
 
   closePopup(): void {
@@ -452,10 +471,11 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
 
   submitEmail(event: Event): void {
     event.preventDefault();
-    if (!this.popupEmail || this.submitting()) return;
+    if (!this.popupEmail || !this.popupConsent || this.submitting()) return;
 
     this.submitting.set(true);
-    this.newsletterService.subscribe(this.popupEmail).subscribe({
+    this.popupError.set(null);
+    this.newsletterService.subscribe(this.popupEmail, this.popupConsent, 'homepage_popup').subscribe({
       next: () => {
         this.submitting.set(false);
         this.dismissed = true;
@@ -464,15 +484,13 @@ export class HeroBlockComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         this.submitting.set(false);
-        this.dismissed = true;
-        this.showPopup.set(false);
-        if (err?.status === 409) {
-          this.alreadyClaimed.set(true);
-        } else {
-          // Error genérico de red/servidor — mostramos éxito para no frustrar al usuario
-          this.emailSubmitted.set(true);
-        }
+        this.popupError.set(err?.message || 'No hemos podido completar la suscripción. Inténtalo de nuevo.');
       },
     });
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showPopup() || this.emailSubmitted() || this.alreadyClaimed()) this.closePopup();
   }
 }

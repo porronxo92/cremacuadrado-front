@@ -7,20 +7,22 @@ import { ToastComponent } from './shared/components/toast/toast.component';
 import { AnnouncementBarComponent } from './shared/components/announcement-bar/announcement-bar.component';
 import { MiniCartComponent } from './shared/components/mini-cart/mini-cart.component';
 import { WhatsappButtonComponent } from './shared/components/whatsapp-button/whatsapp-button.component';
+import { CookieBannerComponent } from './shared/components/cookie-banner/cookie-banner.component';
 import { filter, map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, ToastComponent, AnnouncementBarComponent, MiniCartComponent, WhatsappButtonComponent],
+  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, ToastComponent, AnnouncementBarComponent, MiniCartComponent, WhatsappButtonComponent, CookieBannerComponent],
   template: `
+    <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
     <div class="app">
       @if (!isAdminRoute()) {
         <app-announcement-bar />
         <app-header />
       }
-      <main class="main-content">
+      <main class="main-content" id="contenido-principal" tabindex="-1">
         <router-outlet />
       </main>
       @if (!isAdminRoute()) {
@@ -29,6 +31,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
       }
       <app-toast />
       <app-mini-cart />
+      @if (!isAdminRoute()) {
+        <app-cookie-banner />
+      }
     </div>
   `,
   styles: [`

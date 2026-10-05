@@ -27,11 +27,6 @@ const FAQS = [
   { q: '¿Cómo se conserva?', a: 'Temperatura ambiente, alejada de la luz directa. No necesita nevera. El frío puede endurecer la crema.' },
 ];
 
-const PLACEHOLDER_REVIEWS = [
-  { name: 'Marta G.', location: 'Madrid',   text: 'Jamás volvería a comprar otra.', rating: 5 },
-  { name: 'Carlos M.', location: 'Valencia', text: 'Compré el kilo y fue la mejor decisión.',  rating: 5 },
-];
-
 function gramsFromFormat(format: string): number {
   const normalized = format.trim().toLowerCase();
   if (normalized.endsWith('kg')) return Math.round(parseFloat(normalized.replace('kg', '').trim()) * 1000);
@@ -143,10 +138,14 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             
               <div class="step-body">
                 <span class="step-label">valoraciones</span>
-                <div class="step-stars">
-                  <span class="stars-filled">★★★★★</span>
-                  <span class="stars-meta">{{ product()!.average_rating ?? '4.9' }} · {{ product()!.review_count || 47 }} reseñas</span>
-                </div>
+                @if (product()!.review_count && product()!.average_rating) {
+                  <div class="step-stars">
+                    <span class="stars-filled" aria-hidden="true">{{ starString(roundRating(product()!.average_rating!)) }}</span>
+                    <span class="stars-meta">{{ product()!.average_rating | number:'1.1-1' }} · {{ product()!.review_count }} {{ product()!.review_count === 1 ? 'reseña' : 'reseñas' }}</span>
+                  </div>
+                } @else {
+                  <div class="step-stars"><span class="stars-meta">Aún sin reseñas</span></div>
+                }
               </div>
             
 
@@ -210,7 +209,8 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
 
               <div class="step-body">
                 <span class="step-label">precio</span>
-                <app-price-display [price]="effectivePrice()" [grams]="selectedFormat()!.grams" />
+                <app-price-display [price]="effectivePrice()" [grams]="selectedFormat()!.grams"
+                  [priorPrice]="purchaseType() === 'once' && selectedVariant()?.compare_price ? Math.round(selectedVariant()!.compare_price! * 100) : null" />
               </div>
 
 
@@ -438,20 +438,9 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               </div>
             }
           } @else {
-            @for (review of placeholderReviews; track review.name) {
-              <div class="pd__review">
-                <div class="pd__review-top">
-                  <span class="pd__review-name">{{ review.name }}</span>
-                  <span class="pd__review-stars">★★★★★</span>
-                </div>
-                <p class="pd__review-text">"{{ review.text }}"</p>
-                <div class="pd__review-meta">
-                  {{ review.location }}
-                  <span class="pd__review-verified">Compra verificada</span>
-                </div>
-              </div>
-            }
+            <p class="pd__reviews-empty">Todavía no hay opiniones sobre este producto. ¡Sé la primera persona en compartir la tuya!</p>
           }
+          <p class="reviews-note">Solo publicamos opiniones de clientes con cuenta. La etiqueta «Compra verificada» indica que la persona recibió un pedido con ese producto. Revisamos cada opinión antes de publicarla y no eliminamos las negativas salvo que incumplan nuestras normas (lenguaje ofensivo o datos personales).</p>
         </div>
 
       }
@@ -917,6 +906,9 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       display: flex; align-items: center; gap: 6px;
     }
 
+    .pd__reviews-empty { font-family: 'Lora', serif; color: #6B6456; margin: 1rem 0; }
+    .reviews-note { font-size: 0.75rem; color: #6B6456; line-height: 1.5; margin-top: 1.25rem; }
+
     .pd__review-verified {
       font-size: .68rem; font-weight: 500;
       background: rgba($verde,.15); color: #5A6B0A;
@@ -988,6 +980,8 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return f ? Math.round(f.price * 0.85) : 0;
   });
 
+  readonly Math = Math;
+
   readonly effectivePrice = computed(() =>
     this.purchaseType() === 'sub' ? this.subPrice() : (this.selectedFormat()?.price ?? 0)
   );
@@ -1002,7 +996,6 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   ];
 
   readonly faqs = FAQS;
-  readonly placeholderReviews = PLACEHOLDER_REVIEWS;
   readonly reviews = signal<Review[]>([]);
   readonly showReviewForm = signal(false);
   readonly submittingReview = signal(false);
@@ -1144,6 +1137,10 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       next: (reviews) => this.reviews.set(reviews),
       error: () => {},
     });
+  }
+
+  roundRating(value: number): number {
+    return Math.round(Number(value));
   }
 
   starString(rating: number): string {

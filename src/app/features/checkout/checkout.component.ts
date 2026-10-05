@@ -7,7 +7,17 @@ import { OrderService } from '../../core/services/order.service';
 import { AuthService } from '../../core/services/auth.service';
 import { StripeService } from '../../core/services/stripe.service';
 import { UserService } from '../../core/services/user.service';
-import { Address } from '../../core/models';
+import { Address, BillingDetails } from '../../core/models';
+import { normalizeTaxId, taxIdValidator } from '../../core/utils/tax-id';
+import { EXCLUDED_POSTCODE_PREFIXES, TERMS_VERSION } from '../../core/legal';
+import { AbstractControl, ValidationErrors } from '@angular/forms';
+
+/** Shipping scope from the sales conditions: peninsular Spain only. */
+function peninsulaPostcode(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value || '').trim();
+  return value.length >= 2 && EXCLUDED_POSTCODE_PREFIXES.includes(value.slice(0, 2)) ? { outOfArea: true } : null;
+}
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-checkout',
@@ -131,7 +141,13 @@ import { Address } from '../../core/models';
                       </div>
                       <div class="form-group">
                         <label for="postalCode">Código postal *</label>
-                        <input type="text" id="postalCode" formControlName="postalCode">
+                        <input type="text" id="postalCode" formControlName="postalCode" inputmode="numeric" autocomplete="postal-code"
+                          [class.error]="shippingForm.get('postalCode')?.invalid && shippingForm.get('postalCode')?.touched">
+                        @if (shippingForm.get('postalCode')?.hasError('outOfArea')) {
+                          <span class="error-text">De momento solo enviamos a la península. Escríbenos a info&#64;cremacuadrado.com</span>
+                        } @else if (shippingForm.get('postalCode')?.hasError('pattern') && shippingForm.get('postalCode')?.touched) {
+                          <span class="error-text">Código postal no válido</span>
+                        }
                       </div>
                     </div>
 
@@ -143,9 +159,7 @@ import { Address } from '../../core/models';
                       <div class="form-group">
                         <label for="country">País *</label>
                         <select id="country" formControlName="country">
-                          <option value="ES">España</option>
-                          <option value="PT">Portugal</option>
-                          <option value="FR">Francia</option>
+                          <option value="ES">España (península)</option>
                         </select>
                       </div>
                     </div>
@@ -162,6 +176,54 @@ import { Address } from '../../core/models';
                       Guardar esta dirección para futuros pedidos
                     </label>
                   }
+                }
+
+                <label class="save-address-checkbox invoice-toggle">
+                  <input type="checkbox" [checked]="needsInvoice()" (change)="toggleInvoice($any($event.target).checked)">
+                  Necesito factura a nombre de empresa o autónomo (con NIF)
+                </label>
+
+                @if (needsInvoice()) {
+                  <form [formGroup]="billingForm" class="billing-form">
+                    <div class="form-row form-row--2">
+                      <div class="form-group">
+                        <label for="billingName">Razón social o nombre *</label>
+                        <input type="text" id="billingName" formControlName="name" autocomplete="organization">
+                      </div>
+                      <div class="form-group">
+                        <label for="billingNif">NIF / CIF / NIE *</label>
+                        <input type="text" id="billingNif" formControlName="nif" autocomplete="off"
+                          [class.error]="billingForm.get('nif')?.invalid && billingForm.get('nif')?.touched">
+                        @if (billingForm.get('nif')?.hasError('taxId') && billingForm.get('nif')?.touched) {
+                          <span class="error-text">NIF no válido</span>
+                        }
+                      </div>
+                    </div>
+                    <label class="save-address-checkbox">
+                      <input type="checkbox" [checked]="billingSameAsShipping()" (change)="setBillingSameAsShipping($any($event.target).checked)">
+                      La dirección fiscal es la misma que la de envío
+                    </label>
+                    @if (!billingSameAsShipping()) {
+                      <div class="form-group">
+                        <label for="billingStreet">Dirección fiscal *</label>
+                        <input type="text" id="billingStreet" formControlName="street">
+                      </div>
+                      <div class="form-row form-row--2">
+                        <div class="form-group">
+                          <label for="billingCity">Ciudad *</label>
+                          <input type="text" id="billingCity" formControlName="city">
+                        </div>
+                        <div class="form-group">
+                          <label for="billingPostal">Código postal *</label>
+                          <input type="text" id="billingPostal" formControlName="postal_code">
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label for="billingProvince">Provincia *</label>
+                        <input type="text" id="billingProvince" formControlName="province">
+                      </div>
+                    }
+                  </form>
                 }
               </section>
               
@@ -247,18 +309,26 @@ import { Address } from '../../core/models';
               <hr>
               
               <div class="summary-row summary-row--total">
-                <span>Total</span>
+                <span>Total <small class="vat-note">(IVA incluido)</small></span>
                 <span>{{ cartService.cart()?.total | currency:'EUR' }}</span>
               </div>
               
-              <button 
+              <label class="terms-check">
+                <input type="checkbox" [checked]="acceptTerms()" (change)="acceptTerms.set($any($event.target).checked)" required>
+                <span>
+                  He leído y acepto las <a routerLink="/condiciones-venta" target="_blank">condiciones generales de venta</a>,
+                  incluida la información sobre el <a routerLink="/desistimiento" target="_blank">derecho de desistimiento</a>. *
+                </span>
+              </label>
+
+              <button
                 class="btn btn--primary btn--large btn--block"
                 (click)="placeOrder()"
-                [disabled]="processing() || !isFormValid()">
+                [disabled]="processing() || !isFormValid() || !isBillingValid() || !acceptTerms()">
                 @if (processing()) {
                   Procesando...
                 } @else {
-                  Confirmar pedido
+                  Pedido con obligación de pago
                 }
               </button>
               
@@ -269,9 +339,8 @@ import { Address } from '../../core/models';
               }
               
               <p class="terms-notice">
-                Al realizar el pedido, aceptas nuestros
-                <a routerLink="/aviso-legal">Términos y condiciones</a> y
-                <a routerLink="/privacidad">Política de privacidad</a>.
+                Envío a España peninsular en 48–72 h. Trataremos tus datos para gestionar el pedido
+                (ejecución del contrato). Más información en la <a routerLink="/privacidad" target="_blank">política de privacidad</a>.
               </p>
             </div>
           </div>
@@ -463,6 +532,10 @@ import { Address } from '../../core/models';
       padding: 0.15rem 0.5rem;
       border-radius: 10px;
     }
+
+    .invoice-toggle { margin-top: 1.25rem; }
+
+    .billing-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
 
     .save-address-checkbox {
       display: flex;
@@ -732,6 +805,15 @@ import { Address } from '../../core/models';
       margin-top: 1rem;
     }
     
+    .vat-note { font-size: 0.75rem; font-weight: 400; color: #666; }
+
+    .terms-check {
+      display: flex; gap: 0.6rem; align-items: flex-start; margin: 1.25rem 0 0.75rem;
+      font-size: 0.85rem; line-height: 1.5; cursor: pointer;
+      input { margin-top: 0.2rem; width: 18px; height: 18px; flex-shrink: 0; }
+      a { color: #4a7c4e; font-weight: 600; }
+    }
+
     .terms-notice {
       margin-top: 1rem;
       font-size: 0.8rem;
@@ -783,7 +865,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private _selectedAddress: Address | null = null;
 
   private orderNumber: string | null = null;
+  private paymentIntentId: string | null = null;
   private stripeInitTriggered = false;
+
+  billingForm!: FormGroup;
+  needsInvoice = signal(false);
+  billingSameAsShipping = signal(true);
+  acceptTerms = signal(false);
 
   constructor() {}
 
@@ -825,10 +913,19 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       phone: ['', Validators.required],
     });
 
+    this.billingForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(2)]],
+      nif: ['', [Validators.required, taxIdValidator]],
+      street: [''],
+      city: [''],
+      postal_code: [''],
+      province: [''],
+    });
+
     this.shippingForm = this.fb.group({
       address: ['', Validators.required],
       city: ['', Validators.required],
-      postalCode: ['', Validators.required],
+      postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/), peninsulaPostcode]],
       state: ['', Validators.required],
       country: ['ES', Validators.required],
       notes: [''],
@@ -840,6 +937,44 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       return this.contactForm.valid;
     }
     return this.contactForm.valid && this.shippingForm.valid;
+  }
+
+  toggleInvoice(checked: boolean): void {
+    this.needsInvoice.set(checked);
+    if (checked && !this.billingForm.value.name) {
+      const { firstName, lastName } = this.contactForm.value;
+      this.billingForm.patchValue({ name: `${firstName || ''} ${lastName || ''}`.trim() });
+    }
+  }
+
+  setBillingSameAsShipping(same: boolean): void {
+    this.billingSameAsShipping.set(same);
+    for (const key of ['street', 'city', 'postal_code', 'province']) {
+      const control = this.billingForm.get(key)!;
+      control.setValidators(same ? [] : [Validators.required]);
+      control.updateValueAndValidity();
+    }
+  }
+
+  isBillingValid(): boolean {
+    return !this.needsInvoice() || this.billingForm.valid;
+  }
+
+  /** Tax details sent to the backend (null = simplified invoice without NIF). */
+  private buildBilling(): BillingDetails | null {
+    if (!this.needsInvoice()) return null;
+    const b = this.billingForm.value;
+    const ship = this.buildCheckoutData().shipping_address;
+    const same = this.billingSameAsShipping();
+    return {
+      name: b.name.trim(),
+      nif: normalizeTaxId(b.nif),
+      street: same ? ship.street : b.street,
+      city: same ? ship.city : b.city,
+      postal_code: same ? ship.postal_code : b.postal_code,
+      province: same ? ship.province : b.province,
+      country: ship.country || 'ES',
+    };
   }
 
   private loadSavedAddresses(): void {
@@ -920,6 +1055,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.orderService.createPaymentIntent(this.buildCheckoutData() as any).subscribe({
       next: async (response) => {
         this.orderNumber = response.order_number;
+        this.paymentIntentId = response.payment_intent_id;
         try {
           await this.stripeService.initElements(response.client_secret);
           // Small timeout ensures the #payment-element div is rendered
@@ -954,8 +1090,33 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.acceptTerms()) {
+      this.error.set('Debes aceptar las condiciones generales de venta.');
+      return;
+    }
+
+    if (!this.isBillingValid()) {
+      this.billingForm.markAllAsTouched();
+      this.error.set('Revisa los datos de facturación.');
+      return;
+    }
+
     this.processing.set(true);
     this.error.set(null);
+
+    // Tax details go to the pending order right before charging: the invoice
+    // is issued automatically when Stripe confirms the payment.
+    if (this.orderNumber && this.paymentIntentId) {
+      try {
+        await firstValueFrom(
+          this.orderService.preConfirm(this.orderNumber, this.paymentIntentId, TERMS_VERSION, this.buildBilling()),
+        );
+      } catch (err: any) {
+        this.error.set(err?.message || 'No se pudo preparar el pago. Inténtalo de nuevo.');
+        this.processing.set(false);
+        return;
+      }
+    }
 
     if (this.authService.isAuthenticated() && this.selectedAddressId() === 'new' && this.saveNewAddress()) {
       this.userService.createAddress({

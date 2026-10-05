@@ -12,8 +12,13 @@ import { pricePerHundredGrams } from '../../../../core/utils/format-price';
         {{ price / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}
       </span>
       <span class="price-display__per100">
-        {{ per100g / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}/100g
+        {{ per100g / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}/100g · IVA incluido
       </span>
+      @if (priorPrice && priorPrice > price) {
+        <span class="price-display__prior">
+          Precio más bajo de los últimos 30 días: <s>{{ priorPrice / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
+        </span>
+      }
     </div>
   `,
   styles: [`
@@ -38,6 +43,13 @@ import { pricePerHundredGrams } from '../../../../core/utils/format-price';
       color: $brand;
     }
 
+    .price-display__prior {
+      flex-basis: 100%;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.78rem;
+      color: $muted;
+    }
+
     .price-display__per100 {
       font-family: 'Poppins', sans-serif;
       font-weight: 300;
@@ -49,6 +61,8 @@ import { pricePerHundredGrams } from '../../../../core/utils/format-price';
 export class PriceDisplayComponent {
   @Input() price = 0;    // cents
   @Input() grams = 100;  // grams for the selected format
+  /** Omnibus: lowest price of the 30 days before the reduction (cents), from the API. */
+  @Input() priorPrice: number | null = null;
 
   get per100g(): number {
     return pricePerHundredGrams(this.price, this.grams);

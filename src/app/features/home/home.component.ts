@@ -6,22 +6,18 @@ import { CartService } from '../../core/services/cart.service';
 import { MiniCartService } from '../../core/services/mini-cart.service';
 import { ToastService } from '../../core/services/toast.service';
 import { SeoService } from '../../core/services/seo.service';
-import { ProductListItem, ProductVariant } from '../../core/models';
+import { NewsletterService } from '../../core/services/newsletter.service';
+import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
+import { FormsModule } from '@angular/forms';
+import { FeaturedReview, ProductListItem, ProductVariant } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
 import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-block.component';
 import { environment } from '@env/environment';
 
-const REVIEWS = [
-  { name: 'Ana M.', location: 'Madrid', text: 'Increíble sabor, mi favorita para el desayuno. Ya he pedido tres veces.', rating: 5, product: 'Crema Pura 100%' },
-  { name: 'Carlos R.', location: 'Barcelona', text: 'La calidad se nota desde el primer bocado. Pistacho real, sin engaños.', rating: 5, product: 'Crema Crunchy' },
-  { name: 'Laura G.', location: 'Valencia', text: 'Me la recomendaron en Instagram y fue un acierto total. El tarro dura poco en casa.', rating: 5, product: 'Crema Pura 100%' },
-  { name: 'Javier P.', location: 'Sevilla', text: 'La mejor crema de frutos secos que he probado. Mi familia está enganchada.', rating: 5, product: 'Crema Crunchy' },
-];
-
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterModule, HeroBlockComponent, TrilogiaBlockComponent],
+  imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, PrivacyNoticeComponent],
   template: `
     <!-- Bloque 1: Hero + Trilogía -->
     <app-hero-block videoSrc="assets/videos/crema-pistacho-artesanal-hero.mp4" />
@@ -48,8 +44,8 @@ const REVIEWS = [
                     [ngSrc]="product.primary_image || '/assets/images/placeholder.jpg'"
                     [alt]="product.name + ' — crema de pistacho manchego'"
                     fill>
-                  @if (product.compare_price && product.compare_price > (getSelectedVariant(product)?.price ?? 0)) {
-                    <span class="product-card__badge">Oferta</span>
+                  @if (getSelectedVariant(product)?.compare_price; as prior) {
+                    <span class="product-card__badge">Antes {{ prior | currency:'EUR' }}</span>
                   }
                 </a>
                 <div class="product-card__body">
@@ -87,26 +83,28 @@ const REVIEWS = [
       </div>
     </section>
 
-    <!-- Bloque 3: Reseñas -->
-    <section class="reviews">
-      <div class="container">
-        <h2 class="reviews__title">LO QUE DICEN</h2>
-        <p class="reviews__sub">Más de 400 clientes en toda España</p>
-        <div class="reviews__grid">
-          @for (review of reviews; track review.name) {
-            <blockquote class="review-card">
-              <div class="review-card__stars">★★★★★</div>
-              <p class="review-card__text">"{{ review.text }}"</p>
-              <footer class="review-card__footer">
-                <strong>{{ review.name }}</strong>
-                <span>{{ review.location }}</span>
-                <span class="review-card__product">{{ review.product }}</span>
-              </footer>
-            </blockquote>
-          }
+    <!-- Bloque 3: Reseñas (reales, aprobadas) -->
+    @if (reviews().length > 0) {
+      <section class="reviews">
+        <div class="container">
+          <h2 class="reviews__title">LO QUE DICEN</h2>
+          <p class="reviews__sub">Opiniones de clientes de 4 y 5 estrellas · consulta todas en cada producto</p>
+          <div class="reviews__grid">
+            @for (review of reviews(); track review.id) {
+              <blockquote class="review-card">
+                <div class="review-card__stars" [attr.aria-label]="review.rating + ' de 5 estrellas'">{{ '★'.repeat(review.rating) }}</div>
+                <p class="review-card__text">"{{ review.comment || review.title }}"</p>
+                <footer class="review-card__footer">
+                  <strong>{{ review.user_name }}</strong>
+                  @if (review.is_verified_purchase) { <span>Compra verificada</span> }
+                  <a class="review-card__product" [routerLink]="['/tienda', review.product_slug]">{{ review.product_name }}</a>
+                </footer>
+              </blockquote>
+            }
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    }
 
     <!-- Bloque 4: B2B -->
     <section class="b2b">
@@ -147,9 +145,16 @@ const REVIEWS = [
               type="email"
               class="newsletter__input"
               placeholder="tu@email.com"
+              name="newsletterEmail"
+              [(ngModel)]="newsletterEmail"
               required
               aria-label="Tu email">
-            <button type="submit" class="newsletter__btn">Suscribirme</button>
+            <button type="submit" class="newsletter__btn" [disabled]="newsletterSending() || !newsletterConsent">Suscribirme</button>
+            <label class="newsletter__consent">
+              <input type="checkbox" name="newsletterConsent" [(ngModel)]="newsletterConsent">
+              <span>Acepto recibir recetas, novedades y ofertas por email. Puedo darme de baja cuando quiera.</span>
+            </label>
+            <app-privacy-notice purpose="enviarte comunicaciones comerciales" legalBasis="tu consentimiento" />
           </form>
         </div>
       </div>
@@ -619,9 +624,14 @@ const REVIEWS = [
       margin: 0;
     }
 
+    .newsletter__consent { flex-basis: 100%; display: flex; gap: 0.5rem; align-items: flex-start; font-family: 'Poppins', sans-serif; font-size: 0.75rem; line-height: 1.45; cursor: pointer;
+      input { margin-top: 0.15rem; width: 16px; height: 16px; flex-shrink: 0; } }
+    .newsletter__form app-privacy-notice { flex-basis: 100%; }
+
     .newsletter__form {
       display: flex;
       gap: 0.6rem;
+      flex-wrap: wrap;
       flex: 1;
       max-width: 480px;
 
@@ -675,10 +685,18 @@ export class HomeComponent implements OnInit {
 
   readonly featuredProducts = signal<ProductListItem[]>([]);
   readonly loadingProducts = signal(true);
-  readonly reviews = REVIEWS;
+  readonly reviews = signal<FeaturedReview[]>([]);
+  readonly newsletterSending = signal(false);
+  newsletterEmail = '';
+  newsletterConsent = false;
+  private newsletterService = inject(NewsletterService);
   readonly selectedVariants = new Map<number, ProductVariant>();
 
   ngOnInit(): void {
+    this.productService.getFeaturedReviews(4, 4).subscribe({
+      next: reviews => this.reviews.set(reviews),
+      error: () => this.reviews.set([]),
+    });
     this.seo.set({
       title: 'Crema de Pistacho Manchego Artesanal',
       description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Descubre Pura (100% pistacho) y Crunchy. Envío a toda España.',
@@ -739,8 +757,20 @@ export class HomeComponent implements OnInit {
 
   subscribeNewsletter(event: Event): void {
     event.preventDefault();
-    // TODO: connect to newsletter backend
-    this.toastService.success('¡Gracias por suscribirte!');
-    (event.target as HTMLFormElement).reset();
+    if (!this.newsletterEmail || !this.newsletterConsent || this.newsletterSending()) return;
+    this.newsletterSending.set(true);
+    this.newsletterService.subscribe(this.newsletterEmail, true, 'homepage_footer').subscribe({
+      next: (res) => {
+        this.newsletterSending.set(false);
+        this.toastService.success(res.message);
+        this.newsletterEmail = '';
+        this.newsletterConsent = false;
+      },
+      error: (err) => {
+        this.newsletterSending.set(false);
+        this.toastService.error(err?.message || 'No hemos podido completar la suscripción');
+      },
+    });
   }
+
 }

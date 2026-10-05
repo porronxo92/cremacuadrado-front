@@ -6,6 +6,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { PointOfSaleService } from '../../../core/services/point-of-sale.service';
 import { SeoService } from '../../../core/services/seo.service';
 import { PointOfSale } from '../../../core/models';
+import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 
 @Component({
   selector: 'app-puntos-de-venta',
@@ -66,6 +67,14 @@ import { PointOfSale } from '../../../core/models';
                es la fuente indexable) y retrasa la hidratación si se carga de
                inmediato — se difiere hasta que entra en el viewport. -->
           <div class="pdv-map-wrapper">
+            @if (!mapAllowed()) {
+              <div class="pdv-map pdv-map--consent">
+                <p>El mapa lo ofrece Google Maps, que instala sus propias cookies. La lista de tiendas
+                  de abajo funciona sin él.</p>
+                <button type="button" class="pdv-map__load" (click)="loadMap()">Mostrar el mapa</button>
+                <button type="button" class="pdv-map__settings" (click)="cookieConsent.openSettings()">Configurar cookies</button>
+              </div>
+            } @else {
             @defer (on viewport) {
               <iframe
                 class="pdv-map"
@@ -77,6 +86,7 @@ import { PointOfSale } from '../../../core/models';
               ></iframe>
             } @placeholder {
               <div class="pdv-map pdv-map--skeleton"></div>
+            }
             }
             <div class="pdv-map__overlay-tip">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -392,6 +402,18 @@ import { PointOfSale } from '../../../core/models';
       @media (max-width: 768px) { height: 280px; }
     }
 
+    .pdv-map--consent {
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
+      padding: 1.5rem; text-align: center; background: #EDE9DF;
+      p { max-width: 420px; margin: 0; font-family: 'Lora', serif; font-size: 0.9rem; color: #1C1A14; }
+    }
+    .pdv-map__load, .pdv-map__settings {
+      min-height: 48px; padding: 0 1.25rem; border-radius: 20px; cursor: pointer;
+      font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.85rem;
+    }
+    .pdv-map__load { background: #7B1716; color: #F4F1E9; border: 1.5px solid #7B1716; }
+    .pdv-map__settings { background: transparent; color: #7B1716; border: 1.5px solid #7B1716; }
+
     .pdv-map--skeleton {
       background: var(--color-card-bg, #EDE9DF);
     }
@@ -699,6 +721,10 @@ import { PointOfSale } from '../../../core/models';
   `]
 })
 export class PuntosDeVentaComponent implements OnInit {
+  cookieConsent = inject(CookieConsentService);
+  /** El usuario pulsó «Mostrar el mapa» (petición expresa) o aceptó los servicios externos. */
+  private mapRequested = signal(false);
+  readonly mapAllowed = computed(() => this.mapRequested() || this.cookieConsent.external());
   private toastService = inject(ToastService);
   private pointOfSaleService = inject(PointOfSaleService);
   private seo = inject(SeoService);
@@ -708,6 +734,10 @@ export class PuntosDeVentaComponent implements OnInit {
 
   searchQuery = '';
   activeCity = signal<string | null>(null);
+
+  loadMap(): void {
+    this.mapRequested.set(true);
+  }
 
   ngOnInit(): void {
     this.seo.set({

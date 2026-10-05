@@ -81,12 +81,12 @@ import { SeoService } from '../../../core/services/seo.service';
             <nav class="toc" [class.is-open]="tocOpen()">
               <p class="toc__title">Contenido</p>
               <ul>
-                <li><a href="#plazos" (click)="tocOpen.set(false)">Plazos de entrega</a></li>
-                <li><a href="#costes" (click)="tocOpen.set(false)">Costes de envío</a></li>
-                <li><a href="#seguimiento" (click)="tocOpen.set(false)">Seguimiento</a></li>
-                <li><a href="#incidencias" (click)="tocOpen.set(false)">Incidencias</a></li>
-                <li><a href="#devoluciones" (click)="tocOpen.set(false)">Devoluciones</a></li>
-                <li><a href="#contacto" (click)="tocOpen.set(false)">Contacto</a></li>
+                <li><a [routerLink]="[]" fragment="plazos" (click)="tocOpen.set(false)">Plazos de entrega</a></li>
+                <li><a [routerLink]="[]" fragment="costes" (click)="tocOpen.set(false)">Costes de envío</a></li>
+                <li><a [routerLink]="[]" fragment="seguimiento" (click)="tocOpen.set(false)">Seguimiento</a></li>
+                <li><a [routerLink]="[]" fragment="incidencias" (click)="tocOpen.set(false)">Incidencias</a></li>
+                <li><a [routerLink]="[]" fragment="devoluciones" (click)="tocOpen.set(false)">Devoluciones</a></li>
+                <li><a [routerLink]="[]" fragment="contacto" (click)="tocOpen.set(false)">Contacto</a></li>
               </ul>
             </nav>
 
@@ -127,9 +127,9 @@ import { SeoService } from '../../../core/services/seo.service';
                       <tr><th>Destino</th><th>Coste</th><th>Plazo</th></tr>
                     </thead>
                     <tbody>
-                      <tr><td>Península</td><td>Calculado en el carrito</td><td>48–72 h</td></tr>
-                      <tr><td>Islas Baleares</td><td>Consultar</td><td>3–5 días</td></tr>
-                      <tr><td>Canarias / Ceuta / Melilla</td><td>Consultar</td><td>5–7 días</td></tr>
+                      <tr><td>Península</td><td>4,95 € · gratis desde 48 €</td><td>48–72 h</td></tr>
+                      <tr><td>Islas Baleares</td><td>De momento no enviamos</td><td>—</td></tr>
+                      <tr><td>Canarias / Ceuta / Melilla</td><td>De momento no enviamos</td><td>—</td></tr>
                     </tbody>
                   </table>
                 </div>
@@ -171,7 +171,8 @@ import { SeoService } from '../../../core/services/seo.service';
               <section class="section" id="devoluciones">
                 <h2><span class="section__num">05</span> Política de devoluciones</h2>
                 <p>Tienes <strong>14 días naturales</strong> desde la recepción para ejercer tu derecho de desistimiento, conforme a la normativa de consumidores.</p>
-                <p>Los productos deben estar en su estado original y sin abrir. Para iniciar una devolución contacta en <a href="mailto:ayuda@cremacuadrado.com">ayuda&#64;cremacuadrado.com</a>.</p>
+                <p>No se admite la devolución de tarros abiertos o desprecintados tras la entrega, por razones de salud e higiene. Te reembolsamos el importe pagado, incluidos los gastos de envío ordinarios, en un máximo de 14 días; los gastos de devolución corren a tu cargo salvo producto defectuoso.</p>
+                <p>Puedes desistir online desde <a routerLink="/desistimiento">el formulario de desistimiento</a>, donde también encontrarás el modelo oficial. Más detalles en las <a routerLink="/condiciones-venta" fragment="desistimiento">condiciones de venta</a>.</p>
               </section>
 
               <section class="section" id="contacto">

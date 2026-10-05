@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiMessage } from '../../../core/models';
 import {
-  AdminCart, AdminCoupon, AdminDashboard, AdminOrder, AdminPayment, AdminRefund, AdminShipment,
+  AdminCart, AdminCoupon, AdminDashboard, AdminInvoice, AdminInvoiceTotals, AdminOrder, AdminPayment, AdminRefund, AdminShipment,
   AdminUserDetail, AdminUserRow, AdminUserUpdate, AdminWebhookEvent, CouponRedemption,
   LowStockVariant, OrderPayments, OrderShipment, Page, QueryParams,
 } from './admin.models';
@@ -100,6 +100,26 @@ export class AdminApiService {
   }
   syncOrderTracking(id: number): Observable<unknown> {
     return this.post(`/orders/${id}/tracking/sync`);
+  }
+  issueOrderInvoice(orderId: number): Observable<AdminInvoice> {
+    return this.post(`/orders/${orderId}/invoice`);
+  }
+
+  // ── Invoices ───────────────────────────────────────────────────────────
+  invoices(query: QueryParams): Observable<Page<AdminInvoice>> {
+    return this.page('/invoices', query);
+  }
+  invoiceTotals(query: QueryParams): Observable<AdminInvoiceTotals> {
+    return this.get('/invoices/totals', query);
+  }
+  downloadInvoice(invoice: { id: number; invoice_number: string }): Observable<void> {
+    return this.download(`/invoices/${invoice.id}/pdf`, {}, `Factura_${invoice.invoice_number}.pdf`);
+  }
+  exportInvoicesMonth(month: string): Observable<void> {
+    return this.download('/invoices/export', { month }, `facturas_${month}.zip`);
+  }
+  regenerateInvoicePdf(id: number): Observable<ApiMessage> {
+    return this.post(`/invoices/${id}/regenerate-pdf`);
   }
 
   // ── Users ──────────────────────────────────────────────────────────────

@@ -3,7 +3,8 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { OrderService } from '../../../core/services/order.service';
 import { ToastService } from '../../../core/services/toast.service';
-import { Order, OrderListItem } from '../../../core/models';
+import { InvoiceSummary, Order, OrderListItem } from '../../../core/models';
+import { saveBlob } from '../../../core/utils/save-blob';
 
 @Component({
   selector: 'app-account-orders',
@@ -191,8 +192,40 @@ import { Order, OrderListItem } from '../../../core/models';
 
             </div>
 
+            @if (orderInvoices().length > 0) {
+              <div class="modal__invoices">
+                <h3 class="modal__invoices-title">Facturas</h3>
+                <ul>
+                  @for (inv of orderInvoices(); track inv.invoice_number) {
+                    <li>
+                      <span>
+                        {{ inv.invoice_type === 'corrective' ? 'Rectificativa' : 'Factura' }}
+                        <strong>{{ inv.invoice_number }}</strong>
+                        · {{ inv.issued_at + 'Z' | date:'dd/MM/yyyy' }}
+                        · {{ inv.total | currency:'EUR' }}
+                      </span>
+                      <button type="button" class="btn btn--ghost btn--small"
+                        [disabled]="downloadingInvoice() === inv.invoice_number"
+                        (click)="downloadInvoice(selectedOrder()!.order_number, inv.invoice_number)"
+                        [attr.aria-label]="'Descargar ' + inv.invoice_number">
+                        {{ downloadingInvoice() === inv.invoice_number ? 'Descargando…' : 'Descargar PDF' }}
+                      </button>
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
+
             <!-- Acciones del modal -->
             <div class="modal__footer">
+              @if (canRequestInvoice(selectedOrder()!.status) && orderInvoices().length === 0) {
+                <button
+                  class="btn btn--outline"
+                  [disabled]="downloadingInvoice() !== null"
+                  (click)="downloadInvoice(selectedOrder()!.order_number)">
+                  {{ downloadingInvoice() ? 'Descargando…' : 'Descargar factura' }}
+                </button>
+              }
               @if (canRequestInvoice(selectedOrder()!.status)) {
                 <button
                   class="btn btn--outline"
@@ -784,6 +817,14 @@ import { Order, OrderListItem } from '../../../core/models';
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
+
+    .modal__invoices {
+      padding: 0 1.5rem 1rem;
+      h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.08em; color: #6B6456; margin: 0 0 0.5rem; }
+      ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+      li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.85rem; }
+      .btn--small { min-height: 40px; padding: 0.4rem 0.9rem; font-size: 0.8rem; }
+    }
   `]
 })
 export class AccountOrdersComponent implements OnInit {
@@ -796,6 +837,8 @@ export class AccountOrdersComponent implements OnInit {
   totalPages = signal(1);
   selectedOrder = signal<Order | null>(null);
   requestingInvoice = signal(false);
+  orderInvoices = signal<InvoiceSummary[]>([]);
+  downloadingInvoice = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadOrders();
@@ -822,6 +865,7 @@ export class AccountOrdersComponent implements OnInit {
     this.orderService.getOrder(order.order_number).subscribe({
       next: (fullOrder) => {
         this.selectedOrder.set(fullOrder);
+        this.loadInvoices(fullOrder);
       },
       error: () => {
         this.toastService.error('No se pudo cargar el detalle del pedido');
@@ -832,6 +876,32 @@ export class AccountOrdersComponent implements OnInit {
   closeModal(): void {
     this.selectedOrder.set(null);
     this.requestingInvoice.set(false);
+    this.orderInvoices.set([]);
+  }
+
+  private loadInvoices(order: Order): void {
+    this.orderInvoices.set([]);
+    if (!this.canRequestInvoice(order.status)) return;
+    this.orderService.getInvoices(order.order_number).subscribe({
+      next: (invoices) => this.orderInvoices.set(invoices),
+      error: () => this.orderInvoices.set([]),
+    });
+  }
+
+  downloadInvoice(orderNumber: string, invoiceNumber?: string): void {
+    this.downloadingInvoice.set(invoiceNumber ?? orderNumber);
+    this.orderService.downloadInvoice(orderNumber, invoiceNumber).subscribe({
+      next: (blob) => {
+        saveBlob(blob, `Factura_${invoiceNumber ?? orderNumber}.pdf`);
+        this.downloadingInvoice.set(null);
+        // First download of an older order issues the invoice: refresh the list
+        if (!invoiceNumber && this.selectedOrder()) this.loadInvoices(this.selectedOrder()!);
+      },
+      error: () => {
+        this.toastService.error('No se pudo descargar la factura. Inténtalo de nuevo.');
+        this.downloadingInvoice.set(null);
+      }
+    });
   }
 
   cancelOrder(orderNumber: string): void {
@@ -852,9 +922,10 @@ export class AccountOrdersComponent implements OnInit {
   requestInvoice(orderNumber: string): void {
     this.requestingInvoice.set(true);
     this.orderService.requestInvoice(orderNumber).subscribe({
-      next: () => {
-        this.toastService.success('Te enviaremos la factura por email en unos minutos');
+      next: (res) => {
+        this.toastService.success(res.message || 'Factura enviada por email');
         this.requestingInvoice.set(false);
+        if (this.selectedOrder()) this.loadInvoices(this.selectedOrder()!);
       },
       error: () => {
         this.toastService.error('No se pudo solicitar la factura. Inténtalo de nuevo.');
@@ -864,7 +935,7 @@ export class AccountOrdersComponent implements OnInit {
   }
 
   canRequestInvoice(status: string): boolean {
-    return ['paid', 'processing', 'shipped', 'delivered'].includes(status);
+    return ['paid', 'processing', 'shipped', 'delivered', 'partially_refunded', 'refunded'].includes(status);
   }
 
   getStatusLabel(status: string): string {

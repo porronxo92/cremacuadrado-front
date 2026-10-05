@@ -4,12 +4,49 @@
   "installCommand": "npm install",
   "framework": null,
   "rewrites": [
-    { "source": "/", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/api" }
+    {
+      "source": "/",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api"
+    }
   ],
   "functions": {
     "api/index.mjs": {
       "includeFiles": "dist/cremacuadrado/**"
     }
-  }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy-Report-Only",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://accounts.google.com/gsi/client; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://*.public.blob.vercel-storage.com https://*.stripe.com https://*.googleusercontent.com https://maps.gstatic.com https://*.google.com; font-src 'self' data:; media-src 'self' https://*.public.blob.vercel-storage.com; connect-src 'self' https://api.cremacuadrado.com https://api-stg.cremacuadrado.com https://api.stripe.com https://accounts.google.com; frame-src https://js.stripe.com https://hooks.stripe.com https://accounts.google.com https://www.google.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(self \"https://js.stripe.com\")"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        }
+      ]
+    }
+  ]
 }

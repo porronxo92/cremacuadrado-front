@@ -27,14 +27,14 @@ import { SeoService } from '../../../core/services/seo.service';
             <nav class="toc" [class.is-open]="tocOpen()">
               <p class="toc__title">Contenido</p>
               <ul>
-                <li><a href="#titular" (click)="tocOpen.set(false)">Titular del sitio</a></li>
-                <li><a href="#ley-aplicable" (click)="tocOpen.set(false)">Ley aplicable</a></li>
-                <li><a href="#aceptacion" (click)="tocOpen.set(false)">Aceptación del usuario</a></li>
-                <li><a href="#contenido" (click)="tocOpen.set(false)">Contenido y uso</a></li>
-                <li><a href="#propiedad" (click)="tocOpen.set(false)">Propiedad intelectual</a></li>
-                <li><a href="#responsabilidad" (click)="tocOpen.set(false)">Responsabilidad</a></li>
-                <li><a href="#cookies" (click)="tocOpen.set(false)">Cookies</a></li>
-                <li><a href="#enlaces" (click)="tocOpen.set(false)">Enlaces</a></li>
+                <li><a [routerLink]="[]" fragment="titular" (click)="tocOpen.set(false)">Titular del sitio</a></li>
+                <li><a [routerLink]="[]" fragment="ley-aplicable" (click)="tocOpen.set(false)">Ley aplicable</a></li>
+                <li><a [routerLink]="[]" fragment="aceptacion" (click)="tocOpen.set(false)">Aceptación del usuario</a></li>
+                <li><a [routerLink]="[]" fragment="contenido" (click)="tocOpen.set(false)">Contenido y uso</a></li>
+                <li><a [routerLink]="[]" fragment="propiedad" (click)="tocOpen.set(false)">Propiedad intelectual</a></li>
+                <li><a [routerLink]="[]" fragment="responsabilidad" (click)="tocOpen.set(false)">Responsabilidad</a></li>
+                <li><a [routerLink]="[]" fragment="cookies" (click)="tocOpen.set(false)">Cookies</a></li>
+                <li><a [routerLink]="[]" fragment="enlaces" (click)="tocOpen.set(false)">Enlaces</a></li>
               </ul>
             </nav>
 
@@ -59,7 +59,7 @@ import { SeoService } from '../../../core/services/seo.service';
                   </div>
                   <div class="highlight-card">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
-                    <div><strong>Jurisdicción Ciudad Real</strong><p>Las partes se someten expresamente a los Juzgados y Tribunales de Ciudad Real para resolver cualquier controversia.</p></div>
+                    <div><strong>Jurisdicción</strong><p>Si eres consumidor, podrás acudir a los juzgados de tu domicilio. En el resto de casos, las partes se someten a los Juzgados y Tribunales de Ciudad Real. Las compras se rigen además por las <a routerLink="/condiciones-venta">condiciones generales de venta</a>.</p></div>
                   </div>
                 </div>
               </section>

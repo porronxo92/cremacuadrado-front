@@ -11,7 +11,7 @@ const MESSAGES = [
   selector: 'app-announcement-bar',
   standalone: true,
   template: `
-    <div class="announcement-bar" role="marquee" aria-live="polite" aria-atomic="true">
+    <div class="announcement-bar" role="region" aria-label="Avisos" [attr.aria-live]="paused() ? 'polite' : 'off'" aria-atomic="true">
       <div class="announcement-bar__track">
         @for (msg of messages; track $index) {
           <span
@@ -22,6 +22,13 @@ const MESSAGES = [
           </span>
         }
       </div>
+      @if (rotating()) {
+        <!-- WCAG 2.2.2: el contenido que cambia solo debe poder pausarse -->
+        <button type="button" class="announcement-bar__pause" (click)="togglePause()"
+                [attr.aria-label]="paused() ? 'Reanudar avisos' : 'Pausar avisos'">
+          {{ paused() ? '▶' : '❚❚' }}
+        </button>
+      }
     </div>
   `,
   styles: [`
@@ -66,6 +73,13 @@ const MESSAGES = [
       }
     }
 
+    .announcement-bar__pause {
+      position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+      min-width: 32px; height: 28px; border: 0; border-radius: 4px; background: transparent;
+      color: #F4F1E9; font-size: 0.65rem; cursor: pointer;
+      &:hover, &:focus-visible { background: rgba(255,255,255,0.15); }
+    }
+
     @media (max-width: 768px) {
       .announcement-bar__msg {
         font-size: 0.68rem;
@@ -85,16 +99,37 @@ export class AnnouncementBarComponent implements OnInit, OnDestroy {
 
   readonly messages = MESSAGES;
   readonly currentIndex = signal(0);
+  readonly rotating = signal(false);
+  readonly paused = signal(false);
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
     if (window.matchMedia('(max-width: 768px)').matches) return;
+    // Sin rotación automática si el usuario pide menos movimiento
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
+    this.rotating.set(true);
+    this.start();
+  }
+
+  togglePause(): void {
+    this.paused.update(p => !p);
+    if (this.paused()) this.stop();
+    else this.start();
+  }
+
+  private start(): void {
+    this.stop();
     this.intervalId = setInterval(() => {
       this.currentIndex.update(i => (i + 1) % this.messages.length);
     }, 4000);
+  }
+
+  private stop(): void {
+    if (this.intervalId) clearInterval(this.intervalId);
+    this.intervalId = null;
   }
 
   ngOnDestroy(): void {

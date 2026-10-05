@@ -704,3 +704,43 @@ button {
   background-color: rgba(239, 68, 68, 0.1);
   color: var(--color-error);
 }
+
+
+// ── Accesibilidad (WCAG 2.1 AA) ─────────────────────────────────────────────
+// Foco visible para navegación con teclado en todos los elementos interactivos,
+// aunque un componente haya quitado el outline por defecto.
+a, button, input, select, textarea, summary, [tabindex] {
+  &:focus-visible {
+    outline: 3px solid #E6C15A !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 5px #1C1A14 !important;
+  }
+}
+
+// Enlace "Saltar al contenido" (visible al recibir el foco)
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 2000;
+  padding: 0.75rem 1.25rem;
+  background: #1C1A14;
+  color: #F4F1E9;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  border-radius: 0 0 6px 6px;
+  &:focus { top: 0; }
+}
+
+.main-content:focus { outline: none; }
+
+// Respeta "reducir movimiento" del sistema
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  video[autoplay] { display: none; }
+}

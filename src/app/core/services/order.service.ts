@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import {
   Order, OrderListItem, CheckoutData, CheckoutValidation,
-  PaymentIntent, ApiMessage, PaginatedResponse
+  PaymentIntent, ApiMessage, PaginatedResponse, InvoiceSummary, BillingDetails
 } from '../models';
 
 const CART_SESSION_KEY = 'cc_cart_session';
@@ -127,5 +127,33 @@ export class OrderService {
    */
   requestInvoice(orderNumber: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${this.ordersUrl}/${orderNumber}/request-invoice`, {});
+  }
+
+  /** Invoices (regular + corrective) issued for an order. */
+  getInvoices(orderNumber: string): Observable<InvoiceSummary[]> {
+    return this.http.get<InvoiceSummary[]>(`${this.ordersUrl}/${orderNumber}/invoices`);
+  }
+
+  /** Stored invoice PDF; pass `invoiceNumber` for a corrective invoice. */
+  downloadInvoice(orderNumber: string, invoiceNumber?: string): Observable<Blob> {
+    const params: Record<string, string> = {};
+    if (invoiceNumber) params['number'] = invoiceNumber;
+    return this.http.get(`${this.ordersUrl}/${orderNumber}/invoice`, { params, responseType: 'blob' });
+  }
+
+  /**
+   * Last step before charging: records the explicit acceptance of the sales
+   * conditions and the tax details (null = simplified invoice) on the pending
+   * order. The PaymentIntent id proves ownership.
+   */
+  preConfirm(orderNumber: string, paymentIntentId: string, termsVersion: string,
+             billing: BillingDetails | null): Observable<ApiMessage> {
+    return this.http.post<ApiMessage>(`${this.checkoutUrl}/pre-confirm`, {
+      order_number: orderNumber,
+      payment_intent_id: paymentIntentId,
+      accept_terms: true,
+      terms_version: termsVersion,
+      billing,
+    });
   }
 }

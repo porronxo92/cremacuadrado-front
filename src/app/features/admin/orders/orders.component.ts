@@ -5,7 +5,7 @@ import { RouterModule } from '@angular/router';
 import { forkJoin, of, catchError } from 'rxjs';
 import { ToastService } from '../../../core/services/toast.service';
 import { AdminApiService } from '../shared/admin-api.service';
-import { AdminOrder, OrderPayments, OrderShipment } from '../shared/admin.models';
+import { AdminOrder, OrderInvoiceRef, OrderPayments, OrderShipment } from '../shared/admin.models';
 import { ORDER_STATUS, ORDER_STATUS_EDITABLE, PAYMENT_STATUS, SHIPMENT_STATUS, statusInfo } from '../shared/admin-labels';
 import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
@@ -172,7 +172,8 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
             @if (o.billing_address) {
               <h3>Facturación</h3>
               <p class="addr">
-                {{ o.billing_address.first_name }} {{ o.billing_address.last_name }}<br>
+                {{ $any(o.billing_address).name || (o.billing_address.first_name + ' ' + o.billing_address.last_name) }}<br>
+                @if ($any(o.billing_address).nif) { <span class="mono">NIF {{ $any(o.billing_address).nif }}</span><br> }
                 {{ o.billing_address.street }}, {{ o.billing_address.postal_code }} {{ o.billing_address.city }}
               </p>
             }
@@ -223,6 +224,28 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
               @for (r of payments()?.refunds ?? []; track r.id) {
                 <p class="line"><adm-badge tone="neutral">Reembolso {{ r.status }}</adm-badge>
                   −{{ r.amount | currency:'EUR' }} · {{ r.reason || 'sin motivo' }} · {{ r.created_at | date:'dd/MM HH:mm' }}</p>
+              }
+            }
+            <h3 class="invoices-title">Facturas</h3>
+            @for (inv of o.invoices ?? []; track inv.id) {
+              <p class="line">
+                <adm-badge [tone]="inv.invoice_type === 'corrective' ? 'danger' : 'info'">
+                  {{ inv.invoice_type === 'corrective' ? 'Rectificativa' : 'Factura' }}
+                </adm-badge>
+                <span class="mono">{{ inv.invoice_number }}</span> · {{ inv.total | currency:'EUR' }}
+                <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost" (click)="downloadInvoice(inv)">PDF</button>
+              </p>
+            } @empty {
+              @if (isInvoiceable(o.status)) {
+                <p class="line adm-muted">
+                  Sin factura emitida.
+                  <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost"
+                          [disabled]="issuingInvoice()" (click)="issueInvoice(o)">
+                    {{ issuingInvoice() ? 'Emitiendo…' : 'Emitir factura' }}
+                  </button>
+                </p>
+              } @else {
+                <p class="line adm-muted">Se emite automáticamente al cobrar el pedido.</p>
               }
             }
           </section>
@@ -302,6 +325,7 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
     }
   `,
   styles: [`
+    .invoices-title { margin-top: 1rem; }
     .status-select { width: auto; min-height: 34px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
     .actions { display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center; }
     .detail-head { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; font-size: 0.8rem; }
@@ -420,6 +444,36 @@ export class AdminOrdersComponent implements OnInit {
       error: err => {
         this.syncing.set(false);
         this.toast.error(err.message || 'No se pudo consultar Correos');
+      },
+    });
+  }
+
+  issuingInvoice = signal(false);
+
+  isInvoiceable(status: string): boolean {
+    return ['paid', 'processing', 'shipped', 'delivered', 'partially_refunded', 'refunded'].includes(status);
+  }
+
+  downloadInvoice(inv: OrderInvoiceRef): void {
+    this.api.downloadInvoice(inv).subscribe({
+      error: err => this.toast.error(err.message || 'No se pudo descargar la factura'),
+    });
+  }
+
+  issueInvoice(order: AdminOrder): void {
+    this.issuingInvoice.set(true);
+    this.api.issueOrderInvoice(order.id).subscribe({
+      next: inv => {
+        this.issuingInvoice.set(false);
+        this.toast.success(`Factura ${inv.invoice_number} emitida`);
+        const current = this.detail();
+        if (current?.id === order.id) {
+          this.detail.set({ ...current, invoices: [...(current.invoices ?? []), inv] });
+        }
+      },
+      error: err => {
+        this.issuingInvoice.set(false);
+        this.toast.error(err.message || 'No se pudo emitir la factura');
       },
     });
   }

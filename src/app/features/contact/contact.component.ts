@@ -11,10 +11,12 @@ interface FaqItem {
   open: boolean;
 }
 
+import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
+
 @Component({
   selector: 'app-contact',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, PrivacyNoticeComponent],
   template: `
     <div class="contact-page">
 
@@ -179,9 +181,13 @@ interface FaqItem {
                   <div class="form-check">
                     <label class="checkbox-label">
                       <input type="checkbox" name="marketing" [(ngModel)]="formData.marketing">
-                      <span class="checkbox-text">Acepto el envío de comunicaciones comerciales, promociones y ofertas</span>
+                      <span class="checkbox-text">Acepto el envío de comunicaciones comerciales, promociones y ofertas (opcional)</span>
                     </label>
                   </div>
+
+                  <app-privacy-notice
+                    purpose="responder a tu consulta y, solo si marcas la casilla, enviarte comunicaciones comerciales"
+                    legalBasis="tu consentimiento" />
 
                   <button
                     type="submit"
@@ -749,6 +755,7 @@ export class ContactComponent {
       email: this.formData.email,
       message: this.formData.message,
       accepts_marketing: this.formData.marketing,
+      accept_privacy: this.formData.privacy,
     }).subscribe({
       next: () => {
         this.sending.set(false);

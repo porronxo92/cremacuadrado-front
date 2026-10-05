@@ -3,6 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { saveBlob } from '../../../core/utils/save-blob';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-account-profile',
@@ -110,9 +113,52 @@ import { AuthService } from '../../../core/services/auth.service';
           </button>
         </form>
       </div>
+
+      <!-- Privacidad (RGPD) -->
+      <div class="profile-section" id="privacidad">
+        <h2>Privacidad y datos</h2>
+
+        <label class="privacy-toggle">
+          <input type="checkbox" [checked]="marketingOptIn()" [disabled]="savingMarketing()" (change)="toggleMarketing($any($event.target).checked)">
+          <span>Quiero recibir recetas, novedades y ofertas por email. Puedes cambiarlo cuando quieras.</span>
+        </label>
+
+        <div class="privacy-actions">
+          <button type="button" class="btn btn--secondary" [disabled]="exporting()" (click)="exportData()">
+            {{ exporting() ? 'Preparando…' : 'Descargar mis datos (JSON)' }}
+          </button>
+        </div>
+
+        <div class="danger-zone">
+          <h3>Eliminar mi cuenta</h3>
+          <p>Borraremos tus direcciones, carritos y solicitudes y anonimizaremos tu perfil. Por obligación legal
+            conservaremos bloqueados tus pedidos y facturas durante los plazos fiscales. Esta acción no se puede deshacer.</p>
+          @if (!confirmDelete()) {
+            <button type="button" class="btn btn--danger" (click)="confirmDelete.set(true)">Eliminar mi cuenta</button>
+          } @else {
+            <p class="danger-confirm" role="alert">¿Seguro? Se cerrará tu sesión y no podrás recuperar la cuenta.</p>
+            <div class="privacy-actions">
+              <button type="button" class="btn btn--secondary" (click)="confirmDelete.set(false)">Cancelar</button>
+              <button type="button" class="btn btn--danger" [disabled]="deleting()" (click)="deleteAccount()">
+                {{ deleting() ? 'Eliminando…' : 'Sí, eliminar definitivamente' }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
     </div>
   `,
   styles: [`
+    .privacy-toggle { display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 1.25rem; cursor: pointer; line-height: 1.5;
+      input { margin-top: 0.25rem; width: 18px; height: 18px; flex-shrink: 0; } }
+    .privacy-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .danger-zone { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;
+      h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #a3261f; }
+      p { font-size: 0.9rem; color: #555; line-height: 1.6; } }
+    .danger-confirm { font-weight: 600; color: #a3261f !important; }
+    .btn--danger { min-height: 48px; padding: 0 1.25rem; border-radius: 20px; border: 1.5px solid #a3261f;
+      background: #fff; color: #a3261f; font-weight: 600; cursor: pointer;
+      &:hover:not(:disabled) { background: #a3261f; color: #fff; } }
     .profile-page {
       h1 {
         margin: 0 0 2rem;
@@ -236,6 +282,7 @@ export class AccountProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   profileForm!: FormGroup;
   passwordForm!: FormGroup;
@@ -244,6 +291,13 @@ export class AccountProfileComponent implements OnInit {
   savingProfile = signal(false);
   profileSuccess = signal(false);
   profileError = signal<string | null>(null);
+
+  marketingOptIn = signal(false);
+  savingMarketing = signal(false);
+  exporting = signal(false);
+  confirmDelete = signal(false);
+  deleting = signal(false);
+  private toastService = inject(ToastService);
 
   savingPassword = signal(false);
   passwordSuccess = signal(false);
@@ -287,11 +341,56 @@ export class AccountProfileComponent implements OnInit {
           email: user.email,
           phone: user.phone ?? ''
         });
+        this.marketingOptIn.set(!!user.marketing_opt_in);
         this.loadingProfile.set(false);
       },
       error: () => {
         this.loadingProfile.set(false);
       }
+    });
+  }
+
+  toggleMarketing(optIn: boolean): void {
+    this.savingMarketing.set(true);
+    this.userService.setMarketing(optIn).subscribe({
+      next: () => {
+        this.marketingOptIn.set(optIn);
+        this.savingMarketing.set(false);
+        this.toastService.success(optIn ? 'Te has suscrito a nuestras comunicaciones' : 'No volverás a recibir comunicaciones comerciales');
+      },
+      error: () => {
+        this.savingMarketing.set(false);
+        this.toastService.error('No se pudo guardar la preferencia');
+      },
+    });
+  }
+
+  exportData(): void {
+    this.exporting.set(true);
+    this.userService.exportMyData().subscribe({
+      next: blob => {
+        saveBlob(blob, 'mis-datos-cremacuadrado.json');
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.toastService.error('No se pudieron exportar tus datos');
+      },
+    });
+  }
+
+  deleteAccount(): void {
+    this.deleting.set(true);
+    this.userService.deleteMyAccount().subscribe({
+      next: () => {
+        this.toastService.success('Tu cuenta se ha eliminado');
+        this.authService.logoutLocal();
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        this.deleting.set(false);
+        this.toastService.error('No se pudo eliminar la cuenta. Escríbenos a info@cremacuadrado.com');
+      },
     });
   }
 

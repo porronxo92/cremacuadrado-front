@@ -4,13 +4,14 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollapsibleBlockComponent } from '../../../shared/components/collapsible-block/collapsible-block.component';
 import { ParaTiendasService } from '../../../core/services/para-tiendas.service';
 import { SeoService } from '../../../core/services/seo.service';
+import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notice/privacy-notice.component';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 @Component({
   selector: 'app-para-tiendas',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CollapsibleBlockComponent],
+  imports: [CommonModule, ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
   template: `
     <div class="pt-page">
 
@@ -310,6 +311,14 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 </div>
               </div>
 
+              <label class="pt-form__consent">
+                <input type="checkbox" formControlName="acceptPrivacy">
+                <span>He leído la información sobre privacidad y acepto que me contactéis para darme precios y condiciones *</span>
+              </label>
+              <app-privacy-notice
+                purpose="gestionar tu solicitud como punto de venta y contactarte con información comercial sobre ella"
+                legalBasis="tu consentimiento y la aplicación de medidas precontractuales a petición tuya" />
+
               <p class="pt-form__note">Sin compromiso. Os llamamos en 48 horas. Si os interesa conocer el producto antes de decidir, os enviamos una muestra gratuita.</p>
 
               @if (submitState() === 'error') {
@@ -323,7 +332,6 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 {{ submitState() === 'loading' ? 'Enviando...' : 'Conocer precios de venta' }}
               </button>
 
-              <p class="pt-form__disclaimer">No compartimos tus datos con terceros.</p>
             </form>
           }
         </div>
@@ -632,6 +640,9 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       color: #7B1716;
     }
 
+    .pt-form__consent { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 1rem; font-family: 'Poppins', sans-serif; font-size: 0.8rem; line-height: 1.5; cursor: pointer;
+      input { margin-top: 0.2rem; width: 18px; height: 18px; flex-shrink: 0; } }
+
     .pt-form__note {
       font-family: 'Lora', serif;
       font-style: italic;
@@ -750,6 +761,7 @@ export class ParaTiendasComponent {
     establishmentType: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{9,15}$/)]],
+    acceptPrivacy: [false, Validators.requiredTrue],
   });
 
   scrollToForm(): void {
@@ -772,6 +784,7 @@ export class ParaTiendasComponent {
       establishment_type: value.establishmentType!,
       email: value.email!,
       phone: value.phone!,
+      accept_privacy: !!value.acceptPrivacy,
     }).subscribe({
       next: () => this.submitState.set('success'),
       error: () => this.submitState.set('error'),

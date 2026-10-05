@@ -19,6 +19,21 @@ export class UserService {
     return this.http.get<User>(`${this.apiUrl}/profile`);
   }
   
+  /** Consentimiento de comunicaciones comerciales (queda registrado en el backend). */
+  setMarketing(optIn: boolean): Observable<ApiMessage> {
+    return this.http.put<ApiMessage>(`${this.apiUrl}/preferences`, null, { params: { marketing_opt_in: String(optIn) } });
+  }
+
+  /** Derecho de acceso / portabilidad: todos mis datos en JSON. */
+  exportMyData(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/me/export`, { responseType: 'blob' });
+  }
+
+  /** Derecho de supresión: anonimiza la cuenta (pedidos y facturas se conservan bloqueados). */
+  deleteMyAccount(): Observable<ApiMessage> {
+    return this.http.delete<ApiMessage>(`${this.apiUrl}/me`);
+  }
+
   /**
    * Update user profile
    */

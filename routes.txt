@@ -7,5 +7,7 @@
 /aviso-legal
 /cookies
 /devoluciones
+/condiciones-venta
+/desistimiento
 /tienda/crema-pistacho-pura
 /tienda/crema-pistacho-crunchy

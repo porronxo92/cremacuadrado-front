@@ -28,17 +28,31 @@ export const routes: Routes = [
     loadComponent: () => import('./features/pages/privacy/privacy.component').then(m => m.PrivacyPageComponent),
   },
   {
-    // El contenido de ConditionsPageComponent es Aviso Legal (titular del
-    // sitio, NIF, jurisdicción, propiedad intelectual) — vivía montado en
-    // /condiciones-venta, que es una página legal distinta y obligatoria
-    // (CLAUDE.md) que de momento no existe. Esta ruta la cubre de verdad;
-    // /condiciones-venta pasa a ser un 301 más abajo.
+    // Aviso legal (LSSI art. 10). Las condiciones de venta viven en /condiciones-venta.
     path: 'aviso-legal',
     loadComponent: () => import('./features/pages/conditions/conditions.component').then(m => m.ConditionsPageComponent),
   },
   {
     path: 'cookies',
     loadComponent: () => import('./features/pages/cookies/cookies.component').then(m => m.CookiesPageComponent),
+  },
+  {
+    path: 'condiciones-venta',
+    loadComponent: () => import('./features/pages/sales-conditions/sales-conditions.component').then(m => m.SalesConditionsComponent),
+  },
+  {
+    path: 'desistimiento',
+    loadComponent: () => import('./features/pages/withdrawal/withdrawal.component').then(m => m.WithdrawalComponent),
+  },
+  {
+    path: 'newsletter/confirmar',
+    data: { mode: 'confirm' },
+    loadComponent: () => import('./features/newsletter/newsletter-action.component').then(m => m.NewsletterActionComponent),
+  },
+  {
+    path: 'newsletter/baja',
+    data: { mode: 'unsubscribe' },
+    loadComponent: () => import('./features/newsletter/newsletter-action.component').then(m => m.NewsletterActionComponent),
   },
   {
     path: 'devoluciones',
@@ -100,7 +114,6 @@ export const routes: Routes = [
   { path: 'blog', redirectTo: '/el-archivo', pathMatch: 'full' },
   { path: 'blog/:slug', redirectTo: '/el-archivo/:slug', pathMatch: 'full' },
   { path: 'checkout/success', redirectTo: '/gracias', pathMatch: 'full' },
-  { path: 'condiciones-venta', redirectTo: '/aviso-legal', pathMatch: 'full' },
   { path: 'pages/sobre-nosotros', redirectTo: '/nuestro-metodo', pathMatch: 'full' },
   { path: 'nosotros', redirectTo: '/nuestro-metodo', pathMatch: 'full' },
   { path: 'pages/contacto', redirectTo: '/contacto', pathMatch: 'full' },
@@ -235,6 +248,14 @@ export const routes: Routes = [
       {
         path: 'pagos',
         loadComponent: () => import('./features/admin/payments/payments.component').then(m => m.AdminPaymentsComponent),
+      },
+      {
+        path: 'cumplimiento',
+        loadComponent: () => import('./features/admin/compliance/compliance.component').then(m => m.AdminComplianceComponent),
+      },
+      {
+        path: 'facturas',
+        loadComponent: () => import('./features/admin/invoices/invoices.component').then(m => m.AdminInvoicesComponent),
       },
       {
         path: 'envios',

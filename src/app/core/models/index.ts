@@ -49,6 +49,8 @@ export interface ProductVariant {
   id: number;
   format: string;
   price: number;
+  /** Omnibus: precio más bajo de los 30 días previos a una rebaja (solo si el precio actual es menor). */
+  compare_price?: number | null;
   stock: number;
   is_in_stock: boolean;
   is_low_stock: boolean;
@@ -268,6 +270,26 @@ export interface PaymentIntent {
   order_number: string;
 }
 
+/** Tax details for a full invoice (company / self-employed). */
+export interface BillingDetails {
+  name: string;          // razón social o nombre completo
+  nif: string;
+  street: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  country: string;
+}
+
+export type InvoiceType = 'simplified' | 'full' | 'corrective';
+
+export interface InvoiceSummary {
+  invoice_number: string;
+  invoice_type: InvoiceType;
+  issued_at: string;
+  total: number;
+}
+
 // Blog interfaces
 export interface BlogPost {
   id: number;
@@ -313,6 +335,8 @@ export interface RegisterData {
   first_name: string;
   last_name: string;
   phone?: string;
+  accept_terms?: boolean;
+  marketing_opt_in?: boolean;
 }
 
 export interface AuthTokens {

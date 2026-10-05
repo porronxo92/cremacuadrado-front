@@ -58,3 +58,15 @@ export function statusInfo(map: Record<string, { label: string; tone: BadgeTone 
   if (!key) return { label: '—', tone: 'neutral' as BadgeTone };
   return map[key] ?? { label: key, tone: 'neutral' as BadgeTone };
 }
+
+export const INVOICE_TYPE: Record<string, { label: string; tone: BadgeTone }> = {
+  simplified: { label: 'Simplificada', tone: 'neutral' },
+  full: { label: 'Completa (NIF)', tone: 'info' },
+  corrective: { label: 'Rectificativa', tone: 'danger' },
+};
+
+export const INVOICE_PDF_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
+  stored: { label: 'Guardado', tone: 'success' },
+  pending: { label: 'Pendiente', tone: 'warning' },
+  failed: { label: 'Error', tone: 'danger' },
+};
