@@ -53,3 +53,8 @@ Desktop.ini
 *.bak
 *.tmp
 .vercel
+
+# Agent skills (npx skills)
+.agents/
+.claude/skills/
+skills-lock.json
