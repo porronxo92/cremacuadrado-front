@@ -129,6 +129,8 @@ border-radius: 20px;
 **`MiniCart`**
 - Slide-in desde la derecha
 - No redirige a /carrito — muestra resumen con botón "Tramitar pedido"
+- Diálogo modal accesible: al abrir, el foco entra en el panel (botón cerrar); Tab queda atrapado dentro; Esc y el overlay lo cierran; al cerrar, el foco vuelve al elemento que lo abrió
+- Cerrado: `inert` + `visibility: hidden` (fuera del orden de tabulación y del lector de pantalla)
 
 ### B2C — Ficha de producto
 
@@ -136,11 +138,11 @@ border-radius: 20px;
 1. Estrellas + número de reseñas (antes del título)
 2. Título en Teko Bold uppercase + tagline Lora italic
 3. Reproductor de audio 30s (La Trilogía del Sabor)
-4. Selector de formato: 100g / 200g / 1kg / Suscripción mensual
+4. Selector de formato: 100g / 200g / 1kg
 5. Precio dinámico: total + €/100g (se actualiza al cambiar formato)
-6. CTA "Añadir al carrito"
+6. Cantidad + CTA "Añadir al carrito" (con la suscripción desactivada se muestra directamente, sin selector "una vez / suscripción" de una sola opción)
 7. Garantías: envío gratis +48€ / 48-72h / pago seguro
-8. Bloque club mensual −15%
+8. Bloque club mensual −15% — **oculto** mientras `SUBSCRIPTION_ENABLED = false` (no hay cobro recurrente)
 
 Zona inferior (tras los CTAs):
 - Tabs: El producto / Ingredientes / Nutrición / Cómo usarlo
@@ -148,14 +150,15 @@ Zona inferior (tras los CTAs):
 - Reseñas verificadas (Judge.me)
 
 **Comportamiento móvil**:
-- Galería: foto full-width con swipe, puntos de navegación. Sin thumbnails.
-- Barra fija en la parte inferior al hacer scroll: nombre + formato + precio + botón "Añadir al carrito". Mínimo 48px de alto.
-- Tabs con scroll horizontal
+- Galería: foto full-width con swipe, puntos de navegación (punto visual de 7px dentro de una zona táctil de 24×24px). Sin thumbnails.
+- Barra fija en la parte inferior al hacer scroll: nombre + formato + precio + botón "Añadir al carrito" de 48px, con `env(safe-area-inset-bottom)`.
+- Tabs con scroll horizontal y patrón WAI-ARIA (flechas / Inicio / Fin, `aria-controls`, tabindex itinerante)
 
 **`FormatSelector`**
 - Props: `formats: [{label, price, pricePerGram, badge, badgeColor}]`, `onChange`
 - Al seleccionar, actualiza precio dinámicamente
 - Badges: "Para probar" (gris) / "Más popular" (verde) / "Mejor €/g" (amarillo) / "−15% cada mes" (granate suave para suscripción)
+- Seleccionado: borde granate de 2px + check (no solo color; el verde `#A2BA1C` sobre crema no llega a 3:1). `aria-pressed`, sin `aria-label` para que se lean formato, precio y badge.
 
 **`AudioPlayer`**
 - Reproductor compacto en píldora redondeada, fondo `#EDE9DF`
@@ -170,29 +173,28 @@ Zona inferior (tras los CTAs):
 ### Carrito y checkout
 
 **`CartPage`** (`/carrito`)
-- Dos columnas desktop: resumen del pedido (izq) + acción (der)
-- En móvil: una columna + botón "Ir al pago" fijo en la parte inferior
-- Selector cantidad (+/−) + botón eliminar por línea
-- Campo código de descuento: oculto por defecto, desplegable al hacer clic
-- Envío calculado dinámicamente: 6€ península / 8,50€ Baleares / Gratis si subtotal ≥ 48€
-- Botón "Ir al pago" → inicia el flujo de identificación
+- Dos columnas desktop: líneas del pedido (izq) + resumen y acción (der)
+- En móvil: una columna + barra fija inferior con total y botón "Ir al pago" (sustituye al botón del resumen)
+- Por línea: formato visible, selector cantidad (+/−, 44px, `aria-label` con el nombre del producto) + botón eliminar (48px, `aria-label`)
+- Código de descuento: plegado por defecto ("¿Tienes un código de descuento?"), **solo para clientes con cuenta**; a los invitados se les invita a iniciar sesión o registrarse
+- Envío: lo calcula el backend (4,95 € península; gratis desde 48 € tras descuentos). La barra de progreso usa subtotal − descuento
+- Botón "Ir al pago" → `/checkout`
 
-**Flujo de checkout** (4 pasos):
+**Flujo de checkout** (una página, 3 secciones):
 1. `/carrito` — resumen
-2. Identificación — 3 opciones: Google OAuth / Crear cuenta (incentivo cuchara) / Invitado
-3. Datos de envío — con checkbox "datos de facturación iguales" (marcado por defecto)
-4. Pago — Stripe. Botón "Confirmar pedido"
-5. Stripe redirige a `/gracias`
+2. `/checkout` — 1 Contacto (enlace "¿Ya tienes cuenta? Inicia sesión"; invitado por defecto) · 2 Dirección de envío (+ factura con NIF opcional) · 3 Pago Stripe (Payment Element)
+3. Botón "Pedido con obligación de pago" (texto legal obligatorio)
+4. Stripe redirige a `/gracias`
 
-**`CheckoutIdentification`**
-- Opción Google: botón OAuth (un clic, datos autorellenados)
-- Opción Crear cuenta: email + contraseña + mensaje incentivo "Recibe una cuchara CremaCuadrado con tu primer pedido"
-- Opción Invitado: solo email
+> Decisión de negocio: **no hay incentivo de la cuchara** al crear cuenta por ahora, y no hay paso de identificación separado (Google / crear cuenta / invitado). No añadirlos sin confirmarlo.
 
-**`ShippingForm`**
-- Campos: nombre, apellidos, dirección, provincia, código postal, teléfono
-- Checkbox "Los datos de facturación son los mismos" — marcado por defecto
-- Si desmarca: aparecen campos de facturación con NIF/CIF
+**Formulario del checkout** (reglas de la skill ui-ux-pro-max, ver «Reglas UX y accesibilidad»):
+- El botón de pago **nunca** se desactiva por validación (solo mientras procesa). Al pulsarlo con datos pendientes: resumen de errores arriba (`role="alert"`, recibe el foco, cada error enlaza a su campo) + error en línea bajo cada campo
+- Cada campo con error: `aria-invalid` + `aria-describedby` → mensaje que dice qué falta y cómo arreglarlo
+- `autocomplete` en todos los campos (`email`, `given-name`, `family-name`, `shipping address-line1`, `shipping address-level2`, `shipping postal-code`, `billing …`), `inputmode="numeric"` en códigos postales
+- Campos de 48px y `font-size: 1rem` (evita el zoom de iOS)
+- Casilla "Necesito factura… (con NIF)"; dentro, "La dirección fiscal es la misma que la de envío" marcada por defecto
+- Resumen del pedido con nombre + formato + precio unitario
 
 ### Homepage
 
@@ -297,10 +299,8 @@ Zona inferior (tras los CTAs):
 4. Backend → guarda lead en tabla propia (BBDD) → email confirmación + notificación interna a b2b@cremacuadrado.com con tipo de negocio
 5. Lucas/Stefano llaman en 48h
 
-### Registro con incentivo
-1. En el checkout, opción "Crear cuenta"
-2. Mensaje visible: "Recibe una cuchara CremaCuadrado con tu primer pedido"
-3. Al completar el pedido: `has_received_spoon = true`, cuchara incluida en el envío
+### Registro con incentivo — en pausa
+La cuchara de regalo con el primer pedido **no está activa** (decisión de negocio). No mostrar el mensaje "Recibe una cuchara CremaCuadrado con tu primer pedido" hasta que se confirme.
 
 ---
 
@@ -317,8 +317,9 @@ Zona inferior (tras los CTAs):
 ### Estados de UI requeridos
 
 Todos los formularios y botones de compra deben manejar:
-- **Loading**: deshabilitar botón + indicador visual durante la petición
-- **Error**: mensaje claro al usuario. Nunca exponer errores técnicos internos.
+- **Loading**: deshabilitar botón + indicador visual durante la petición (`aria-busy`). Es el único motivo para deshabilitar un botón de envío: nunca por validación.
+- **Error**: mensaje claro al usuario que diga causa + cómo arreglarlo, anunciado con `role="alert"` / `aria-live`. Nunca exponer errores técnicos internos.
+- **Errores HTTP**: el `errorInterceptor` devuelve `{ status, message }` → usar `err.message`, nunca `err.error?.detail` (siempre es `undefined` y el cliente ve un mensaje genérico).
 - **Vacío**: estados de lista vacía en carrito, pedidos, etc.
 
 ---
@@ -331,12 +332,45 @@ Todos los formularios y botones de compra deben manejar:
 - Hooks en camelCase con prefijo `use`: `useCart`, `useAuth`, `useFormatPrice`
 - Utilidades en camelCase: `formatPrice`, `calculateShipping`, `formatDate`
 
-### Accesibilidad
+### Reglas UX y accesibilidad (skill `ui-ux-pro-max`)
 
-- Todos los botones tienen texto descriptivo o `aria-label`
+Reglas tomadas de la skill instalada en `.agents/skills/ui-ux-pro-max` (WCAG 2.2, Apple HIG, Material). Prioridad: 1 accesibilidad → 2 táctil → 3 rendimiento → 5 responsive → 6 tipografía/color → 7 animación → 8 formularios → 9 navegación. Las líneas rojas de marca y de UX de este documento mandan sobre la skill.
+
+**Accesibilidad**
+- Contraste de texto ≥ 4,5:1 (texto grande ≥ 3:1); bordes de controles, iconos con significado y estados seleccionados ≥ 3:1. Sobre crema `#F4F1E9`: granate 9,4:1 ✅, `#6B6456` 5,2:1 ✅, **amarillo `#E6C15A` 1,5:1 ❌ y verde `#A2BA1C` 1,9:1 ❌** → amarillo y verde solo como acento o fondo, nunca como texto ni como único indicador de estado.
+- No transmitir información solo con color: añadir icono o texto (p. ej. el check del formato seleccionado).
+- Foco visible: lo garantiza `styles.scss` (`:focus-visible` con `!important`); no quitarlo en componentes. Los elementos fijos (barra de compra, banner de cookies) no deben tapar el control enfocado.
+- Botones solo con icono: `aria-label` que incluya el producto («Eliminar Crema Pura 200g del carrito»). Iconos decorativos con `aria-hidden="true"`; imagen junto a un texto que ya la nombra: `alt=""`.
+- Contadores y cantidades que cambian: `aria-live="polite"`.
+- Paneles y modales (mini-carrito, menú móvil, cookies): foco al abrir, foco atrapado, Esc cierra, foco devuelto al cerrar; cerrados con `inert`.
+- Pestañas: patrón WAI-ARIA completo (flechas, `aria-controls`, `aria-labelledby`). Si no es una pestaña (p. ej. puntos de una galería), no usar `role="tab"`.
+- Respetar `prefers-reduced-motion` (ya global en `styles.scss`).
+
+**Táctil**
+- Objetivo de proyecto: **48px** para botones y controles del embudo de compra en móvil (por encima de 44pt iOS / 48dp Android). Mínimo legal web WCAG 2.2 AA: 24×24px; los controles secundarios muy compactos (+/− del mini-carrito, puntos de la galería) pueden quedarse en 40–44px o en 24px con zona táctil ampliada.
+- Separación ≥ 8px entre objetivos táctiles; `touch-action: manipulation` en steppers.
+- Barras fijas inferiores: `padding-bottom: env(safe-area-inset-bottom)` y reservar su alto en la página.
+
+**Formularios** (`input-labels`, `error-placement`, `error-summary`, `focus-management`, `autofill-support`)
+- Etiqueta visible por campo (el placeholder nunca sustituye a la etiqueta).
+- Validar al salir del campo o al enviar, no en cada pulsación.
+- Error específico bajo el campo, enlazado con `aria-describedby` + `aria-invalid`.
+- Al enviar con errores: resumen enfocable arriba con enlaces a cada campo; el botón de envío sigue activo.
+- `autocomplete` y `type`/`inputmode` correctos en todos los campos.
+- `font-size` ≥ 16px en campos (evita zoom en iOS).
+
+**Tipografía y color**
+- Texto de interfaz ≥ 12px (badges incluidos); cuerpo 16px, `line-height` 1.5–1.6.
+- Usar las variables de `styles.scss` (`--color-brand`, `--color-text-light`, `--color-error`…), no hex sueltos, y nunca blanco puro de fondo.
+
+**Uso de la skill**
+- Instalación local (`.agents/` y `.claude/skills/` están en `.gitignore`): `npx skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max`
+- Búsqueda: `python .agents/skills/ui-ux-pro-max/scripts/search.py "<consulta>" --domain ux` (o `--stack angular`). En Windows, con `PYTHONIOENCODING=utf-8`. Las rutas `${CLAUDE_PLUGIN_ROOT}/...` del `SKILL.md` no aplican a esta instalación.
+- No usar `--design-system` ni `--persist`: la identidad de marca ya está definida aquí.
+- Las guías `--stack angular` están escritas para Angular 22; el proyecto usa Angular 18 (descartar las de zoneless, etc.).
+
+**Otros**
 - Imágenes con `alt` descriptivo incluyendo keyword cuando aplique (para SEO)
-- Mínimo 48px de altura en elementos táctiles en móvil (estándar de accesibilidad)
-- El mini-carrito y el menú móvil son accesibles con teclado (foco atrapado mientras están abiertos)
 
 ### Imágenes y rendimiento
 
