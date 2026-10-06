@@ -1,5 +1,5 @@
-import { Component, inject, effect, ElementRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, effect, ElementRef, HostListener, ViewChild } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
@@ -19,22 +19,28 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
     }
 
     <!-- Panel -->
+    <!-- Cerrado: inert (fuera del orden de tabulación y del lector de pantalla).
+         Abierto: diálogo modal con el foco atrapado; Esc lo cierra. -->
     <aside
+      #panel
       class="mini-cart"
       [class.is-open]="miniCartService.isOpen()"
       role="dialog"
-      aria-modal="true"
-      aria-label="Carrito de compra">
+      [attr.aria-modal]="miniCartService.isOpen() ? 'true' : null"
+      [attr.inert]="miniCartService.isOpen() ? null : ''"
+      aria-labelledby="mini-cart-title">
 
       <!-- Header -->
       <div class="mini-cart__header">
-        <h2 class="mini-cart__title">
+        <h2 class="mini-cart__title" id="mini-cart-title">
           Tu carrito
           @if (cartService.itemCount() > 0) {
-            <span class="mini-cart__count">{{ cartService.itemCount() }}</span>
+            <span class="mini-cart__count" [attr.aria-label]="cartService.itemCount() + (cartService.itemCount() === 1 ? ' artículo' : ' artículos')">{{ cartService.itemCount() }}</span>
           }
         </h2>
         <button
+          #closeBtn
+          type="button"
           class="mini-cart__close"
           (click)="close()"
           aria-label="Cerrar carrito">
@@ -66,7 +72,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                 <div class="mini-cart__item-img">
                   <img
                     [src]="item.product_image || '/assets/images/placeholder.jpg'"
-                    [alt]="item.product_name"
+                    alt=""
                     width="72" height="72"
                     loading="lazy">
                 </div>
@@ -80,23 +86,26 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                   <div class="mini-cart__item-row">
                     <div class="mini-cart__qty" role="group" [attr.aria-label]="'Cantidad de ' + item.product_name">
                       <button
+                        type="button"
                         (click)="decrement(item.id, item.quantity)"
                         [disabled]="updating"
-                        aria-label="Reducir cantidad">−</button>
-                      <span>{{ item.quantity }}</span>
+                        [attr.aria-label]="item.quantity <= 1 ? 'Eliminar ' + item.product_name + ' del carrito' : 'Quitar una unidad de ' + item.product_name">−</button>
+                      <span aria-live="polite">{{ item.quantity }}</span>
                       <button
+                        type="button"
                         (click)="increment(item.id, item.quantity)"
-                        [disabled]="updating"
-                        aria-label="Aumentar cantidad">+</button>
+                        [disabled]="updating || item.quantity >= item.stock_available"
+                        [attr.aria-label]="'Añadir una unidad de ' + item.product_name">+</button>
                     </div>
                     <span class="mini-cart__item-price">{{ item.total | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                   </div>
                 </div>
                 <button
+                  type="button"
                   class="mini-cart__item-remove"
                   (click)="remove(item.id)"
                   [disabled]="updating"
-                  [attr.aria-label]="'Eliminar ' + item.product_name">
+                  [attr.aria-label]="'Eliminar ' + item.product_name + ' del carrito'">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"/>
                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -118,9 +127,9 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
           @if ((cartService.cart()?.shipping_cost || 0) > 0) {
             <p class="mini-cart__shipping-notice">{{ cartService.cart()?.shipping_message }}</p>
           } @else {
-            <p class="mini-cart__shipping-free">✓ Envío gratis</p>
+            <p class="mini-cart__shipping-free"><span aria-hidden="true">✓</span> Envío gratis</p>
           }
-          <button class="mini-cart__cta" (click)="goToCart()">
+          <button type="button" class="mini-cart__cta" (click)="goToCart()">
             Tramitar pedido
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
@@ -162,11 +171,15 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       display: flex;
       flex-direction: column;
       transform: translateX(100%);
-      transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1);
+      visibility: hidden;
+      // Al cerrar, visibility cambia cuando termina el desplazamiento
+      transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0s linear 300ms;
       box-shadow: -4px 0 32px rgba($text, 0.12);
 
       &.is-open {
         transform: translateX(0);
+        visibility: visible;
+        transition: transform 300ms cubic-bezier(0.32, 0.72, 0, 1), visibility 0s;
       }
     }
 
@@ -208,9 +221,13 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
     }
 
     .mini-cart__close {
+      width: 48px;
+      height: 48px;
+      justify-content: center;
+      margin-right: -0.75rem;
       background: none;
       border: none;
-      padding: 0.4rem;
+      padding: 0;
       cursor: pointer;
       color: $muted;
       border-radius: 4px;
@@ -257,6 +274,8 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       border: 1.5px solid $brand;
       border-radius: 20px;
       padding: 0.6rem 1.5rem;
+      min-height: 48px;
+      line-height: 1.9;
       font-family: 'Poppins', sans-serif;
       font-weight: 600;
       font-size: 0.8rem;
@@ -344,8 +363,9 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       overflow: hidden;
 
       button {
-        width: 28px;
-        height: 28px;
+        width: 40px;
+        height: 40px;
+        touch-action: manipulation;
         background: none;
         border: none;
         cursor: pointer;
@@ -369,7 +389,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
         color: $text;
         border-left: 1px solid $border;
         border-right: 1px solid $border;
-        line-height: 28px;
+        line-height: 40px;
       }
     }
 
@@ -381,11 +401,14 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
     }
 
     .mini-cart__item-remove {
+      width: 44px;
+      height: 44px;
+      justify-content: center;
       background: none;
       border: none;
-      padding: 0.35rem;
+      padding: 0;
       cursor: pointer;
-      color: rgba($muted, 0.5);
+      color: $muted;
       flex-shrink: 0;
       border-radius: 4px;
       display: flex;
@@ -399,7 +422,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
 
     // ── Footer ────────────────────────────────────────────
     .mini-cart__footer {
-      padding: 1.25rem 1.5rem;
+      padding: 1.25rem 1.5rem calc(1.25rem + env(safe-area-inset-bottom, 0px));
       border-top: 1px solid $border;
       flex-shrink: 0;
       background: $bg;
@@ -462,6 +485,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       color: $accent;
       border: none;
       border-radius: 20px;
+      min-height: 48px;
       font-family: 'Poppins', sans-serif;
       font-size: 0.85rem;
       font-weight: 600;
@@ -476,16 +500,64 @@ export class MiniCartComponent {
   readonly cartService = inject(CartService);
   readonly miniCartService = inject(MiniCartService);
   private router = inject(Router);
+  private document = inject(DOCUMENT);
+
+  @ViewChild('panel') private panel?: ElementRef<HTMLElement>;
+  @ViewChild('closeBtn') private closeBtn?: ElementRef<HTMLButtonElement>;
+
+  /** Elemento con el foco al abrir (p. ej. «Añadir al carrito»), para devolvérselo al cerrar. */
+  private returnFocusTo: HTMLElement | null = null;
+  private wasOpen = false;
 
   updating = false;
 
   constructor() {
     effect(() => {
       const open = this.miniCartService.isOpen();
-      if (typeof document !== 'undefined') {
-        document.body.style.overflow = open ? 'hidden' : '';
+      if (typeof document === 'undefined') return;
+      document.body.style.overflow = open ? 'hidden' : '';
+
+      if (open && !this.wasOpen) {
+        this.returnFocusTo = this.document.activeElement as HTMLElement | null;
+        // Tras pintar el panel (deja de ser inert), el foco entra en él.
+        setTimeout(() => this.closeBtn?.nativeElement.focus());
+      } else if (!open && this.wasOpen) {
+        const target = this.returnFocusTo;
+        this.returnFocusTo = null;
+        if (target?.isConnected) setTimeout(() => target.focus());
       }
+      this.wasOpen = open;
     });
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (!this.miniCartService.isOpen()) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      this.close();
+      return;
+    }
+
+    // Foco atrapado dentro del panel mientras está abierto
+    if (event.key === 'Tab' && this.panel) {
+      const root = this.panel.nativeElement;
+      const focusables = Array.from(root.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      ));
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = this.document.activeElement;
+      if (event.shiftKey && (active === first || !root.contains(active))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (active === last || !root.contains(active))) {
+        event.preventDefault();
+        first.focus();
+      }
+    }
   }
 
   close(): void {

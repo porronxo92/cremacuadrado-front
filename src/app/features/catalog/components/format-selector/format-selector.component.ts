@@ -18,12 +18,18 @@ export interface ProductFormat {
     <div class="fmt-grid" role="group" aria-label="Selecciona el formato">
       @for (fmt of formats; track fmt.id) {
         <button
+          type="button"
           class="fmt-card"
           [class.is-active]="selected?.id === fmt.id"
           [class.is-best]="fmt.badgeColor === 'yellow'"
           (click)="select(fmt)"
-          [attr.aria-pressed]="selected?.id === fmt.id"
-          [attr.aria-label]="fmt.label + ' — ' + (fmt.price / 100 | currency:'EUR':'symbol':'1.2-2':'es')">
+          [attr.aria-pressed]="selected?.id === fmt.id">
+          <!-- Sin aria-label: el lector lee el texto visible (formato, precio y etiqueta) -->
+          @if (selected?.id === fmt.id) {
+            <span class="fmt-card__check" aria-hidden="true">
+              <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4"><polyline points="20 6 9 17 4 12"/></svg>
+            </span>
+          }
           <div class="fmt-card__name">{{ fmt.label }}</div>
           <div class="fmt-card__price">{{ fmt.price / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</div>
           @if (fmt.badge) {
@@ -51,6 +57,8 @@ export interface ProductFormat {
     }
 
     .fmt-card {
+      position: relative;
+      min-height: 48px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -63,9 +71,12 @@ export interface ProductFormat {
       text-align: center;
       transition: border-color 150ms, background 150ms;
 
-      &:hover { border-color: rgba($verde, 0.5); }
-      &.is-active { border-color: $verde; background: rgba($verde, 0.06); }
+      touch-action: manipulation;
+
+      // Seleccionado: borde granate de 2px + check (contraste ≥ 3:1 y no depende solo del color)
+      &:hover { border-color: rgba($brand, 0.45); }
       &.is-best:not(.is-active) { border-color: $accent; }
+      &.is-active { border: 2px solid $brand; padding: 7.5px 5.5px; background: rgba($brand, 0.04); }
     }
 
     .fmt-card__name {
@@ -82,9 +93,23 @@ export interface ProductFormat {
       color: $brand;
     }
 
+    .fmt-card__check {
+      position: absolute;
+      top: -7px;
+      right: -7px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: $brand;
+      color: $accent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .fmt-card__badge {
       font-family: 'Poppins', sans-serif;
-      font-size: 0.6rem;
+      font-size: 0.7rem;
       font-weight: 500;
       padding: 1px 6px;
       border-radius: 20px;

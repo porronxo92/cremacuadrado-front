@@ -26,7 +26,8 @@ import { PHONE_PREFIXES } from '../../../core/data/spain';
       </select>
       <input class="phone__number" type="tel" inputmode="tel" autocomplete="tel-national"
              [id]="inputId" [value]="number()" [disabled]="disabled()"
-             [attr.aria-invalid]="invalid" placeholder="600 000 000"
+             [attr.aria-invalid]="invalid" [attr.aria-describedby]="describedBy"
+             placeholder="600 000 000"
              (input)="onNumber($any($event.target).value)" (blur)="onTouched()">
     </div>
   `,
@@ -34,13 +35,15 @@ import { PHONE_PREFIXES } from '../../../core/data/spain';
     .phone { display: flex; gap: 0.5rem; }
     .phone__prefix { flex: 0 0 auto; width: auto !important; min-width: 6.5rem; }
     .phone__number { flex: 1 1 auto; min-width: 0; }
-    .phone--invalid .phone__number, .phone--invalid .phone__prefix { border-color: #e74c3c !important; }
+    .phone--invalid .phone__number, .phone--invalid .phone__prefix { border-color: var(--color-error, #A01C1C) !important; }
   `],
 })
 export class PhoneInputComponent implements ControlValueAccessor, Validator {
   @Input() inputId = 'phone';
   /** Marca el campo en rojo (lo decide el formulario padre: touched + invalid). */
   @Input() invalid = false;
+  /** id del mensaje de error que describe el campo (aria-describedby). */
+  @Input() describedBy: string | null = null;
 
   readonly prefixes = PHONE_PREFIXES;
   readonly prefix = signal('+34');

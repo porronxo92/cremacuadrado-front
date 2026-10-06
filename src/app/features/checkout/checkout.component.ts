@@ -41,10 +41,25 @@ import { firstValueFrom } from 'rxjs';
           <div class="checkout-layout">
             <!-- Checkout form -->
             <div class="checkout-form">
+
+              <!-- Resumen de errores: aparece al intentar pagar con datos pendientes.
+                   Recibe el foco y enlaza cada error con su campo (los errores
+                   en línea se mantienen debajo de cada campo). -->
+              @if (errorSummary().length > 0) {
+                <div class="error-summary" #errorSummaryEl tabindex="-1" role="alert" aria-labelledby="error-summary-title">
+                  <h2 id="error-summary-title">Revisa estos datos para continuar</h2>
+                  <ul>
+                    @for (e of errorSummary(); track e.id) {
+                      <li><a [href]="'#' + e.id" (click)="focusField($event, e.id)">{{ e.label }}</a></li>
+                    }
+                  </ul>
+                </div>
+              }
+
               <!-- Step 1: Contact -->
-              <section class="checkout-section">
-                <h2>
-                  <span class="step-number">1</span>
+              <section class="checkout-section" aria-labelledby="step-contact">
+                <h2 id="step-contact">
+                  <span class="step-number" aria-hidden="true">1</span>
                   Información de contacto
                 </h2>
 
@@ -65,22 +80,22 @@ import { firstValueFrom } from 'rxjs';
                   </p>
                 }
 
-                <form [formGroup]="contactForm">
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="email">Email *</label>
-                      <input
-                        type="email"
-                        id="email"
-                        formControlName="email"
-                        [class.error]="contactForm.get('email')?.invalid && contactForm.get('email')?.touched">
-                      @if (contactForm.get('email')?.hasError('required') && contactForm.get('email')?.touched) {
-                        <span class="error-text">El email es obligatorio</span>
-                      }
-                      @if (contactForm.get('email')?.hasError('email') && contactForm.get('email')?.touched) {
-                        <span class="error-text">Email no válido</span>
-                      }
-                    </div>
+                <form [formGroup]="contactForm" (ngSubmit)="placeOrder()" novalidate>
+                  <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input
+                      type="email"
+                      id="email"
+                      formControlName="email"
+                      autocomplete="email"
+                      [class.error]="showError(contactForm, 'email')"
+                      [attr.aria-invalid]="showError(contactForm, 'email')"
+                      [attr.aria-describedby]="showError(contactForm, 'email') ? 'email-error' : null">
+                    @if (showError(contactForm, 'email')) {
+                      <span class="error-text" id="email-error">
+                        {{ contactForm.get('email')?.hasError('required') ? 'Escribe tu email para recibir la confirmación del pedido' : 'Revisa el email: debe tener el formato nombre@dominio.com' }}
+                      </span>
+                    }
                   </div>
 
                   @if (missingProfileData()) {
@@ -93,38 +108,44 @@ import { firstValueFrom } from 'rxjs';
                     <div class="form-group">
                       <label for="firstName">Nombre *</label>
                       <input type="text" id="firstName" formControlName="firstName" autocomplete="given-name"
-                        [class.error]="showError(contactForm, 'firstName')">
-                      @if (showError(contactForm, 'firstName')) { <span class="error-text">El nombre es obligatorio</span> }
+                        [class.error]="showError(contactForm, 'firstName')"
+                        [attr.aria-invalid]="showError(contactForm, 'firstName')"
+                        [attr.aria-describedby]="showError(contactForm, 'firstName') ? 'firstName-error' : null">
+                      @if (showError(contactForm, 'firstName')) { <span class="error-text" id="firstName-error">Escribe tu nombre</span> }
                     </div>
                     <div class="form-group">
                       <label for="lastName">Apellidos *</label>
                       <input type="text" id="lastName" formControlName="lastName" autocomplete="family-name"
-                        [class.error]="showError(contactForm, 'lastName')">
-                      @if (showError(contactForm, 'lastName')) { <span class="error-text">Los apellidos son obligatorios</span> }
+                        [class.error]="showError(contactForm, 'lastName')"
+                        [attr.aria-invalid]="showError(contactForm, 'lastName')"
+                        [attr.aria-describedby]="showError(contactForm, 'lastName') ? 'lastName-error' : null">
+                      @if (showError(contactForm, 'lastName')) { <span class="error-text" id="lastName-error">Escribe tus apellidos</span> }
                     </div>
                   </div>
 
                   <div class="form-group">
                     <label for="phone">Teléfono *</label>
-                    <app-phone-input formControlName="phone" inputId="phone" [invalid]="showError(contactForm, 'phone')" />
-                    @if (contactForm.get('phone')?.hasError('required') && contactForm.get('phone')?.touched) {
-                      <span class="error-text">El teléfono es obligatorio (lo necesita Correos para la entrega)</span>
-                    } @else if (contactForm.get('phone')?.hasError('phone') && contactForm.get('phone')?.touched) {
-                      <span class="error-text">Teléfono no válido: 9 dígitos para España</span>
+                    <app-phone-input formControlName="phone" inputId="phone" [invalid]="showError(contactForm, 'phone')"
+                      [describedBy]="showError(contactForm, 'phone') ? 'phone-error' : null" />
+                    @if (showError(contactForm, 'phone')) {
+                      <span class="error-text" id="phone-error">
+                        {{ contactForm.get('phone')?.hasError('required') ? 'Escribe un teléfono: Correos lo necesita para la entrega' : 'Revisa el teléfono: en España son 9 dígitos' }}
+                      </span>
                     }
                   </div>
                 </form>
               </section>
 
               <!-- Step 2: Shipping -->
-              <section class="checkout-section">
-                <h2>
-                  <span class="step-number">2</span>
+              <section class="checkout-section" aria-labelledby="step-shipping">
+                <h2 id="step-shipping">
+                  <span class="step-number" aria-hidden="true">2</span>
                   Dirección de envío
                 </h2>
 
                 @if (savedAddresses().length > 0) {
-                  <div class="saved-addresses">
+                  <fieldset class="saved-addresses">
+                    <legend class="sr-only">Dirección de envío guardada</legend>
                     @for (addr of savedAddresses(); track addr.id) {
                       <label class="saved-address-option" [class.selected]="selectedAddressId() === addr.id">
                         <input type="radio" name="savedAddress" [checked]="selectedAddressId() === addr.id" (change)="selectSavedAddress(addr)">
@@ -143,31 +164,39 @@ import { firstValueFrom } from 'rxjs';
                         <strong>+ Usar otra dirección</strong>
                       </div>
                     </label>
-                  </div>
+                  </fieldset>
                 }
 
                 @if (selectedAddressId() === 'new') {
-                  <form [formGroup]="shippingForm">
+                  <form [formGroup]="shippingForm" (ngSubmit)="placeOrder()" novalidate>
                     <div class="form-group">
                       <label for="address">Dirección *</label>
-                      <input type="text" id="address" formControlName="address" placeholder="Calle, número, piso...">
+                      <input type="text" id="address" formControlName="address" autocomplete="shipping address-line1"
+                        placeholder="Calle, número, piso..."
+                        [class.error]="showError(shippingForm, 'address')"
+                        [attr.aria-invalid]="showError(shippingForm, 'address')"
+                        [attr.aria-describedby]="showError(shippingForm, 'address') ? 'address-error' : null">
+                      @if (showError(shippingForm, 'address')) { <span class="error-text" id="address-error">Escribe la calle, el número y el piso</span> }
                     </div>
 
                     <div class="form-row form-row--2">
                       <div class="form-group">
                         <label for="city">Ciudad *</label>
-                        <input type="text" id="city" formControlName="city">
+                        <input type="text" id="city" formControlName="city" autocomplete="shipping address-level2"
+                          [class.error]="showError(shippingForm, 'city')"
+                          [attr.aria-invalid]="showError(shippingForm, 'city')"
+                          [attr.aria-describedby]="showError(shippingForm, 'city') ? 'city-error' : null">
+                        @if (showError(shippingForm, 'city')) { <span class="error-text" id="city-error">Escribe la ciudad o el municipio</span> }
                       </div>
                       <div class="form-group">
                         <label for="postalCode">Código postal *</label>
-                        <input type="text" id="postalCode" formControlName="postalCode" inputmode="numeric" autocomplete="postal-code"
-                          [class.error]="shippingForm.get('postalCode')?.invalid && shippingForm.get('postalCode')?.touched">
-                        @if (shippingForm.get('postalCode')?.hasError('outOfArea')) {
-                          <span class="error-text">De momento solo enviamos a la península. Escríbenos a info&#64;cremacuadrado.com</span>
-                        } @else if (shippingForm.get('postalCode')?.hasError('pattern') && shippingForm.get('postalCode')?.touched) {
-                          <span class="error-text">Código postal no válido (5 dígitos)</span>
-                        } @else if (shippingForm.get('postalCode')?.hasError('provinceMismatch')) {
-                          <span class="error-text">El código postal no corresponde a la provincia seleccionada</span>
+                        <input type="text" id="postalCode" formControlName="postalCode" inputmode="numeric" maxlength="5"
+                          autocomplete="shipping postal-code"
+                          [class.error]="postalCodeError()"
+                          [attr.aria-invalid]="!!postalCodeError()"
+                          [attr.aria-describedby]="postalCodeError() ? 'postalCode-error' : null">
+                        @if (postalCodeError(); as msg) {
+                          <span class="error-text" id="postalCode-error">{{ msg }}</span>
                         }
                       </div>
                     </div>
@@ -175,18 +204,20 @@ import { firstValueFrom } from 'rxjs';
                     <div class="form-row form-row--2">
                       <div class="form-group">
                         <label for="state">Provincia *</label>
-                        <select id="state" formControlName="state" autocomplete="address-level1"
-                          [class.error]="showError(shippingForm, 'state')">
+                        <select id="state" formControlName="state" autocomplete="shipping address-level1"
+                          [class.error]="showError(shippingForm, 'state')"
+                          [attr.aria-invalid]="showError(shippingForm, 'state')"
+                          [attr.aria-describedby]="showError(shippingForm, 'state') ? 'state-error' : null">
                           <option value="" disabled>Selecciona una provincia</option>
                           @for (p of shippingProvinces; track p.code) {
                             <option [value]="p.name">{{ p.name }}</option>
                           }
                         </select>
-                        @if (showError(shippingForm, 'state')) { <span class="error-text">Selecciona una provincia</span> }
+                        @if (showError(shippingForm, 'state')) { <span class="error-text" id="state-error">Selecciona la provincia</span> }
                       </div>
                       <div class="form-group">
                         <label for="country">País *</label>
-                        <select id="country" formControlName="country">
+                        <select id="country" formControlName="country" autocomplete="shipping country">
                           <option value="ES">España (península)</option>
                         </select>
                       </div>
@@ -199,63 +230,87 @@ import { firstValueFrom } from 'rxjs';
                   </form>
 
                   @if (authService.isAuthenticated()) {
-                    <label class="save-address-checkbox">
+                    <label class="check-option">
                       <input type="checkbox" [checked]="saveNewAddress()" (change)="saveNewAddress.set($any($event.target).checked)">
                       Guardar esta dirección para futuros pedidos
                     </label>
                   }
                 }
 
-                <label class="save-address-checkbox invoice-toggle">
+                <label class="check-option invoice-toggle">
                   <input type="checkbox" [checked]="needsInvoice()" (change)="toggleInvoice($any($event.target).checked)">
                   Necesito factura a nombre de empresa o autónomo (con NIF)
                 </label>
 
                 @if (needsInvoice()) {
-                  <form [formGroup]="billingForm" class="billing-form">
+                  <form [formGroup]="billingForm" class="billing-form" (ngSubmit)="placeOrder()" novalidate>
                     <div class="form-row form-row--2">
                       <div class="form-group">
                         <label for="billingName">Razón social o nombre *</label>
-                        <input type="text" id="billingName" formControlName="name" autocomplete="organization">
+                        <input type="text" id="billingName" formControlName="name" autocomplete="organization"
+                          [class.error]="showError(billingForm, 'name')"
+                          [attr.aria-invalid]="showError(billingForm, 'name')"
+                          [attr.aria-describedby]="showError(billingForm, 'name') ? 'billingName-error' : null">
+                        @if (showError(billingForm, 'name')) { <span class="error-text" id="billingName-error">Escribe la razón social o el nombre fiscal</span> }
                       </div>
                       <div class="form-group">
                         <label for="billingNif">NIF / CIF / NIE *</label>
                         <input type="text" id="billingNif" formControlName="nif" autocomplete="off"
-                          [class.error]="billingForm.get('nif')?.invalid && billingForm.get('nif')?.touched">
-                        @if (billingForm.get('nif')?.hasError('taxId') && billingForm.get('nif')?.touched) {
-                          <span class="error-text">NIF no válido</span>
+                          [class.error]="showError(billingForm, 'nif')"
+                          [attr.aria-invalid]="showError(billingForm, 'nif')"
+                          [attr.aria-describedby]="showError(billingForm, 'nif') ? 'billingNif-error' : null">
+                        @if (showError(billingForm, 'nif')) {
+                          <span class="error-text" id="billingNif-error">
+                            {{ billingForm.get('nif')?.hasError('required') ? 'Escribe el NIF, CIF o NIE' : 'Revisa el NIF: la letra o los dígitos no cuadran' }}
+                          </span>
                         }
                       </div>
                     </div>
-                    <label class="save-address-checkbox">
+                    <label class="check-option">
                       <input type="checkbox" [checked]="billingSameAsShipping()" (change)="setBillingSameAsShipping($any($event.target).checked)">
                       La dirección fiscal es la misma que la de envío
                     </label>
                     @if (!billingSameAsShipping()) {
                       <div class="form-group">
                         <label for="billingStreet">Dirección fiscal *</label>
-                        <input type="text" id="billingStreet" formControlName="street">
+                        <input type="text" id="billingStreet" formControlName="street" autocomplete="billing address-line1"
+                          [class.error]="showError(billingForm, 'street')"
+                          [attr.aria-invalid]="showError(billingForm, 'street')"
+                          [attr.aria-describedby]="showError(billingForm, 'street') ? 'billingStreet-error' : null">
+                        @if (showError(billingForm, 'street')) { <span class="error-text" id="billingStreet-error">Escribe la dirección fiscal</span> }
                       </div>
                       <div class="form-row form-row--2">
                         <div class="form-group">
                           <label for="billingCity">Ciudad *</label>
-                          <input type="text" id="billingCity" formControlName="city">
+                          <input type="text" id="billingCity" formControlName="city" autocomplete="billing address-level2"
+                            [class.error]="showError(billingForm, 'city')"
+                            [attr.aria-invalid]="showError(billingForm, 'city')"
+                            [attr.aria-describedby]="showError(billingForm, 'city') ? 'billingCity-error' : null">
+                          @if (showError(billingForm, 'city')) { <span class="error-text" id="billingCity-error">Escribe la ciudad</span> }
                         </div>
                         <div class="form-group">
                           <label for="billingPostal">Código postal *</label>
-                          <input type="text" id="billingPostal" formControlName="postal_code">
+                          <input type="text" id="billingPostal" formControlName="postal_code" inputmode="numeric" maxlength="5"
+                            autocomplete="billing postal-code"
+                            [class.error]="billingPostalError()"
+                            [attr.aria-invalid]="!!billingPostalError()"
+                            [attr.aria-describedby]="billingPostalError() ? 'billingPostal-error' : null">
+                          @if (billingPostalError(); as msg) { <span class="error-text" id="billingPostal-error">{{ msg }}</span> }
                         </div>
                       </div>
                       <div class="form-group">
                         <label for="billingProvince">Provincia *</label>
-                        <select id="billingProvince" formControlName="province">
+                        <select id="billingProvince" formControlName="province" autocomplete="billing address-level1"
+                          [class.error]="showError(billingForm, 'province')"
+                          [attr.aria-invalid]="showError(billingForm, 'province')"
+                          [attr.aria-describedby]="showError(billingForm, 'province') ? 'billingProvince-error' : null">
                           <option value="" disabled>Selecciona una provincia</option>
                           @for (p of allProvinces; track p.code) {
                             <option [value]="p.name">{{ p.name }}</option>
                           }
                         </select>
-                        @if (billingForm.get('postal_code')?.hasError('provinceMismatch')) {
-                          <span class="error-text">El código postal no corresponde a la provincia</span>
+                        @if (showError(billingForm, 'province')) {
+                          <span class="error-text" id="billingProvince-error">Selecciona la provincia</span>
                         }
                       </div>
                     }
@@ -264,15 +319,15 @@ import { firstValueFrom } from 'rxjs';
               </section>
 
               <!-- Step 3: Payment -->
-              <section class="checkout-section">
-                <h2>
-                  <span class="step-number">3</span>
+              <section class="checkout-section" aria-labelledby="step-payment">
+                <h2 id="step-payment">
+                  <span class="step-number" aria-hidden="true">3</span>
                   Pago seguro
                 </h2>
 
                 @if (stripeInitializing()) {
-                  <div class="stripe-loading">
-                    <span class="spinner"></span>
+                  <div class="stripe-loading" role="status">
+                    <span class="spinner" aria-hidden="true"></span>
                     Preparando formulario de pago...
                   </div>
                 }
@@ -282,12 +337,12 @@ import { firstValueFrom } from 'rxjs';
 
                 @if (!stripeReady() && !stripeInitializing()) {
                   <p class="stripe-hint">
-                    Completa los pasos anteriores para activar el formulario de pago.
+                    Completa tus datos de contacto y la dirección de envío para activar el formulario de pago.
                   </p>
                 }
 
                 <p class="payment-notice">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                   </svg>
                   Pago 100% seguro · Procesado por Stripe · Cifrado SSL
@@ -299,69 +354,78 @@ import { firstValueFrom } from 'rxjs';
             <div class="order-summary">
               <h2>Resumen del pedido</h2>
 
-              <div class="summary-items">
+              <ul class="summary-items">
                 @for (item of cartService.cart()?.items || []; track item.id) {
-                  <div class="summary-item">
+                  <li class="summary-item">
                     <div class="summary-item__image">
-                      <img [src]="item.product_image || '/assets/images/placeholder.jpg'" [alt]="item.product_name">
-                      <span class="quantity-badge">{{ item.quantity }}</span>
+                      <img [src]="item.product_image || '/assets/images/placeholder.jpg'" [alt]="item.product_name" width="56" height="56">
+                      <span class="quantity-badge" [attr.aria-label]="item.quantity + (item.quantity === 1 ? ' unidad' : ' unidades')">{{ item.quantity }}</span>
                     </div>
                     <div class="summary-item__info">
-                      <h4>{{ item.product_name }}</h4>
-                      <span>{{ item.product_price | currency:'EUR' }} x {{ item.quantity }}</span>
+                      <h3>{{ item.product_name }}</h3>
+                      @if (item.variant_format) { <span class="summary-item__format">{{ item.variant_format }}</span> }
+                      <span>{{ (item.unit_price ?? item.product_price ?? 0) | currency:'EUR':'symbol':'1.2-2':'es' }} × {{ item.quantity }}</span>
                     </div>
                     <div class="summary-item__total">
-                      {{ item.total | currency:'EUR' }}
+                      {{ item.total | currency:'EUR':'symbol':'1.2-2':'es' }}
                     </div>
-                  </div>
+                  </li>
                 }
-              </div>
+              </ul>
 
               <hr>
 
               <div class="summary-row">
                 <span>Subtotal</span>
-                <span>{{ cartService.cart()?.subtotal | currency:'EUR' }}</span>
+                <span>{{ cartService.cart()?.subtotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
               @if ((cartService.cart()?.discount ?? 0) > 0) {
                 <div class="summary-row summary-row--discount">
                   <span>Descuento {{ cartService.cart()?.coupon?.code ? '(' + cartService.cart()!.coupon!.code + ')' : '' }}</span>
-                  <span>−{{ cartService.cart()?.discount | currency:'EUR' }}</span>
+                  <span>−{{ cartService.cart()?.discount | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                 </div>
               }
 
               <div class="summary-row">
                 <span>Envío</span>
-                <span>{{ shippingCost | currency:'EUR' }}</span>
+                <span>
+                  @if (shippingCost === 0) { Gratis } @else { {{ shippingCost | currency:'EUR':'symbol':'1.2-2':'es' }} }
+                </span>
               </div>
-
-              @if (shippingCost === 0) {
-                <div class="free-shipping-badge">
-                  ✓ Envío gratuito
-                </div>
-              }
 
               <hr>
 
               <div class="summary-row summary-row--total">
                 <span>Total <small class="vat-note">(IVA incluido)</small></span>
-                <span>{{ cartService.cart()?.total | currency:'EUR' }}</span>
+                <span>{{ cartService.cart()?.total | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
-              <label class="terms-check">
-                <input type="checkbox" [checked]="acceptTerms()" (change)="acceptTerms.set($any($event.target).checked)" required>
+              <label class="terms-check" [class.has-error]="termsError()">
+                <input type="checkbox" id="acceptTerms" [checked]="acceptTerms()"
+                  (change)="onTermsChange($any($event.target).checked)"
+                  [attr.aria-invalid]="termsError()"
+                  [attr.aria-describedby]="termsError() ? 'acceptTerms-error' : null">
                 <span>
                   He leído y acepto las <a routerLink="/condiciones-venta" target="_blank">condiciones generales de venta</a>,
                   incluida la información sobre el <a routerLink="/desistimiento" target="_blank">derecho de desistimiento</a>. *
                 </span>
               </label>
+              @if (termsError()) {
+                <span class="error-text error-text--terms" id="acceptTerms-error">Marca la casilla para aceptar las condiciones de venta</span>
+              }
 
+              <!-- Siempre pulsable (salvo mientras se procesa): si falta algo,
+                   al pulsarlo se muestra el resumen de errores en lugar de
+                   dejar un botón gris sin explicación. -->
               <button
+                type="button"
                 class="btn btn--primary btn--large btn--block"
                 (click)="placeOrder()"
-                [disabled]="processing() || !isFormValid() || !isBillingValid() || !acceptTerms()">
+                [disabled]="processing()"
+                [attr.aria-busy]="processing()">
                 @if (processing()) {
+                  <span class="spinner spinner--on-brand" aria-hidden="true"></span>
                   Procesando...
                 } @else {
                   Pedido con obligación de pago
@@ -369,7 +433,7 @@ import { firstValueFrom } from 'rxjs';
               </button>
 
               @if (error()) {
-                <div class="error-message">
+                <div class="error-message" role="alert">
                   {{ error() }}
                 </div>
               }
@@ -385,9 +449,13 @@ import { firstValueFrom } from 'rxjs';
     </div>
   `,
   styles: [`
+    // Estilo de marca (variables globales de styles.scss). Contenedores con
+    // radio 2px; botones con radio 20px; nunca blanco puro.
+    $surface: #FAF8F3;
+
     .checkout-page {
-      padding: 2rem 0;
-      background: #f9f9f9;
+      padding: 2rem 0 3rem;
+      background: var(--color-bg);
       min-height: calc(100vh - 140px);
     }
 
@@ -398,8 +466,14 @@ import { firstValueFrom } from 'rxjs';
     }
 
     h1 {
-      margin-bottom: 2rem;
-      color: #333;
+      font-family: var(--font-title);
+      font-weight: 700;
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      color: var(--color-brand);
+      margin-bottom: 1.5rem;
     }
 
     .checkout-layout {
@@ -413,90 +487,121 @@ import { firstValueFrom } from 'rxjs';
       }
     }
 
+    // ── Resumen de errores ──────────────────────────────
+    .error-summary {
+      border: 2px solid var(--color-error);
+      background: rgba(160, 28, 28, 0.04);
+      border-radius: 2px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      scroll-margin-top: 100px;
+
+      h2 {
+        font-family: var(--font-ui);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--color-error);
+        margin: 0 0 0.5rem;
+      }
+
+      ul { margin: 0; padding-left: 1.25rem; }
+
+      li { margin: 0.25rem 0; }
+
+      a {
+        color: var(--color-error);
+        font-weight: 500;
+        text-decoration: underline;
+        display: inline-block;
+        padding: 0.25rem 0;
+      }
+    }
+
     .checkout-section {
-      background: #fff;
-      border-radius: 8px;
+      background: $surface;
+      border: 1px solid var(--color-border);
+      border-radius: 2px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 
       h2 {
         display: flex;
         align-items: center;
         gap: 0.75rem;
-        margin: 0 0 1.5rem;
-        font-size: 1.2rem;
-        color: #333;
+        margin: 0 0 1.25rem;
+        font-family: var(--font-ui);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-text);
       }
+
+      @media (max-width: 480px) { padding: 1.25rem 1rem; }
     }
 
     .step-number {
       width: 28px;
       height: 28px;
-      background: #4a7c4e;
-      color: #fff;
+      background: var(--color-brand);
+      color: var(--color-accent);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
+      flex-shrink: 0;
     }
 
-    .login-prompt {
-      background: #f0f7f0;
-      padding: 0.75rem;
-      border-radius: 4px;
+    .login-prompt,
+    .coupon-guest-warning,
+    .profile-hint {
+      padding: 0.75rem 1rem;
+      border-radius: 2px;
       margin-bottom: 1rem;
       font-size: 0.9rem;
+      line-height: 1.5;
 
-      a {
-        color: #4a7c4e;
-        font-weight: 600;
-      }
+      a { color: var(--color-brand); font-weight: 600; text-decoration: underline; }
     }
 
-    .coupon-guest-warning {
-      background: #fff8e6;
-      border: 1px solid #f0d98c;
-      padding: 0.75rem;
-      border-radius: 4px;
-      margin-bottom: 1rem;
-      font-size: 0.9rem;
-      color: #7a5c00;
+    .login-prompt { background: var(--color-bg-alt); }
 
-      a {
-        color: #4a7c4e;
-        font-weight: 600;
-      }
+    .coupon-guest-warning,
+    .profile-hint {
+      background: rgba(230, 193, 90, 0.18);
+      border: 1px solid rgba(200, 138, 26, 0.45);
+      color: #5C4300;
     }
 
+    // ── Campos ──────────────────────────────────────────
     .form-group {
       margin-bottom: 1rem;
 
       label {
         display: block;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.4rem;
         font-size: 0.9rem;
         font-weight: 500;
-        color: #333;
+        color: var(--color-text);
       }
 
       input, select, textarea {
         width: 100%;
+        min-height: 48px;
         padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 1rem;
+        border: 1px solid var(--color-border);
+        border-radius: 2px;
+        background: #FFFDF8;
+        color: var(--color-text);
+        font-family: var(--font-ui);
+        font-size: 1rem; // ≥16px: evita el zoom automático de iOS
+        transition: border-color 150ms;
 
-        &:focus {
-          outline: none;
-          border-color: #4a7c4e;
-        }
+        &:focus { border-color: var(--color-brand); }
 
-        &.error {
-          border-color: #e74c3c;
-        }
+        &.error { border-color: var(--color-error); border-width: 2px; }
       }
+
+      textarea { min-height: 0; }
     }
 
     .form-row {
@@ -507,21 +612,27 @@ import { firstValueFrom } from 'rxjs';
 
         @media (max-width: 480px) {
           grid-template-columns: 1fr;
+          gap: 0;
         }
       }
     }
 
     .error-text {
-      color: #e74c3c;
-      font-size: 0.8rem;
-      margin-top: 0.25rem;
+      display: block;
+      color: var(--color-error);
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+
+      &--terms { margin: -0.25rem 0 0.75rem; }
     }
 
     .saved-addresses {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
-      margin-bottom: 1.25rem;
+      margin: 0 0 1.25rem;
+      border: none;
+      padding: 0;
     }
 
     .saved-address-option {
@@ -529,18 +640,22 @@ import { firstValueFrom } from 'rxjs';
       align-items: flex-start;
       gap: 0.75rem;
       padding: 0.85rem 1rem;
-      border: 2px solid #ddd;
-      border-radius: 8px;
+      border: 2px solid var(--color-border);
+      border-radius: 2px;
       cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
+      transition: border-color 150ms, background 150ms;
 
       input[type="radio"] {
         margin-top: 0.2rem;
+        width: 20px;
+        height: 20px;
+        accent-color: var(--color-brand);
+        flex-shrink: 0;
       }
 
       &.selected {
-        border-color: #4a7c4e;
-        background: #f0f7f0;
+        border-color: var(--color-brand);
+        background: rgba(123, 23, 22, 0.04);
       }
 
       &__body {
@@ -549,100 +664,59 @@ import { firstValueFrom } from 'rxjs';
         strong {
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
           gap: 0.5rem;
-          color: #333;
+          color: var(--color-text);
+          font-weight: 600;
         }
 
         p {
           margin: 0.25rem 0 0;
-          color: #666;
+          color: var(--color-text-light);
         }
       }
     }
 
     .badge {
-      background: #4a7c4e;
-      color: #fff;
+      background: var(--color-brand);
+      color: var(--color-accent);
       font-size: 0.7rem;
       font-weight: 600;
       padding: 0.15rem 0.5rem;
-      border-radius: 10px;
+      border-radius: 20px;
     }
 
     .invoice-toggle { margin-top: 1.25rem; }
 
-    .billing-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #eee; }
+    .billing-form { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border); }
 
-    .save-address-checkbox {
+    // Casillas: zona táctil de 48px aunque el control mida 20px
+    .check-option {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
+      min-height: 48px;
       font-size: 0.9rem;
-      color: #333;
-      cursor: pointer;
-      margin-top: 0.5rem;
-
-      input {
-        width: auto;
-      }
-    }
-
-    .payment-methods {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-
-    .payment-option {
+      color: var(--color-text);
       cursor: pointer;
 
       input {
-        display: none;
+        width: 20px;
+        height: 20px;
+        accent-color: var(--color-brand);
+        flex-shrink: 0;
       }
-
-      &__content {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 1rem;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        transition: all 0.3s;
-
-        svg {
-          color: #666;
-        }
-      }
-
-      &.selected &__content {
-        border-color: #4a7c4e;
-        background: #f0f7f0;
-
-        svg {
-          color: #4a7c4e;
-        }
-      }
-    }
-
-    .card-form {
-      margin-top: 1rem;
-      padding-top: 1rem;
-      border-top: 1px solid #eee;
     }
 
     .payment-notice {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: #666;
+      color: var(--color-text-light);
       font-size: 0.85rem;
       margin-top: 1rem;
 
-      svg {
-        color: #27ae60;
-        flex-shrink: 0;
-      }
+      svg { color: var(--color-success); flex-shrink: 0; }
     }
 
     .stripe-loading {
@@ -650,25 +724,28 @@ import { firstValueFrom } from 'rxjs';
       align-items: center;
       gap: 0.75rem;
       padding: 1rem;
-      color: #666;
+      color: var(--color-text-light);
       font-size: 0.9rem;
     }
 
     .stripe-hint {
-      color: #999;
+      color: var(--color-text-light);
       font-size: 0.9rem;
       font-style: italic;
-      padding: 1rem 0;
+      padding: 0.5rem 0;
     }
 
     .spinner {
+      display: inline-block;
       width: 18px;
       height: 18px;
-      border: 2px solid #ddd;
-      border-top-color: #4a7c4e;
+      border: 2px solid var(--color-border);
+      border-top-color: var(--color-brand);
       border-radius: 50%;
       animation: spin 0.7s linear infinite;
       flex-shrink: 0;
+
+      &--on-brand { border-color: rgba(230, 193, 90, 0.35); border-top-color: var(--color-accent); }
     }
 
     @keyframes spin {
@@ -680,22 +757,30 @@ import { firstValueFrom } from 'rxjs';
       &.hidden { display: none; }
     }
 
+    // ── Resumen del pedido ─────────────────────────────
     .order-summary {
-      background: #fff;
-      border-radius: 8px;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 2px;
       padding: 1.5rem;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       position: sticky;
       top: 90px;
 
+      @media (max-width: 900px) { position: static; }
+
       h2 {
         margin: 0 0 1rem;
-        font-size: 1.2rem;
-        color: #333;
+        font-family: var(--font-ui);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--color-text);
       }
     }
 
     .summary-items {
+      list-style: none;
+      margin: 0;
+      padding: 0;
       max-height: 300px;
       overflow-y: auto;
     }
@@ -704,37 +789,39 @@ import { firstValueFrom } from 'rxjs';
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid #eee;
+      padding: 0.75rem 0.25rem 0.75rem 0;
+      border-bottom: 1px solid var(--color-border);
 
-      &:last-child {
-        border-bottom: none;
-      }
+      &:last-child { border-bottom: none; }
     }
 
     .summary-item__image {
       position: relative;
-      width: 50px;
-      height: 50px;
-      border-radius: 4px;
-      overflow: hidden;
+      width: 56px;
+      height: 56px;
+      flex-shrink: 0;
+      margin: 6px 6px 0 0;
 
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        border-radius: 2px;
+        background: var(--color-bg);
       }
 
       .quantity-badge {
         position: absolute;
         top: -6px;
         right: -6px;
-        width: 20px;
+        min-width: 20px;
         height: 20px;
-        background: #4a7c4e;
-        color: #fff;
-        border-radius: 50%;
+        padding: 0 4px;
+        background: var(--color-brand);
+        color: var(--color-accent);
+        border-radius: 10px;
         font-size: 0.7rem;
+        font-weight: 600;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -743,139 +830,132 @@ import { firstValueFrom } from 'rxjs';
 
     .summary-item__info {
       flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
 
-      h4 {
+      h3 {
         margin: 0;
+        font-family: var(--font-ui);
         font-size: 0.9rem;
-        color: #333;
+        font-weight: 500;
+        color: var(--color-text);
       }
 
       span {
         font-size: 0.8rem;
-        color: #666;
+        color: var(--color-text-light);
       }
     }
 
+    .summary-item__format { font-weight: 500; }
+
     .summary-item__total {
       font-weight: 600;
-      color: #333;
+      color: var(--color-text);
+      white-space: nowrap;
     }
 
     hr {
       border: none;
-      border-top: 1px solid #eee;
+      border-top: 1px solid var(--color-border);
       margin: 1rem 0;
     }
 
     .summary-row {
       display: flex;
       justify-content: space-between;
-      padding: 0.5rem 0;
-      color: #666;
+      padding: 0.4rem 0;
+      color: var(--color-text-light);
 
-      &--discount {
-        color: #27ae60;
-        font-weight: 500;
-      }
+      &--discount { color: var(--color-success); font-weight: 500; }
 
       &--total {
-        font-size: 1.25rem;
-        font-weight: 700;
-        color: #333;
-        padding: 1rem 0;
-      }
-    }
+        align-items: baseline;
+        font-weight: 600;
+        color: var(--color-text);
+        padding: 0.75rem 0;
 
-    .free-shipping-badge {
-      background: #d4edda;
-      color: #155724;
-      padding: 0.5rem;
-      border-radius: 4px;
-      font-size: 0.85rem;
-      text-align: center;
-      margin: 0.5rem 0;
+        span:last-child {
+          font-family: var(--font-title);
+          font-size: 2rem;
+          line-height: 1;
+          color: var(--color-brand);
+        }
+      }
     }
 
     .btn {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 48px;
       padding: 0.75rem 1.5rem;
-      border: none;
-      border-radius: 4px;
+      border: 1.5px solid var(--color-brand);
+      border-radius: 20px;
+      font-family: var(--font-ui);
       font-weight: 600;
       cursor: pointer;
       text-decoration: none;
       text-align: center;
-      transition: all 0.3s;
+      transition: background 150ms, color 150ms;
 
       &--primary {
-        background: #4a7c4e;
-        color: #fff;
+        background: var(--color-brand);
+        color: var(--color-accent);
 
-        &:hover:not(:disabled) {
-          background: #3d6640;
-        }
+        &:hover:not(:disabled) { background: var(--color-brand-hover); }
 
-        &:disabled {
-          background: #ccc;
-          cursor: not-allowed;
-        }
+        &:disabled { opacity: 0.5; cursor: progress; }
       }
 
-      &--large {
-        padding: 1rem 2rem;
-        font-size: 1.1rem;
-      }
+      &--large { min-height: 54px; font-size: 1rem; }
 
-      &--block {
-        display: block;
-        width: 100%;
-      }
+      &--block { display: flex; width: 100%; }
     }
 
     .error-message {
-      background: #fee;
-      color: #c00;
+      background: rgba(160, 28, 28, 0.06);
+      border: 1px solid rgba(160, 28, 28, 0.35);
+      color: var(--color-error);
       padding: 0.75rem;
-      border-radius: 4px;
+      border-radius: 2px;
       font-size: 0.9rem;
       margin-top: 1rem;
     }
 
-    .profile-hint {
-      background: #fff8e6; border: 1px solid #f0d98c; color: #7a5c00;
-      padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem;
-    }
-
-    select.error { border-color: #e74c3c; }
-
-    .vat-note { font-size: 0.75rem; font-weight: 400; color: #666; }
+    .vat-note { font-size: 0.75rem; font-weight: 400; color: var(--color-text-light); }
 
     .terms-check {
       display: flex; gap: 0.6rem; align-items: flex-start; margin: 1.25rem 0 0.75rem;
-      font-size: 0.85rem; line-height: 1.5; cursor: pointer;
-      input { margin-top: 0.2rem; width: 18px; height: 18px; flex-shrink: 0; }
-      a { color: #4a7c4e; font-weight: 600; }
+      font-size: 0.85rem; line-height: 1.5; cursor: pointer; color: var(--color-text);
+      input { margin-top: 0.15rem; width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--color-brand); }
+      a { color: var(--color-brand); font-weight: 600; text-decoration: underline; }
+
+      &.has-error input { outline: 2px solid var(--color-error); outline-offset: 2px; }
     }
 
     .terms-notice {
       margin-top: 1rem;
       font-size: 0.8rem;
-      color: #666;
+      color: var(--color-text-light);
       text-align: center;
+      line-height: 1.5;
 
-      a {
-        color: #4a7c4e;
-      }
+      a { color: var(--color-brand); text-decoration: underline; }
     }
 
     .empty-cart {
       text-align: center;
       padding: 3rem;
-      background: #fff;
-      border-radius: 8px;
+      background: var(--color-bg-alt);
+      border-radius: 2px;
 
       p {
-        color: #666;
+        font-family: var(--font-narrative);
+        color: var(--color-text-light);
         margin-bottom: 1rem;
       }
     }
@@ -920,9 +1000,92 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   readonly shippingProvinces = SHIPPING_PROVINCES;
   readonly allProvinces = PROVINCES;
 
+  /** Errores pendientes tras pulsar «pagar» (resumen enfocable arriba del formulario). */
+  errorSummary = signal<{ id: string; label: string }[]>([]);
+  /** La casilla de condiciones se marca en rojo solo tras intentar pagar. */
+  termsError = signal(false);
+  private submitAttempted = false;
+
   showError(form: FormGroup, key: string): boolean {
     const control = form.get(key);
     return !!control && control.invalid && control.touched;
+  }
+
+  postalCodeError(): string | null {
+    const c = this.shippingForm.get('postalCode')!;
+    if (c.hasError('outOfArea')) return 'De momento solo enviamos a la península. Escríbenos a info@cremacuadrado.com';
+    if (c.hasError('provinceMismatch')) return 'El código postal no corresponde a la provincia seleccionada';
+    if (!c.touched) return null;
+    if (c.hasError('required')) return 'Escribe el código postal';
+    if (c.hasError('pattern')) return 'Revisa el código postal: deben ser 5 dígitos';
+    return null;
+  }
+
+  billingPostalError(): string | null {
+    const c = this.billingForm.get('postal_code')!;
+    if (c.hasError('provinceMismatch')) return 'El código postal no corresponde a la provincia';
+    if (c.touched && c.hasError('required')) return 'Escribe el código postal';
+    return null;
+  }
+
+  /** Lista de errores para el resumen: cada uno enlaza al id de su campo. */
+  private collectErrors(): { id: string; label: string }[] {
+    const out: { id: string; label: string }[] = [];
+    const add = (invalid: boolean, id: string, label: string) => { if (invalid) out.push({ id, label }); };
+
+    const c = this.contactForm.controls;
+    add(c['email'].invalid, 'email', c['email'].hasError('required') ? 'Falta el email' : 'El email no es válido');
+    add(c['firstName'].invalid, 'firstName', 'Falta el nombre');
+    add(c['lastName'].invalid, 'lastName', 'Faltan los apellidos');
+    add(c['phone'].invalid, 'phone', c['phone'].hasError('required') ? 'Falta el teléfono' : 'El teléfono no es válido');
+
+    if (this.selectedAddressId() === 'new') {
+      const s = this.shippingForm.controls;
+      add(s['address'].invalid, 'address', 'Falta la dirección');
+      add(s['city'].invalid, 'city', 'Falta la ciudad');
+      const cp = s['postalCode'];
+      add(cp.invalid, 'postalCode',
+        cp.hasError('required') ? 'Falta el código postal'
+          : cp.hasError('outOfArea') ? 'Solo enviamos a la península'
+          : cp.hasError('provinceMismatch') ? 'El código postal no corresponde a la provincia'
+          : 'El código postal no es válido');
+      add(s['state'].invalid, 'state', 'Falta la provincia');
+    }
+
+    if (this.needsInvoice()) {
+      const b = this.billingForm.controls;
+      add(b['name'].invalid, 'billingName', 'Falta la razón social o el nombre fiscal');
+      add(b['nif'].invalid, 'billingNif', b['nif'].hasError('required') ? 'Falta el NIF' : 'El NIF no es válido');
+      if (!this.billingSameAsShipping()) {
+        add(b['street'].invalid, 'billingStreet', 'Falta la dirección fiscal');
+        add(b['city'].invalid, 'billingCity', 'Falta la ciudad fiscal');
+        add(b['postal_code'].invalid, 'billingPostal',
+          b['postal_code'].hasError('provinceMismatch') ? 'El código postal fiscal no corresponde a la provincia' : 'Falta el código postal fiscal');
+        add(b['province'].invalid, 'billingProvince', 'Falta la provincia fiscal');
+      }
+    }
+
+    add(!this.acceptTerms(), 'acceptTerms', 'Acepta las condiciones generales de venta');
+    return out;
+  }
+
+  /** Tras el primer intento de pago, el resumen se actualiza a medida que se corrigen los datos. */
+  private refreshErrorSummary(): void {
+    if (this.submitAttempted && this.errorSummary().length) this.errorSummary.set(this.collectErrors());
+  }
+
+  focusField(event: Event, id: string): void {
+    event.preventDefault();
+    const el = this.document.getElementById(id);
+    if (!el) return;
+    el.scrollIntoView({ block: 'center' });
+    el.focus({ preventScroll: true });
+  }
+
+  onTermsChange(checked: boolean): void {
+    this.acceptTerms.set(checked);
+    if (checked) this.termsError.set(false);
+    this.refreshErrorSummary();
   }
 
   constructor() {}
@@ -956,8 +1119,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     }
 
     // Watch form status changes to trigger Stripe init
-    this.contactForm.statusChanges.subscribe(() => this.tryInitStripe());
-    this.shippingForm.statusChanges.subscribe(() => this.tryInitStripe());
+    this.contactForm.statusChanges.subscribe(() => { this.tryInitStripe(); this.refreshErrorSummary(); });
+    this.shippingForm.statusChanges.subscribe(() => { this.tryInitStripe(); this.refreshErrorSummary(); });
+    this.billingForm.statusChanges.subscribe(() => this.refreshErrorSummary());
   }
 
   ngOnDestroy(): void {
@@ -1172,7 +1336,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        this.error.set(err.error?.detail || 'Error al preparar el pago');
+        // El errorInterceptor ya devuelve { status, message } legible.
+        this.error.set(err?.message || 'Error al preparar el pago. Inténtalo de nuevo.');
         this.stripeInitializing.set(false);
         this.stripeInitTriggered = false;
       },
@@ -1180,25 +1345,30 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   async placeOrder(): Promise<void> {
-    if (!this.isFormValid()) {
+    if (this.processing()) return;
+
+    // Validación al pulsar: resumen de errores enfocable + errores en cada campo.
+    this.submitAttempted = true;
+    const errors = this.collectErrors();
+    this.errorSummary.set(errors);
+    this.termsError.set(!this.acceptTerms());
+    if (errors.length) {
       this.contactForm.markAllAsTouched();
-      this.shippingForm.markAllAsTouched();
+      if (this.selectedAddressId() === 'new') this.shippingForm.markAllAsTouched();
+      if (this.needsInvoice()) this.billingForm.markAllAsTouched();
+      this.error.set(null);
+      // Espera a que se pinte el resumen para moverle el foco.
+      setTimeout(() => {
+        const summary = this.document.querySelector<HTMLElement>('.error-summary');
+        summary?.scrollIntoView({ block: 'start' });
+        summary?.focus({ preventScroll: true });
+      });
       return;
     }
 
     if (!this.stripeReady()) {
-      this.error.set('El formulario de pago no está listo todavía. Por favor espera un momento.');
-      return;
-    }
-
-    if (!this.acceptTerms()) {
-      this.error.set('Debes aceptar las condiciones generales de venta.');
-      return;
-    }
-
-    if (!this.isBillingValid()) {
-      this.billingForm.markAllAsTouched();
-      this.error.set('Revisa los datos de facturación.');
+      this.tryInitStripe();
+      this.error.set('Estamos preparando el formulario de pago. Espera un momento y vuelve a pulsar.');
       return;
     }
 

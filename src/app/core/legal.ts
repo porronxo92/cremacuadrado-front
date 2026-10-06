@@ -20,3 +20,10 @@ export const COMPANY = {
 
 /** Prefijos de código postal fuera del ámbito de envío (Baleares, Canarias, Ceuta, Melilla). */
 export const EXCLUDED_POSTCODE_PREFIXES = ['07', '35', '38', '51', '52'];
+
+/**
+ * Envío gratis a partir de este subtotal (tras descuentos). Solo se usa para
+ * pintar la barra de progreso del carrito: el coste real lo calcula siempre
+ * el backend. Debe coincidir con FREE_SHIPPING_THRESHOLD de app/config.py.
+ */
+export const FREE_SHIPPING_THRESHOLD = 48;

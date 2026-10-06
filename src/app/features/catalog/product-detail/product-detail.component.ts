@@ -21,6 +21,9 @@ import { environment } from '@env/environment';
 type Tab = 'producto' | 'ingredientes' | 'nutricion' | 'como-usarlo';
 type PurchaseType = 'once' | 'sub';
 
+/** Suscripción mensual (−15%): oculta hasta implementar el cobro recurrente. Cambiar a true para reactivarla. */
+const SUBSCRIPTION_ENABLED = false;
+
 const FAQS = [
   { q: '¿Por qué el aceite está separado?', a: 'Es el aceite natural del pistacho — señal de que no hay aditivos. Completamente normal: remueve bien antes de cada uso.' },
   { q: '¿Cuánto tiempo dura la crema?', a: '12 meses desde la elaboración. Una vez abierto, consumir en 4 semanas en lugar fresco y seco.' },
@@ -118,12 +121,12 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                 }
               </div>
               @if (currentImages().length > 1) {
-                <div class="pd__dots" role="tablist">
+                <div class="pd__dots">
                   @for (img of currentImages(); track img.id) {
-                    <button class="pd__dot" [class.is-active]="currentSlide() === $index"
-                      (click)="scrollToSlide($index)" role="tab"
-                      [attr.aria-selected]="currentSlide() === $index"
-                      [attr.aria-label]="'Imagen ' + ($index + 1)">
+                    <button type="button" class="pd__dot" [class.is-active]="currentSlide() === $index"
+                      (click)="scrollToSlide($index)"
+                      [attr.aria-current]="currentSlide() === $index ? 'true' : null"
+                      [attr.aria-label]="'Ver imagen ' + ($index + 1) + ' de ' + currentImages().length">
                     </button>
                   }
                 </div>
@@ -141,6 +144,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                 @if (product()!.review_count && product()!.average_rating) {
                   <div class="step-stars">
                     <span class="stars-filled" aria-hidden="true">{{ starString(roundRating(product()!.average_rating!)) }}</span>
+                    <span class="sr-only">Valoración media</span>
                     <span class="stars-meta">{{ product()!.average_rating | number:'1.1-1' }} · {{ product()!.review_count }} {{ product()!.review_count === 1 ? 'reseña' : 'reseñas' }}</span>
                   </div>
                 } @else {
@@ -217,7 +221,40 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             <!-- 6. Cómo quieres pedirlo -->
 
               <div class="step-body" #purchaseBlock>
-                <span class="step-label">elige cómo pedirlo</span>
+                <span class="step-label">{{ subscriptionEnabled ? 'elige cómo pedirlo' : 'cantidad' }}</span>
+                <!-- Fila cantidad + «Añadir al carrito» (se reutiliza con y sin suscripción) -->
+                <ng-template #buyRow>
+                        <div class="pur-opt__qty-row">
+                          <div class="qty-stepper">
+                            <button class="qty-stepper__btn" type="button"
+                              (click)="quantity.set(quantity() - 1)"
+                              [disabled]="quantity() <= 1"
+                              aria-label="Quitar una unidad">−</button>
+                            <span class="qty-stepper__val" aria-live="polite">
+                              <span class="sr-only">Cantidad: </span>{{ quantity() }}
+                            </span>
+                            <button class="qty-stepper__btn" type="button"
+                              (click)="quantity.set(quantity() + 1)"
+                              [disabled]="quantity() >= (selectedVariant()?.stock ?? 99)"
+                              aria-label="Añadir una unidad">+</button>
+                          </div>
+                          <button
+                            type="button"
+                            class="pd__cta"
+                            (click)="addToCart()"
+                            [disabled]="!selectedVariant()?.is_in_stock || addingToCart()">
+                            @if (addingToCart()) {
+                              <span class="pd__cta-spinner"></span>Añadiendo...
+                            } @else if (!selectedVariant()?.is_in_stock) {
+                              Agotado
+                            } @else {
+                              Añadir al carrito
+                            }
+                          </button>
+                        </div>
+                </ng-template>
+
+                @if (subscriptionEnabled) {
                 <div class="pur-options">
 
                   <!-- Opción A: una vez -->
@@ -236,36 +273,13 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                     </div>
                     @if (purchaseType() === 'once') {
                       <div class="pur-opt__body">
-                        <div class="pur-opt__qty-row">
-                          <div class="qty-stepper">
-                            <button class="qty-stepper__btn" type="button"
-                              (click)="quantity.set(quantity() - 1)"
-                              [disabled]="quantity() <= 1"
-                              aria-label="Reducir cantidad">−</button>
-                            <span class="qty-stepper__val" aria-live="polite" aria-label="Cantidad">{{ quantity() }}</span>
-                            <button class="qty-stepper__btn" type="button"
-                              (click)="quantity.set(quantity() + 1)"
-                              [disabled]="quantity() >= (selectedVariant()?.stock ?? 99)"
-                              aria-label="Aumentar cantidad">+</button>
-                          </div>
-                          <button
-                            class="pd__cta"
-                            (click)="addToCart()"
-                            [disabled]="!selectedVariant()?.is_in_stock || addingToCart()">
-                            @if (addingToCart()) {
-                              <span class="pd__cta-spinner"></span>Añadiendo...
-                            } @else if (!selectedVariant()?.is_in_stock) {
-                              Agotado
-                            } @else {
-                              Añadir al carrito
-                            }
-                          </button>
-                        </div>
+                        <ng-container *ngTemplateOutlet="buyRow" />
                       </div>
                     }
                   </label>
 
-                  <!-- Opción B: suscripción -->
+                  <!-- Opción B: suscripción (desactivada hasta que exista el flujo real; ver SUBSCRIPTION_ENABLED) -->
+                  @if (subscriptionEnabled) {
                   <label class="pur-opt" [class.is-active]="purchaseType() === 'sub'">
                     <div class="pur-opt__header">
                       <span class="pur-opt__radio">
@@ -304,8 +318,15 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                       </div>
                     }
                   </label>
+                  }
 
                 </div>
+                } @else {
+                  <!-- Solo compra única: sin selector de una sola opción -->
+                  <div class="pur-direct">
+                    <ng-container *ngTemplateOutlet="buyRow" />
+                  </div>
+                }
               </div>
 
 
@@ -334,20 +355,24 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
 
         <!-- ── TABS ───────────────────────────────── -->
         <div class="pd__tabs-section">
-          <div class="pd__tabs" role="tablist">
+          <div class="pd__tabs" role="tablist" aria-label="Información del producto" (keydown)="onTabKeydown($event)">
             @for (tab of tabs; track tab.id) {
               <button
+                type="button"
                 class="pd__tab"
+                [id]="'tab-' + tab.id"
                 [class.is-active]="activeTab() === tab.id"
                 (click)="activeTab.set(tab.id)"
                 role="tab"
+                aria-controls="pd-tabpanel"
+                [attr.tabindex]="activeTab() === tab.id ? 0 : -1"
                 [attr.aria-selected]="activeTab() === tab.id">
                 {{ tab.label }}
               </button>
             }
           </div>
 
-          <div class="pd__tab-content" role="tabpanel">
+          <div class="pd__tab-content" id="pd-tabpanel" role="tabpanel" tabindex="0" [attr.aria-labelledby]="'tab-' + activeTab()">
             @if (activeTab() === 'producto') {
               @if (product()!.description) {
                 <div class="pd__description" [innerHTML]="product()!.description"></div>
@@ -407,13 +432,17 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
 
           @if (showReviewForm()) {
             <form class="pd__review-form" (ngSubmit)="submitReview()">
-              <div class="pd__review-form-stars">
+              <div class="pd__review-form-stars" role="group" aria-label="Tu valoración">
                 @for (star of [1, 2, 3, 4, 5]; track star) {
-                  <button type="button" class="star-btn" [class.active]="star <= reviewRating" (click)="reviewRating = star">★</button>
+                  <button type="button" class="star-btn" [class.active]="star <= reviewRating" (click)="reviewRating = star"
+                    [attr.aria-label]="star + (star === 1 ? ' estrella' : ' estrellas')"
+                    [attr.aria-pressed]="star === reviewRating">★</button>
                 }
               </div>
-              <input type="text" placeholder="Título (opcional)" [(ngModel)]="reviewTitle" name="reviewTitle" />
-              <textarea placeholder="Cuéntanos tu experiencia..." [(ngModel)]="reviewComment" name="reviewComment" rows="3"></textarea>
+              <label class="pd__review-label" for="reviewTitle">Título (opcional)</label>
+              <input type="text" id="reviewTitle" [(ngModel)]="reviewTitle" name="reviewTitle" />
+              <label class="pd__review-label" for="reviewComment">Tu opinión</label>
+              <textarea id="reviewComment" placeholder="Cuéntanos tu experiencia..." [(ngModel)]="reviewComment" name="reviewComment" rows="3"></textarea>
               <button type="submit" class="pd__review-submit" [disabled]="submittingReview()">
                 {{ submittingReview() ? 'Enviando…' : 'Enviar reseña' }}
               </button>
@@ -425,7 +454,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               <div class="pd__review">
                 <div class="pd__review-top">
                   <span class="pd__review-name">{{ review.user_name || 'Anónimo' }}</span>
-                  <span class="pd__review-stars">{{ starString(review.rating) }}</span>
+                  <span class="pd__review-stars" role="img" [attr.aria-label]="review.rating + ' de 5 estrellas'">{{ starString(review.rating) }}</span>
                 </div>
                 @if (review.title) { <p class="pd__review-title">{{ review.title }}</p> }
                 @if (review.comment) { <p class="pd__review-text">"{{ review.comment }}"</p> }
@@ -453,7 +482,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
           <div class="pd__sticky-name">{{ product()!.name }} · {{ selectedFormat()?.label }}</div>
           <div class="pd__sticky-price">{{ effectivePrice() / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}</div>
         </div>
-        <button class="pd__sticky-cta" (click)="addToCart()" [disabled]="addingToCart() || !selectedVariant()?.is_in_stock">
+        <button type="button" class="pd__sticky-cta" (click)="addToCart()" [disabled]="addingToCart() || !selectedVariant()?.is_in_stock">
           {{ addingToCart() ? '...' : (!selectedVariant()?.is_in_stock ? 'Agotado' : 'Añadir al carrito') }}
         </button>
       </div>
@@ -544,14 +573,21 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
     }
 
     .pd__dots {
-      display: flex; justify-content: center; gap: 5px; margin-top: 8px;
+      display: flex; justify-content: center; gap: 0; margin-top: 4px;
     }
 
+    // Punto visual de 7px dentro de una zona táctil de 24×24px (WCAG 2.5.8)
     .pd__dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: rgba($muted,.25); border: none; cursor: pointer; padding: 0;
-      transition: background 150ms, transform 150ms;
-      &.is-active { background: $brand; transform: scale(1.3); }
+      width: 24px; height: 24px; padding: 0;
+      background: none; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+
+      &::before {
+        content: ''; width: 7px; height: 7px; border-radius: 50%;
+        background: rgba($muted,.35);
+        transition: background 150ms, transform 150ms;
+      }
+      &.is-active::before { background: $brand; transform: scale(1.3); }
     }
 
     // ── Buy column ────────────────────────────────────
@@ -706,6 +742,8 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       padding: 0 12px 12px;
     }
 
+    .pur-direct { padding-top: 2px; }
+
     .pur-opt__qty-row {
       display: flex;
       align-items: center;
@@ -724,7 +762,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       flex-shrink: 0;
 
       &__btn {
-        width: 34px; height: 34px;
+        width: 44px; height: 44px; touch-action: manipulation;
         background: $bg; border: none;
         font-family: 'Poppins', sans-serif;
         font-size: 1rem; font-weight: 600; color: $brand;
@@ -740,7 +778,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
         font-size: .85rem; font-weight: 600; color: $ink;
         border-left: 1px solid $border;
         border-right: 1px solid $border;
-        line-height: 34px;
+        line-height: 44px;
       }
     }
 
@@ -775,7 +813,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       font-family: 'Poppins', sans-serif; font-size: .75rem; font-weight: 500;
       text-transform: uppercase; letter-spacing: .08em; color: $muted;
       background: none; border: none; border-bottom: 2px solid transparent;
-      padding: .7rem 1.1rem; cursor: pointer; white-space: nowrap;
+      padding: .7rem 1.1rem; min-height: 48px; cursor: pointer; white-space: nowrap;
       transition: color 150ms, border-color 150ms;
       &:hover { color: $brand; }
       &.is-active { color: $brand; border-bottom-color: $brand; }
@@ -843,7 +881,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
     .pd__reviews-cta {
       font-family: 'Poppins', sans-serif; font-size: .75rem; font-weight: 600;
       color: $brand; background: none; border: none; cursor: pointer; text-decoration: underline;
-      padding: 0;
+      padding: 0; min-height: 44px; display: inline-flex; align-items: center;
     }
 
     .pd__review-form {
@@ -856,9 +894,15 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       display: flex; gap: 3px;
     }
 
+    .pd__review-label {
+      font-family: 'Poppins', sans-serif; font-size: .75rem; font-weight: 500; color: $ink;
+      margin-bottom: -.3rem;
+    }
+
     .star-btn {
-      background: none; border: none; cursor: pointer; font-size: 1.3rem;
-      color: rgba($ink, .2); padding: 0; line-height: 1;
+      background: none; border: none; cursor: pointer; font-size: 1.5rem;
+      width: 40px; height: 40px;
+      color: rgba($ink, .25); padding: 0; line-height: 1;
       &.active { color: $accent; }
     }
 
@@ -920,7 +964,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       display: none;
       position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
       background: $bg; border-top: 1px solid $border;
-      padding: .65rem 1.25rem;
+      padding: .65rem 1.25rem calc(.65rem + env(safe-area-inset-bottom, 0px));
       align-items: center; justify-content: space-between; gap: 1rem;
       min-height: 64px; box-shadow: 0 -4px 16px rgba($ink,.08);
 
@@ -943,7 +987,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       padding: .65rem 1.25rem; background: $brand; color: $accent;
       border: none; border-radius: 20px;
       font-family: 'Poppins', sans-serif; font-size: .78rem; font-weight: 600;
-      cursor: pointer; flex-shrink: 0; min-height: 44px; min-width: 140px;
+      cursor: pointer; flex-shrink: 0; min-height: 48px; min-width: 140px;
       transition: background 150ms;
       &:hover:not(:disabled) { background: lighten($brand, 6%); }
       &:disabled { opacity: .5; }
@@ -972,6 +1016,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   readonly currentSlide = signal(0);
   readonly showStickyBar = signal(false);
   readonly activeTab = signal<Tab>('producto');
+  readonly subscriptionEnabled = SUBSCRIPTION_ENABLED;
   readonly purchaseType = signal<PurchaseType>('once');
   readonly quantity = signal(1);
 
@@ -1171,9 +1216,27 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       },
       error: (err) => {
         this.submittingReview.set(false);
-        this.toastService.error(err.error?.detail || 'Error al enviar la reseña');
+        // El errorInterceptor devuelve { status, message }
+        this.toastService.error(err?.message || 'No se pudo enviar la reseña. Inténtalo de nuevo.');
       },
     });
+  }
+
+  /** Flechas, Inicio y Fin para moverse entre pestañas (patrón WAI-ARIA Tabs). */
+  onTabKeydown(event: KeyboardEvent): void {
+    const ids = this.tabs.map(t => t.id);
+    const current = ids.indexOf(this.activeTab());
+    let next = current;
+    if (event.key === 'ArrowRight') next = (current + 1) % ids.length;
+    else if (event.key === 'ArrowLeft') next = (current - 1 + ids.length) % ids.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = ids.length - 1;
+    else return;
+    event.preventDefault();
+    this.activeTab.set(ids[next]);
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => document.getElementById('tab-' + ids[next])?.focus());
+    }
   }
 
   onFormatChange(fmt: ProductFormat): void {
