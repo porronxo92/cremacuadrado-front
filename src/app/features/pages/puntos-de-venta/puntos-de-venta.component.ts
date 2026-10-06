@@ -7,11 +7,12 @@ import { PointOfSaleService } from '../../../core/services/point-of-sale.service
 import { SeoService } from '../../../core/services/seo.service';
 import { PointOfSale } from '../../../core/models';
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
+import { StoresMapComponent } from './stores-map.component';
 
 @Component({
   selector: 'app-puntos-de-venta',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, StoresMapComponent],
   template: `
     <div class="pdv-page">
 
@@ -63,36 +64,23 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
             </div>
           </div>
 
-          <!-- Mapa: el iframe no aporta nada a SEO (la lista de texto de abajo
-               es la fuente indexable) y retrasa la hidratación si se carga de
-               inmediato — se difiere hasta que entra en el viewport. -->
+          <!-- Mapa (Leaflet + OpenStreetMap/CARTO). La lista de texto de abajo es
+               la fuente indexable; el mapa se difiere hasta entrar en pantalla. -->
           <div class="pdv-map-wrapper">
             @if (!mapAllowed()) {
               <div class="pdv-map pdv-map--consent">
-                <p>El mapa lo ofrece Google Maps, que instala sus propias cookies. La lista de tiendas
-                  de abajo funciona sin él.</p>
+                <p>El mapa se carga desde los servidores de CARTO / OpenStreetMap (no instala cookies,
+                  pero recibe tu dirección IP). La lista de tiendas de abajo funciona sin él.</p>
                 <button type="button" class="pdv-map__load" (click)="loadMap()">Mostrar el mapa</button>
                 <button type="button" class="pdv-map__settings" (click)="cookieConsent.openSettings()">Configurar cookies</button>
               </div>
             } @else {
-            @defer (on viewport) {
-              <iframe
-                class="pdv-map"
-                loading="lazy"
-                allowfullscreen
-                referrerpolicy="no-referrer-when-downgrade"
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1571052.1823547506!2d-4.5!3d39.3!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd6a5c8ef6a9d6c7%3A0xd0c1b6e1c4bc5e55!2sCiudad%20Real%2C%20Spain!5e0!3m2!1ses!2ses!4v1700000000000!5m2!1ses!2ses"
-                title="Mapa de puntos de venta CremaCuadrado"
-              ></iframe>
-            } @placeholder {
-              <div class="pdv-map pdv-map--skeleton"></div>
+              @defer (on viewport) {
+                <app-stores-map class="pdv-map" [stores]="filteredStores()" />
+              } @placeholder {
+                <div class="pdv-map pdv-map--skeleton"></div>
+              }
             }
-            }
-            <div class="pdv-map__overlay-tip">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-              Para una experiencia óptima, abre el mapa completo
-              <a href="https://maps.app.goo.gl/yourlink" target="_blank" rel="noopener">Ver en Google Maps →</a>
-            </div>
           </div>
 
           <!-- Resultados -->

@@ -31,7 +31,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
           cambiarla en cualquier momento:</p>
         <p><button type="button" class="ck-btn" (click)="consent.openSettings()">Configurar cookies</button></p>
         <p>Actualmente:
-          <strong>{{ consent.hasDecided() ? (consent.external() ? 'has aceptado los servicios de Google' : 'has rechazado los servicios de Google') : 'aún no has decidido' }}</strong>.</p>
+          <strong>{{ consent.hasDecided() ? (consent.external() ? 'has aceptado los servicios externos' : 'has rechazado los servicios externos') : 'aún no has decidido' }}</strong>.</p>
       </section>
 
       <section id="listado">
@@ -50,13 +50,13 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
           </table>
         </div>
 
-        <h3>Servicios externos de Google (solo si los aceptas o pulsas el botón correspondiente)</h3>
+        <h3>Servicios externos (solo si los aceptas o pulsas el botón correspondiente)</h3>
         <div class="legal-table-wrap">
           <table>
             <thead><tr><th>Servicio</th><th>Titular</th><th>Finalidad</th><th>Más información</th></tr></thead>
             <tbody>
-              <tr><td>Google Maps (NID, AEC y similares)</td><td>Google LLC</td><td>Mostrar el mapa de puntos de venta</td>
-                <td><a href="https://policies.google.com/technologies/cookies" target="_blank" rel="noopener">Política de Google</a></td></tr>
+              <tr><td>Mapa de puntos de venta (no instala cookies; recibe tu IP para servir el mapa)</td><td>CARTO / OpenStreetMap</td><td>Mostrar el mapa de puntos de venta</td>
+                <td><a href="https://carto.com/privacy" target="_blank" rel="noopener">Privacidad de CARTO</a></td></tr>
               <tr><td>Iniciar sesión con Google (g_state, G_ENABLED_IDPS y similares)</td><td>Google LLC</td><td>Identificarte con tu cuenta de Google</td>
                 <td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Privacidad de Google</a></td></tr>
             </tbody>

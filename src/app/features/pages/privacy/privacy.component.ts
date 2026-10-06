@@ -106,7 +106,8 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
               <tr><td>Stripe Payments Europe Ltd.</td><td>Pagos con tarjeta</td><td>UE (Irlanda); transferencias a EE. UU. con DPF y cláusulas tipo</td></tr>
               <tr><td>Sociedad Estatal Correos y Telégrafos</td><td>Envío de pedidos</td><td>España</td></tr>
               <tr><td>Resend / Titan (proveedores de email)</td><td>Envío de emails transaccionales y comerciales</td><td>EE. UU. — cláusulas contractuales tipo</td></tr>
-              <tr><td>Google LLC</td><td>Inicio de sesión con Google y mapa (solo si lo aceptas)</td><td>EE. UU. — Marco de Privacidad de Datos UE-EE. UU.</td></tr>
+              <tr><td>Google LLC</td><td>Inicio de sesión con Google (solo si lo usas o lo aceptas)</td><td>EE. UU. — Marco de Privacidad de Datos UE-EE. UU.</td></tr>
+              <tr><td>CARTO / OpenStreetMap</td><td>Mapa de puntos de venta (solo si lo aceptas o lo muestras)</td><td>UE / EE. UU. — cláusulas contractuales tipo</td></tr>
             </tbody>
           </table>
         </div>

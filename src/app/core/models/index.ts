@@ -384,4 +384,7 @@ export interface PointOfSale {
   city: string;
   instagram_url: string;
   maps_url: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }

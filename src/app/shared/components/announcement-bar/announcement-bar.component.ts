@@ -1,5 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, PLATFORM_ID, inject } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { runAfterStable } from '../../../core/utils/after-stable';
 
 const MESSAGES = [
   '🚚 Envío gratis en pedidos +48€ — Península',
@@ -104,15 +105,20 @@ export class AnnouncementBarComponent implements OnInit, OnDestroy {
 
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
-  ngOnInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    if (window.matchMedia('(max-width: 768px)').matches) return;
-    // Sin rotación automática si el usuario pide menos movimiento
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    this.rotating.set(true);
-    this.start();
+  constructor() {
+    // El intervalo arranca cuando la app ya está estable: si no, la hidratación
+    // nunca limpia el HTML del servidor (ver core/utils/after-stable.ts).
+    runAfterStable(() => {
+      if (!isPlatformBrowser(this.platformId)) return;
+      if (window.matchMedia('(max-width: 768px)').matches) return;
+      // Sin rotación automática si el usuario pide menos movimiento
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      this.rotating.set(true);
+      this.start();
+    });
   }
+
+  ngOnInit(): void {}
 
   togglePause(): void {
     this.paused.update(p => !p);

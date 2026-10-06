@@ -206,7 +206,7 @@ Zona inferior (tras los CTAs):
 **`HeroBlock`**
 - Vídeo de fondo: dos personas untando crema en tostadas. Sin audio, loop.
 - El bloque debe aceptar tanto imagen como vídeo (clase intercambiable en CSS)
-- Pop-up de email: NO al cargar. Activa al segundo scroll o 30 segundos. En móvil: banner deslizante inferior, NUNCA modal full-screen.
+- Sin pop-up de email/cupón (eliminado). La captación de email está solo en el bloque de newsletter de la home.
 
 **`TrilogiaBlock`**
 - Inmediatamente debajo del hero, fondo crema, fuera del vídeo
@@ -373,8 +373,7 @@ Todos los formularios y botones de compra deben manejar:
 - ❌ No usar "ibérico" para el pistacho — usar "español" o "manchego"
 
 ### UX y conversión
-- ❌ No mostrar pop-up de email al cargar la página. Activa al segundo scroll o 30 segundos.
-- ❌ No usar modal full-screen en móvil para el pop-up de email — Google penaliza los intersticiales intrusivos en móvil
+- ❌ No añadir pop-ups promocionales (el de cupón se eliminó). La única modal permitida al cargar es la de consentimiento de cookies (obligación legal, exenta de la penalización de Google), y en móvil va como hoja inferior, nunca a pantalla completa.
 - ❌ No cambiar el orden de los 8 elementos de la zona de compra en la ficha de producto — está optimizado para conversión
 - ❌ No añadir upsells ni productos relacionados en /carrito — debe ser completamente limpio
 - ❌ No mezclar argumentos B2C y B2B en la misma página. La homepage es para B2C; B2B tiene sus landings.
@@ -395,5 +394,5 @@ Todos los formularios y botones de compra deben manejar:
 - ❌ No poner imágenes de más de 200KB en la homepage
 
 ### Legal
-- ❌ No lanzar la web sin el banner de cookies con opción real de rechazar — obligatorio RGPD España
+- ❌ No lanzar la web sin la modal de cookies con opción real de rechazar al mismo nivel que aceptar — obligatorio RGPD España
 - ❌ No operar sin las 5 páginas legales: aviso legal, privacidad, cookies, condiciones de venta, devoluciones

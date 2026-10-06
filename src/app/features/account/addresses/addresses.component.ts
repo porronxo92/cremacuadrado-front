@@ -5,10 +5,13 @@ import { UserService } from '../../../core/services/user.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { Address } from '../../../core/models';
 
+import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
+import { PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPostcode } from '../../../core/data/spain';
+
 @Component({
   selector: 'app-account-addresses',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
   template: `
     <div class="addresses-page">
       <div class="page-header">
@@ -17,7 +20,7 @@ import { Address } from '../../../core/models';
           + Nueva dirección
         </button>
       </div>
-      
+
       @if (loading()) {
         <div class="loading">Cargando direcciones...</div>
       } @else if (addresses().length === 0 && !showForm()) {
@@ -60,7 +63,7 @@ import { Address } from '../../../core/models';
           }
         </div>
       }
-      
+
       <!-- Address form modal -->
       @if (showForm()) {
         <div class="modal-overlay" (click)="closeForm()">
@@ -69,7 +72,7 @@ import { Address } from '../../../core/models';
               <h2>{{ editingAddress() ? 'Editar dirección' : 'Nueva dirección' }}</h2>
               <button class="close-btn" (click)="closeForm()">×</button>
             </div>
-            
+
             <form [formGroup]="addressForm" (ngSubmit)="saveAddress()">
               <div class="modal-body">
                 <div class="form-row">
@@ -82,17 +85,17 @@ import { Address } from '../../../core/models';
                     <input type="text" id="lastName" formControlName="lastName">
                   </div>
                 </div>
-                
+
                 <div class="form-group">
                   <label for="addressLine1">Dirección *</label>
                   <input type="text" id="addressLine1" formControlName="addressLine1" placeholder="Calle, número, piso...">
                 </div>
-                
+
                 <div class="form-group">
                   <label for="addressLine2">Dirección adicional</label>
                   <input type="text" id="addressLine2" formControlName="addressLine2" placeholder="Urbanización, bloque... (opcional)">
                 </div>
-                
+
                 <div class="form-row">
                   <div class="form-group">
                     <label for="city">Ciudad *</label>
@@ -100,42 +103,57 @@ import { Address } from '../../../core/models';
                   </div>
                   <div class="form-group">
                     <label for="postalCode">Código postal *</label>
-                    <input type="text" id="postalCode" formControlName="postalCode">
+                    <input type="text" id="postalCode" formControlName="postalCode" inputmode="numeric" autocomplete="postal-code">
+                    @if (addressForm.get('postalCode')?.hasError('pattern') && addressForm.get('postalCode')?.touched) {
+                      <span class="error-text">Código postal no válido (5 dígitos)</span>
+                    } @else if (addressForm.get('postalCode')?.hasError('provinceMismatch')) {
+                      <span class="error-text">El código postal no corresponde a la provincia</span>
+                    }
                   </div>
                 </div>
-                
+
                 <div class="form-row">
                   <div class="form-group">
                     <label for="state">Provincia *</label>
-                    <input type="text" id="state" formControlName="state">
+                    <select id="state" formControlName="state">
+                      <option value="" disabled>Selecciona una provincia</option>
+                      @for (p of provinces; track p.code) {
+                        <option [value]="p.name">{{ p.name }}</option>
+                      }
+                    </select>
+                    @if (addressForm.get('state')?.invalid && addressForm.get('state')?.touched) {
+                      <span class="error-text">Selecciona una provincia</span>
+                    }
                   </div>
                   <div class="form-group">
                     <label for="country">País *</label>
                     <select id="country" formControlName="country">
                       <option value="ES">España</option>
-                      <option value="PT">Portugal</option>
-                      <option value="FR">Francia</option>
                     </select>
                   </div>
                 </div>
-                
+
                 <div class="form-group">
-                  <label for="phone">Teléfono</label>
-                  <input type="tel" id="phone" formControlName="phone">
+                  <label for="phone">Teléfono *</label>
+                  <app-phone-input formControlName="phone" inputId="phone"
+                    [invalid]="!!addressForm.get('phone')?.invalid && !!addressForm.get('phone')?.touched" />
+                  @if (addressForm.get('phone')?.invalid && addressForm.get('phone')?.touched) {
+                    <span class="error-text">Teléfono obligatorio y válido (9 dígitos para España)</span>
+                  }
                 </div>
-                
+
                 <div class="form-group">
                   <label class="checkbox">
                     <input type="checkbox" formControlName="isDefault">
                     <span>Usar como dirección predeterminada</span>
                   </label>
                 </div>
-                
+
                 @if (formError()) {
                   <div class="error-message">{{ formError() }}</div>
                 }
               </div>
-              
+
               <div class="modal-footer">
                 <button type="button" class="btn btn--secondary" (click)="closeForm()">Cancelar</button>
                 <button type="submit" class="btn btn--primary" [disabled]="saving()">
@@ -153,27 +171,28 @@ import { Address } from '../../../core/models';
     </div>
   `,
   styles: [`
+    .error-text { display: block; color: #e74c3c; font-size: 0.8rem; margin-top: 0.25rem; }
     .addresses-page {
     }
-    
+
     .page-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 2rem;
-      
+
       h1 {
         margin: 0;
         color: #333;
       }
     }
-    
+
     .addresses-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1.5rem;
     }
-    
+
     .address-card {
       background: #fff;
       border-radius: 8px;
@@ -181,12 +200,12 @@ import { Address } from '../../../core/models';
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
       position: relative;
       border: 2px solid transparent;
-      
+
       &.default {
         border-color: #4a7c4e;
       }
     }
-    
+
     .default-badge {
       position: absolute;
       top: -10px;
@@ -198,15 +217,15 @@ import { Address } from '../../../core/models';
       font-size: 0.75rem;
       font-weight: 600;
     }
-    
+
     .address-content {
       margin-bottom: 1rem;
-      
+
       p {
         margin: 0 0 0.25rem;
         color: #666;
         font-size: 0.9rem;
-        
+
         &.address-name {
           font-weight: 600;
           color: #333;
@@ -214,7 +233,7 @@ import { Address } from '../../../core/models';
         }
       }
     }
-    
+
     .address-actions {
       display: flex;
       gap: 0.5rem;
@@ -222,7 +241,7 @@ import { Address } from '../../../core/models';
       border-top: 1px solid #eee;
       padding-top: 1rem;
     }
-    
+
     .btn {
       padding: 0.5rem 1rem;
       border-radius: 4px;
@@ -230,76 +249,76 @@ import { Address } from '../../../core/models';
       cursor: pointer;
       font-size: 0.9rem;
       transition: all 0.3s;
-      
+
       &--primary {
         background: #4a7c4e;
         color: #fff;
         border: none;
-        
+
         &:hover:not(:disabled) {
           background: #3d6640;
         }
-        
+
         &:disabled {
           background: #ccc;
           cursor: not-allowed;
         }
       }
-      
+
       &--secondary {
         background: #f5f5f5;
         color: #333;
         border: none;
-        
+
         &:hover {
           background: #eee;
         }
       }
-      
+
       &--text {
         background: none;
         border: none;
         color: #4a7c4e;
         padding: 0.25rem 0.5rem;
-        
+
         &:hover {
           text-decoration: underline;
         }
-        
+
         &.btn--danger {
           color: #e74c3c;
         }
       }
     }
-    
+
     .empty-state {
       text-align: center;
       padding: 3rem;
       background: #fff;
       border-radius: 8px;
-      
+
       svg {
         color: #ccc;
         margin-bottom: 1rem;
       }
-      
+
       h2 {
         color: #333;
         margin-bottom: 0.5rem;
       }
-      
+
       p {
         color: #666;
         margin-bottom: 1.5rem;
       }
     }
-    
+
     .loading {
       text-align: center;
       padding: 3rem;
       color: #666;
     }
-    
+
     .modal-overlay {
       position: fixed;
       top: 0;
@@ -313,7 +332,7 @@ import { Address } from '../../../core/models';
       z-index: 1000;
       padding: 1rem;
     }
-    
+
     .modal {
       background: #fff;
       border-radius: 8px;
@@ -322,36 +341,36 @@ import { Address } from '../../../core/models';
       max-height: 90vh;
       overflow-y: auto;
     }
-    
+
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 1rem 1.5rem;
       border-bottom: 1px solid #eee;
-      
+
       h2 {
         margin: 0;
         font-size: 1.1rem;
       }
-      
+
       .close-btn {
         background: none;
         border: none;
         font-size: 1.5rem;
         cursor: pointer;
         color: #666;
-        
+
         &:hover {
           color: #333;
         }
       }
     }
-    
+
     .modal-body {
       padding: 1.5rem;
     }
-    
+
     .modal-footer {
       display: flex;
       justify-content: flex-end;
@@ -359,20 +378,20 @@ import { Address } from '../../../core/models';
       padding: 1rem 1.5rem;
       border-top: 1px solid #eee;
     }
-    
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      
+
       @media (max-width: 480px) {
         grid-template-columns: 1fr;
       }
     }
-    
+
     .form-group {
       margin-bottom: 1rem;
-      
+
       label {
         display: block;
         margin-bottom: 0.5rem;
@@ -380,34 +399,34 @@ import { Address } from '../../../core/models';
         font-weight: 500;
         color: #333;
       }
-      
+
       input:not([type="checkbox"]), select {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
-        
+
         &:focus {
           outline: none;
           border-color: #4a7c4e;
         }
       }
     }
-    
+
     .checkbox {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       cursor: pointer;
       font-size: 0.9rem;
-      
+
       input {
         width: 16px;
         height: 16px;
       }
     }
-    
+
     .error-message {
       background: #f8d7da;
       color: #721c24;
@@ -418,24 +437,25 @@ import { Address } from '../../../core/models';
   `]
 })
 export class AccountAddressesComponent implements OnInit {
+  readonly provinces = PROVINCES;
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
   private toastService = inject(ToastService);
-  
+
   addresses = signal<Address[]>([]);
   loading = signal(true);
   showForm = signal(false);
   editingAddress = signal<Address | null>(null);
   saving = signal(false);
   formError = signal<string | null>(null);
-  
+
   addressForm!: FormGroup;
-  
+
   ngOnInit(): void {
     this.initForm();
     this.loadAddresses();
   }
-  
+
   initForm(): void {
     this.addressForm = this.fb.group({
       firstName: ['', Validators.required],
@@ -443,14 +463,21 @@ export class AccountAddressesComponent implements OnInit {
       addressLine1: ['', Validators.required],
       addressLine2: [''],
       city: ['', Validators.required],
-      postalCode: ['', Validators.required],
+      postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
       state: ['', Validators.required],
       country: ['ES', Validators.required],
-      phone: [''],
+      phone: ['', Validators.required],
       isDefault: [false]
+    }, { validators: postcodeMatchesProvince('state', 'postalCode') });
+
+    // Al escribir el CP se propone la provincia si no hay ninguna seleccionada
+    this.addressForm.get('postalCode')!.valueChanges.subscribe(cp => {
+      const state = this.addressForm.get('state')!;
+      const suggested = provinceFromPostcode(cp);
+      if (suggested && !state.value && /^\d{5}$/.test(String(cp))) state.setValue(suggested);
     });
   }
-  
+
   loadAddresses(): void {
     this.loading.set(true);
     this.userService.getAddresses().subscribe({
@@ -463,13 +490,13 @@ export class AccountAddressesComponent implements OnInit {
       }
     });
   }
-  
+
   openAddressForm(): void {
     this.editingAddress.set(null);
     this.addressForm.reset({ country: 'ES', isDefault: false });
     this.showForm.set(true);
   }
-  
+
   editAddress(address: Address): void {
     this.editingAddress.set(address);
     this.addressForm.patchValue({
@@ -479,29 +506,29 @@ export class AccountAddressesComponent implements OnInit {
       addressLine2: address.street_2,
       city: address.city,
       postalCode: address.postal_code,
-      state: address.province,
+      state: canonicalProvince(address.province) ?? '',
       country: address.country,
       phone: address.phone,
       isDefault: address.is_default
     });
     this.showForm.set(true);
   }
-  
+
   closeForm(): void {
     this.showForm.set(false);
     this.editingAddress.set(null);
     this.formError.set(null);
   }
-  
+
   saveAddress(): void {
     if (this.addressForm.invalid) {
       this.addressForm.markAllAsTouched();
       return;
     }
-    
+
     this.saving.set(true);
     this.formError.set(null);
-    
+
     const formValue = this.addressForm.value;
     const addressData = {
       first_name: formValue.firstName,
@@ -516,11 +543,11 @@ export class AccountAddressesComponent implements OnInit {
       is_default: formValue.isDefault,
       label: null
     };
-    
+
     const request = this.editingAddress()
       ? this.userService.updateAddress(this.editingAddress()!.id!, addressData)
       : this.userService.createAddress(addressData);
-    
+
     request.subscribe({
       next: () => {
         this.saving.set(false);
@@ -533,7 +560,7 @@ export class AccountAddressesComponent implements OnInit {
       }
     });
   }
-  
+
   setDefault(addressId: number): void {
     this.userService.setDefaultAddress(addressId).subscribe({
       next: () => this.loadAddresses(),

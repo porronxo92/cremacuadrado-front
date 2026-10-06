@@ -12,6 +12,10 @@ interface PointOfSale {
   city: string;
   instagram_url: string;
   maps_url: string;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  geo_precision: 'exact' | 'approximate' | 'manual' | null;
   is_active: boolean;
   sort_order: number;
 }
@@ -32,12 +36,17 @@ interface PointOfSale {
             <div class="loading">Cargando…</div>
           } @else {
             <table class="pos-table">
-              <thead><tr><th>Nombre</th><th>Ciudad</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr><th>Nombre</th><th>Ciudad</th><th>Mapa</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 @for (store of stores(); track store.id) {
                   <tr>
                     <td>{{ store.name }}</td>
                     <td>{{ store.city }}</td>
+                    <td>
+                      <span class="geo-badge" [attr.data-geo]="store.latitude == null ? 'none' : store.geo_precision">
+                        {{ geoLabel(store) }}
+                      </span>
+                    </td>
                     <td>
                       <span class="status-badge" [class.active]="store.is_active">
                         {{ store.is_active ? 'Activo' : 'Inactivo' }}
@@ -59,7 +68,21 @@ interface PointOfSale {
           <label>Nombre <input type="text" [(ngModel)]="formName"></label>
           <label>Ciudad <input type="text" [(ngModel)]="formCity"></label>
           <label>Instagram (URL) <input type="text" [(ngModel)]="formInstagram" placeholder="https://instagram.com/..."></label>
-          <label>Google Maps (URL) <input type="text" [(ngModel)]="formMaps" placeholder="https://maps.google.com/..."></label>
+          <label>Dirección (calle y número) <input type="text" [(ngModel)]="formAddress" placeholder="Calle Toledo 5"></label>
+          <p class="hint">Con la dirección se coloca automáticamente en el mapa al guardar. Sin dirección, la tienda
+            aparece en el centro de su ciudad (ubicación aproximada).</p>
+          <label>Google Maps (URL, botón «Cómo llegar») <input type="text" [(ngModel)]="formMaps" placeholder="https://maps.google.com/..."></label>
+          <div class="coords">
+            <label>Latitud <input type="number" step="0.000001" [(ngModel)]="formLat" (ngModelChange)="coordsEdited = true"></label>
+            <label>Longitud <input type="number" step="0.000001" [(ngModel)]="formLng" (ngModelChange)="coordsEdited = true"></label>
+          </div>
+          <p class="hint">Opcional: si la ubicación no es exacta, pega aquí las coordenadas (en Google Maps, clic derecho
+            sobre el local → copiar coordenadas).</p>
+          @if (editing()) {
+            <button type="button" class="btn btn--ghost" (click)="geocode()" [disabled]="geocoding()">
+              {{ geocoding() ? 'Buscando…' : 'Localizar en el mapa con la dirección guardada' }}
+            </button>
+          }
           <label>Orden <input type="number" [(ngModel)]="formSortOrder"></label>
           <label class="checkbox-row"><input type="checkbox" [(ngModel)]="formIsActive"> Activo (visible en la web)</label>
 
@@ -80,6 +103,12 @@ interface PointOfSale {
     </div>
   `,
   styles: [`
+    .hint { font-size: 0.75rem; color: #6B6456; margin: -0.25rem 0 0.75rem; line-height: 1.4; }
+    .coords { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .geo-badge { font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eee; white-space: nowrap; }
+    .geo-badge[data-geo="exact"], .geo-badge[data-geo="manual"] { background: #e6f4ea; color: #1e6b34; }
+    .geo-badge[data-geo="approximate"] { background: #fff4d6; color: #7a5c00; }
+    .geo-badge[data-geo="none"] { background: #fde8e8; color: #a3261f; }
     .admin-pos { padding: 2rem; font-family: 'Poppins', sans-serif; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; margin-bottom: 1.5rem; }
     .content-grid { display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start; }
@@ -128,8 +157,38 @@ export class AdminPointsOfSaleComponent implements OnInit {
   formCity = '';
   formInstagram = '';
   formMaps = '';
+  formAddress = '';
+  formLat: number | null = null;
+  formLng: number | null = null;
+  coordsEdited = false;
+  geocoding = signal(false);
   formSortOrder = 0;
   formIsActive = true;
+
+  geoLabel(store: PointOfSale): string {
+    if (store.latitude == null) return 'Sin ubicar';
+    return { exact: 'Exacta', approximate: 'Aproximada', manual: 'Manual' }[store.geo_precision ?? 'approximate'] ?? 'Aproximada';
+  }
+
+  geocode(): void {
+    const store = this.editing();
+    if (!store) return;
+    this.geocoding.set(true);
+    this.http.post<PointOfSale>(`${environment.apiUrl}/admin/points-of-sale/${store.id}/geocode`, {}).subscribe({
+      next: updated => {
+        this.geocoding.set(false);
+        this.formLat = updated.latitude;
+        this.formLng = updated.longitude;
+        this.coordsEdited = false;
+        this.toast.success(`Ubicación ${this.geoLabel(updated).toLowerCase()} encontrada`);
+        this.load();
+      },
+      error: err => {
+        this.geocoding.set(false);
+        this.toast.error(err.message || 'No se han encontrado coordenadas');
+      },
+    });
+  }
 
   ngOnInit(): void {
     this.load();
@@ -149,6 +208,10 @@ export class AdminPointsOfSaleComponent implements OnInit {
     this.formCity = store.city;
     this.formInstagram = store.instagram_url;
     this.formMaps = store.maps_url;
+    this.formAddress = store.address ?? '';
+    this.formLat = store.latitude;
+    this.formLng = store.longitude;
+    this.coordsEdited = false;
     this.formSortOrder = store.sort_order;
     this.formIsActive = store.is_active;
   }
@@ -159,6 +222,10 @@ export class AdminPointsOfSaleComponent implements OnInit {
     this.formCity = '';
     this.formInstagram = '';
     this.formMaps = '';
+    this.formAddress = '';
+    this.formLat = null;
+    this.formLng = null;
+    this.coordsEdited = false;
     this.formSortOrder = 0;
     this.formIsActive = true;
     this.formError.set(null);
@@ -172,14 +239,21 @@ export class AdminPointsOfSaleComponent implements OnInit {
     this.saving.set(true);
     this.formError.set(null);
 
-    const payload = {
+    const payload: Record<string, unknown> = {
       name: this.formName,
       city: this.formCity,
+      address: this.formAddress.trim() || null,
       instagram_url: this.formInstagram,
       maps_url: this.formMaps,
       sort_order: this.formSortOrder,
       is_active: this.formIsActive,
     };
+    // Solo se envían si se han tocado a mano: así el backend sigue geolocalizando
+    // automáticamente al cambiar la dirección.
+    if (this.coordsEdited) {
+      payload['latitude'] = this.formLat;
+      payload['longitude'] = this.formLng;
+    }
 
     const existing = this.editing();
     const request = existing

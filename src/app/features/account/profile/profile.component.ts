@@ -7,10 +7,12 @@ import { ToastService } from '../../../core/services/toast.service';
 import { saveBlob } from '../../../core/utils/save-blob';
 import { Router } from '@angular/router';
 
+import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
+
 @Component({
   selector: 'app-account-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
   template: `
     <div class="profile-page">
       <h1>Mi perfil</h1>
@@ -48,7 +50,11 @@ import { Router } from '@angular/router';
 
             <div class="form-group">
               <label for="phone">Teléfono</label>
-              <input type="tel" id="phone" formControlName="phone">
+              <app-phone-input formControlName="phone" inputId="phone"
+                [invalid]="!!profileForm.get('phone')?.invalid && !!profileForm.get('phone')?.touched" />
+              @if (profileForm.get('phone')?.hasError('phone') && profileForm.get('phone')?.touched) {
+                <span class="error-text">Teléfono no válido: 9 dígitos para España</span>
+              }
             </div>
 
             @if (profileSuccess()) {

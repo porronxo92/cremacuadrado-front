@@ -45,6 +45,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/pages/withdrawal/withdrawal.component').then(m => m.WithdrawalComponent),
   },
   {
+    path: 'factura',
+    loadComponent: () => import('./features/invoice-download/invoice-download.component').then(m => m.InvoiceDownloadComponent),
+  },
+  {
     path: 'newsletter/confirmar',
     data: { mode: 'confirm' },
     loadComponent: () => import('./features/newsletter/newsletter-action.component').then(m => m.NewsletterActionComponent),

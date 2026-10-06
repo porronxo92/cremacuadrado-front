@@ -9,36 +9,38 @@ import { GoogleIdentityService } from '../../../core/services/google-identity.se
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notice/privacy-notice.component';
 
+import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
+
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, PrivacyNoticeComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, PrivacyNoticeComponent, PhoneInputComponent],
   template: `
     <div class="auth-page">
       <div class="auth-card">
         <h1>Crear cuenta</h1>
         <p class="auth-subtitle">Únete a la familia CremaCuadrado</p>
-        
+
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
           <div class="form-row">
             <div class="form-group">
               <label for="firstName">Nombre</label>
-              <input 
-                type="text" 
-                id="firstName" 
+              <input
+                type="text"
+                id="firstName"
                 formControlName="firstName"
                 placeholder="Tu nombre">
             </div>
             <div class="form-group">
               <label for="lastName">Apellidos</label>
-              <input 
-                type="text" 
-                id="lastName" 
+              <input
+                type="text"
+                id="lastName"
                 formControlName="lastName"
                 placeholder="Tus apellidos">
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="email">Email</label>
             <input
@@ -57,18 +59,18 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
 
           <div class="form-group">
             <label for="phone">Teléfono <span class="optional">(opcional)</span></label>
-            <input
-              type="tel"
-              id="phone"
-              formControlName="phone"
-              placeholder="+34 600 000 000">
+            <app-phone-input formControlName="phone" inputId="phone"
+              [invalid]="!!registerForm.get('phone')?.invalid && !!registerForm.get('phone')?.touched" />
+            @if (registerForm.get('phone')?.hasError('phone') && registerForm.get('phone')?.touched) {
+              <span class="error-text">Teléfono no válido: 9 dígitos para España</span>
+            }
           </div>
-          
+
           <div class="form-group">
             <label for="password">Contraseña</label>
-            <input 
-              type="password" 
-              id="password" 
+            <input
+              type="password"
+              id="password"
               formControlName="password"
               placeholder="Mínimo 8 caracteres"
               [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
@@ -79,12 +81,12 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
               <span class="error-text">Mínimo 8 caracteres</span>
             }
           </div>
-          
+
           <div class="form-group">
             <label for="confirmPassword">Confirmar contraseña</label>
-            <input 
-              type="password" 
-              id="confirmPassword" 
+            <input
+              type="password"
+              id="confirmPassword"
               formControlName="confirmPassword"
               placeholder="Repite tu contraseña"
               [class.error]="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">
@@ -92,7 +94,7 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
               <span class="error-text">Las contraseñas no coinciden</span>
             }
           </div>
-          
+
           <div class="form-group">
             <label class="checkbox">
               <input type="checkbox" formControlName="acceptTerms">
@@ -113,13 +115,13 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
           <app-privacy-notice
             purpose="gestionar tu cuenta y tus pedidos y, solo si lo marcas, enviarte comunicaciones comerciales"
             legalBasis="ejecución del contrato y, para las comunicaciones comerciales, tu consentimiento" />
-          
+
           @if (error()) {
             <div class="error-message">
               {{ error() }}
             </div>
           }
-          
+
           <button type="submit" class="btn btn--primary btn--block" [disabled]="loading()">
             @if (loading()) { Creando cuenta... } @else { Crear cuenta }
           </button>
@@ -153,7 +155,7 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
       padding: 2rem;
       background: #f9f9f9;
     }
-    
+
     .auth-card {
       width: 100%;
       max-width: 450px;
@@ -161,33 +163,33 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
       border-radius: 12px;
       padding: 2rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      
+
       h1 {
         margin: 0 0 0.5rem;
         text-align: center;
         color: #333;
       }
     }
-    
+
     .auth-subtitle {
       text-align: center;
       color: #666;
       margin-bottom: 2rem;
     }
-    
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      
+
       @media (max-width: 480px) {
         grid-template-columns: 1fr;
       }
     }
-    
+
     .form-group {
       margin-bottom: 1.25rem;
-      
+
       label {
         display: block;
         margin-bottom: 0.5rem;
@@ -195,25 +197,25 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
         font-weight: 500;
         color: #333;
       }
-      
+
       input:not([type="checkbox"]) {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
-        
+
         &:focus {
           outline: none;
           border-color: #4a7c4e;
         }
-        
+
         &.error {
           border-color: #e74c3c;
         }
       }
     }
-    
+
     .checkbox {
       display: flex;
       align-items: flex-start;
@@ -222,25 +224,25 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
       font-size: 0.85rem;
       color: #666;
       line-height: 1.4;
-      
+
       input {
         margin-top: 3px;
         width: 16px;
         height: 16px;
       }
-      
+
       a {
         color: #4a7c4e;
       }
     }
-    
+
     .error-text {
       color: #e74c3c;
       font-size: 0.8rem;
       margin-top: 0.25rem;
       display: block;
     }
-    
+
     .error-message {
       background: #fee;
       color: #c00;
@@ -250,7 +252,7 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
       margin-bottom: 1rem;
       text-align: center;
     }
-    
+
     .btn {
       padding: 0.75rem 1.5rem;
       border: none;
@@ -258,27 +260,27 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
-      
+
       &--primary {
         background: #4a7c4e;
         color: #fff;
-        
+
         &:hover:not(:disabled) {
           background: #3d6640;
         }
-        
+
         &:disabled {
           background: #ccc;
           cursor: not-allowed;
         }
       }
-      
+
       &--block {
         display: block;
         width: 100%;
       }
     }
-    
+
     .optional { font-weight: 400; color: #999; font-size: 0.8rem; }
 
     .divider {

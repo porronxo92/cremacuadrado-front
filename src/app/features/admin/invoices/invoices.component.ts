@@ -117,12 +117,11 @@ function currentMonth(): string {
                             [attr.aria-label]="'Descargar PDF ' + inv.invoice_number">
                       {{ busy() === inv.id ? '…' : 'PDF' }}
                     </button>
-                    @if (inv.pdf_status !== 'stored') {
-                      <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost"
-                              [disabled]="busy() === inv.id" (click)="regenerate(inv)">
-                        Guardar PDF
-                      </button>
-                    }
+                    <button type="button" class="adm-btn adm-btn--sm adm-btn--ghost"
+                            [disabled]="busy() === inv.id" (click)="regenerate(inv)"
+                            title="Vuelve a generar el PDF desde los datos guardados (el número y los importes no cambian)">
+                      {{ inv.pdf_status === 'stored' ? 'Regenerar PDF' : 'Guardar PDF' }}
+                    </button>
                   </td>
                 </tr>
               } @empty {

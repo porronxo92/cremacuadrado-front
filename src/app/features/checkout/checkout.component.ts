@@ -10,6 +10,10 @@ import { UserService } from '../../core/services/user.service';
 import { Address, BillingDetails } from '../../core/models';
 import { normalizeTaxId, taxIdValidator } from '../../core/utils/tax-id';
 import { EXCLUDED_POSTCODE_PREFIXES, TERMS_VERSION } from '../../core/legal';
+import {
+  PROVINCES, SHIPPING_PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPostcode,
+} from '../../core/data/spain';
+import { PhoneInputComponent } from '../../shared/components/phone-input/phone-input.component';
 import { AbstractControl, ValidationErrors } from '@angular/forms';
 
 /** Shipping scope from the sales conditions: peninsular Spain only. */
@@ -22,12 +26,12 @@ import { firstValueFrom } from 'rxjs';
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneInputComponent],
   template: `
     <div class="checkout-page">
       <div class="container">
         <h1>Finalizar compra</h1>
-        
+
         @if (cartService.itemCount() === 0) {
           <div class="empty-cart">
             <p>Tu carrito está vacío</p>
@@ -43,7 +47,7 @@ import { firstValueFrom } from 'rxjs';
                   <span class="step-number">1</span>
                   Información de contacto
                 </h2>
-                
+
                 @if (!authService.isAuthenticated()) {
                   <p class="login-prompt">
                     ¿Ya tienes cuenta?
@@ -65,9 +69,9 @@ import { firstValueFrom } from 'rxjs';
                   <div class="form-row">
                     <div class="form-group">
                       <label for="email">Email *</label>
-                      <input 
-                        type="email" 
-                        id="email" 
+                      <input
+                        type="email"
+                        id="email"
                         formControlName="email"
                         [class.error]="contactForm.get('email')?.invalid && contactForm.get('email')?.touched">
                       @if (contactForm.get('email')?.hasError('required') && contactForm.get('email')?.touched) {
@@ -78,32 +82,47 @@ import { firstValueFrom } from 'rxjs';
                       }
                     </div>
                   </div>
-                  
+
+                  @if (missingProfileData()) {
+                    <p class="profile-hint" role="status">
+                      Completa los datos marcados en rojo. Los guardaremos en tu cuenta para próximos pedidos.
+                    </p>
+                  }
+
                   <div class="form-row form-row--2">
                     <div class="form-group">
                       <label for="firstName">Nombre *</label>
-                      <input type="text" id="firstName" formControlName="firstName">
+                      <input type="text" id="firstName" formControlName="firstName" autocomplete="given-name"
+                        [class.error]="showError(contactForm, 'firstName')">
+                      @if (showError(contactForm, 'firstName')) { <span class="error-text">El nombre es obligatorio</span> }
                     </div>
                     <div class="form-group">
                       <label for="lastName">Apellidos *</label>
-                      <input type="text" id="lastName" formControlName="lastName">
+                      <input type="text" id="lastName" formControlName="lastName" autocomplete="family-name"
+                        [class.error]="showError(contactForm, 'lastName')">
+                      @if (showError(contactForm, 'lastName')) { <span class="error-text">Los apellidos son obligatorios</span> }
                     </div>
                   </div>
-                  
+
                   <div class="form-group">
                     <label for="phone">Teléfono *</label>
-                    <input type="tel" id="phone" formControlName="phone">
+                    <app-phone-input formControlName="phone" inputId="phone" [invalid]="showError(contactForm, 'phone')" />
+                    @if (contactForm.get('phone')?.hasError('required') && contactForm.get('phone')?.touched) {
+                      <span class="error-text">El teléfono es obligatorio (lo necesita Correos para la entrega)</span>
+                    } @else if (contactForm.get('phone')?.hasError('phone') && contactForm.get('phone')?.touched) {
+                      <span class="error-text">Teléfono no válido: 9 dígitos para España</span>
+                    }
                   </div>
                 </form>
               </section>
-              
+
               <!-- Step 2: Shipping -->
               <section class="checkout-section">
                 <h2>
                   <span class="step-number">2</span>
                   Dirección de envío
                 </h2>
-                
+
                 @if (savedAddresses().length > 0) {
                   <div class="saved-addresses">
                     @for (addr of savedAddresses(); track addr.id) {
@@ -146,7 +165,9 @@ import { firstValueFrom } from 'rxjs';
                         @if (shippingForm.get('postalCode')?.hasError('outOfArea')) {
                           <span class="error-text">De momento solo enviamos a la península. Escríbenos a info&#64;cremacuadrado.com</span>
                         } @else if (shippingForm.get('postalCode')?.hasError('pattern') && shippingForm.get('postalCode')?.touched) {
-                          <span class="error-text">Código postal no válido</span>
+                          <span class="error-text">Código postal no válido (5 dígitos)</span>
+                        } @else if (shippingForm.get('postalCode')?.hasError('provinceMismatch')) {
+                          <span class="error-text">El código postal no corresponde a la provincia seleccionada</span>
                         }
                       </div>
                     </div>
@@ -154,7 +175,14 @@ import { firstValueFrom } from 'rxjs';
                     <div class="form-row form-row--2">
                       <div class="form-group">
                         <label for="state">Provincia *</label>
-                        <input type="text" id="state" formControlName="state">
+                        <select id="state" formControlName="state" autocomplete="address-level1"
+                          [class.error]="showError(shippingForm, 'state')">
+                          <option value="" disabled>Selecciona una provincia</option>
+                          @for (p of shippingProvinces; track p.code) {
+                            <option [value]="p.name">{{ p.name }}</option>
+                          }
+                        </select>
+                        @if (showError(shippingForm, 'state')) { <span class="error-text">Selecciona una provincia</span> }
                       </div>
                       <div class="form-group">
                         <label for="country">País *</label>
@@ -220,13 +248,21 @@ import { firstValueFrom } from 'rxjs';
                       </div>
                       <div class="form-group">
                         <label for="billingProvince">Provincia *</label>
-                        <input type="text" id="billingProvince" formControlName="province">
+                        <select id="billingProvince" formControlName="province">
+                          <option value="" disabled>Selecciona una provincia</option>
+                          @for (p of allProvinces; track p.code) {
+                            <option [value]="p.name">{{ p.name }}</option>
+                          }
+                        </select>
+                        @if (billingForm.get('postal_code')?.hasError('provinceMismatch')) {
+                          <span class="error-text">El código postal no corresponde a la provincia</span>
+                        }
                       </div>
                     }
                   </form>
                 }
               </section>
-              
+
               <!-- Step 3: Payment -->
               <section class="checkout-section">
                 <h2>
@@ -258,11 +294,11 @@ import { firstValueFrom } from 'rxjs';
                 </p>
               </section>
             </div>
-            
+
             <!-- Order summary -->
             <div class="order-summary">
               <h2>Resumen del pedido</h2>
-              
+
               <div class="summary-items">
                 @for (item of cartService.cart()?.items || []; track item.id) {
                   <div class="summary-item">
@@ -280,9 +316,9 @@ import { firstValueFrom } from 'rxjs';
                   </div>
                 }
               </div>
-              
+
               <hr>
-              
+
               <div class="summary-row">
                 <span>Subtotal</span>
                 <span>{{ cartService.cart()?.subtotal | currency:'EUR' }}</span>
@@ -294,25 +330,25 @@ import { firstValueFrom } from 'rxjs';
                   <span>−{{ cartService.cart()?.discount | currency:'EUR' }}</span>
                 </div>
               }
-              
+
               <div class="summary-row">
                 <span>Envío</span>
                 <span>{{ shippingCost | currency:'EUR' }}</span>
               </div>
-              
+
               @if (shippingCost === 0) {
                 <div class="free-shipping-badge">
                   ✓ Envío gratuito
                 </div>
               }
-              
+
               <hr>
-              
+
               <div class="summary-row summary-row--total">
                 <span>Total <small class="vat-note">(IVA incluido)</small></span>
                 <span>{{ cartService.cart()?.total | currency:'EUR' }}</span>
               </div>
-              
+
               <label class="terms-check">
                 <input type="checkbox" [checked]="acceptTerms()" (change)="acceptTerms.set($any($event.target).checked)" required>
                 <span>
@@ -331,13 +367,13 @@ import { firstValueFrom } from 'rxjs';
                   Pedido con obligación de pago
                 }
               </button>
-              
+
               @if (error()) {
                 <div class="error-message">
                   {{ error() }}
                 </div>
               }
-              
+
               <p class="terms-notice">
                 Envío a España peninsular en 48–72 h. Trataremos tus datos para gestionar el pedido
                 (ejecución del contrato). Más información en la <a routerLink="/privacidad" target="_blank">política de privacidad</a>.
@@ -354,36 +390,36 @@ import { firstValueFrom } from 'rxjs';
       background: #f9f9f9;
       min-height: calc(100vh - 140px);
     }
-    
+
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 0 1rem;
     }
-    
+
     h1 {
       margin-bottom: 2rem;
       color: #333;
     }
-    
+
     .checkout-layout {
       display: grid;
       grid-template-columns: 1fr 400px;
       gap: 2rem;
       align-items: start;
-      
+
       @media (max-width: 900px) {
         grid-template-columns: 1fr;
       }
     }
-    
+
     .checkout-section {
       background: #fff;
       border-radius: 8px;
       padding: 1.5rem;
       margin-bottom: 1.5rem;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      
+
       h2 {
         display: flex;
         align-items: center;
@@ -393,7 +429,7 @@ import { firstValueFrom } from 'rxjs';
         color: #333;
       }
     }
-    
+
     .step-number {
       width: 28px;
       height: 28px;
@@ -405,7 +441,7 @@ import { firstValueFrom } from 'rxjs';
       justify-content: center;
       font-size: 0.9rem;
     }
-    
+
     .login-prompt {
       background: #f0f7f0;
       padding: 0.75rem;
@@ -433,10 +469,10 @@ import { firstValueFrom } from 'rxjs';
         font-weight: 600;
       }
     }
-    
+
     .form-group {
       margin-bottom: 1rem;
-      
+
       label {
         display: block;
         margin-bottom: 0.5rem;
@@ -444,37 +480,37 @@ import { firstValueFrom } from 'rxjs';
         font-weight: 500;
         color: #333;
       }
-      
+
       input, select, textarea {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
-        
+
         &:focus {
           outline: none;
           border-color: #4a7c4e;
         }
-        
+
         &.error {
           border-color: #e74c3c;
         }
       }
     }
-    
+
     .form-row {
       &--2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
-        
+
         @media (max-width: 480px) {
           grid-template-columns: 1fr;
         }
       }
     }
-    
+
     .error-text {
       color: #e74c3c;
       font-size: 0.8rem;
@@ -550,21 +586,21 @@ import { firstValueFrom } from 'rxjs';
         width: auto;
       }
     }
-    
+
     .payment-methods {
       display: flex;
       flex-direction: column;
       gap: 0.75rem;
       margin-bottom: 1rem;
     }
-    
+
     .payment-option {
       cursor: pointer;
-      
+
       input {
         display: none;
       }
-      
+
       &__content {
         display: flex;
         align-items: center;
@@ -573,28 +609,28 @@ import { firstValueFrom } from 'rxjs';
         border: 2px solid #ddd;
         border-radius: 8px;
         transition: all 0.3s;
-        
+
         svg {
           color: #666;
         }
       }
-      
+
       &.selected &__content {
         border-color: #4a7c4e;
         background: #f0f7f0;
-        
+
         svg {
           color: #4a7c4e;
         }
       }
     }
-    
+
     .card-form {
       margin-top: 1rem;
       padding-top: 1rem;
       border-top: 1px solid #eee;
     }
-    
+
     .payment-notice {
       display: flex;
       align-items: center;
@@ -643,7 +679,7 @@ import { firstValueFrom } from 'rxjs';
       margin-bottom: 1rem;
       &.hidden { display: none; }
     }
-    
+
     .order-summary {
       background: #fff;
       border-radius: 8px;
@@ -651,44 +687,44 @@ import { firstValueFrom } from 'rxjs';
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       position: sticky;
       top: 90px;
-      
+
       h2 {
         margin: 0 0 1rem;
         font-size: 1.2rem;
         color: #333;
       }
     }
-    
+
     .summary-items {
       max-height: 300px;
       overflow-y: auto;
     }
-    
+
     .summary-item {
       display: flex;
       align-items: center;
       gap: 0.75rem;
       padding: 0.75rem 0;
       border-bottom: 1px solid #eee;
-      
+
       &:last-child {
         border-bottom: none;
       }
     }
-    
+
     .summary-item__image {
       position: relative;
       width: 50px;
       height: 50px;
       border-radius: 4px;
       overflow: hidden;
-      
+
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
       }
-      
+
       .quantity-badge {
         position: absolute;
         top: -6px;
@@ -704,39 +740,39 @@ import { firstValueFrom } from 'rxjs';
         justify-content: center;
       }
     }
-    
+
     .summary-item__info {
       flex: 1;
-      
+
       h4 {
         margin: 0;
         font-size: 0.9rem;
         color: #333;
       }
-      
+
       span {
         font-size: 0.8rem;
         color: #666;
       }
     }
-    
+
     .summary-item__total {
       font-weight: 600;
       color: #333;
     }
-    
+
     hr {
       border: none;
       border-top: 1px solid #eee;
       margin: 1rem 0;
     }
-    
+
     .summary-row {
       display: flex;
       justify-content: space-between;
       padding: 0.5rem 0;
       color: #666;
-      
+
       &--discount {
         color: #27ae60;
         font-weight: 500;
@@ -749,7 +785,7 @@ import { firstValueFrom } from 'rxjs';
         padding: 1rem 0;
       }
     }
-    
+
     .free-shipping-badge {
       background: #d4edda;
       color: #155724;
@@ -759,7 +795,7 @@ import { firstValueFrom } from 'rxjs';
       text-align: center;
       margin: 0.5rem 0;
     }
-    
+
     .btn {
       display: inline-block;
       padding: 0.75rem 1.5rem;
@@ -770,32 +806,32 @@ import { firstValueFrom } from 'rxjs';
       text-decoration: none;
       text-align: center;
       transition: all 0.3s;
-      
+
       &--primary {
         background: #4a7c4e;
         color: #fff;
-        
+
         &:hover:not(:disabled) {
           background: #3d6640;
         }
-        
+
         &:disabled {
           background: #ccc;
           cursor: not-allowed;
         }
       }
-      
+
       &--large {
         padding: 1rem 2rem;
         font-size: 1.1rem;
       }
-      
+
       &--block {
         display: block;
         width: 100%;
       }
     }
-    
+
     .error-message {
       background: #fee;
       color: #c00;
@@ -804,7 +840,14 @@ import { firstValueFrom } from 'rxjs';
       font-size: 0.9rem;
       margin-top: 1rem;
     }
-    
+
+    .profile-hint {
+      background: #fff8e6; border: 1px solid #f0d98c; color: #7a5c00;
+      padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem; font-size: 0.9rem;
+    }
+
+    select.error { border-color: #e74c3c; }
+
     .vat-note { font-size: 0.75rem; font-weight: 400; color: #666; }
 
     .terms-check {
@@ -819,18 +862,18 @@ import { firstValueFrom } from 'rxjs';
       font-size: 0.8rem;
       color: #666;
       text-align: center;
-      
+
       a {
         color: #4a7c4e;
       }
     }
-    
+
     .empty-cart {
       text-align: center;
       padding: 3rem;
       background: #fff;
       border-radius: 8px;
-      
+
       p {
         color: #666;
         margin-bottom: 1rem;
@@ -872,6 +915,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   needsInvoice = signal(false);
   billingSameAsShipping = signal(true);
   acceptTerms = signal(false);
+  /** El usuario logado tenía datos de contacto incompletos (p. ej. registro con Google). */
+  missingProfileData = signal(false);
+  readonly shippingProvinces = SHIPPING_PROVINCES;
+  readonly allProvinces = PROVINCES;
+
+  showError(form: FormGroup, key: string): boolean {
+    const control = form.get(key);
+    return !!control && control.invalid && control.touched;
+  }
 
   constructor() {}
 
@@ -890,8 +942,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
-          phone: user.phone,
+          phone: user.phone ?? '',
         });
+        // Cuentas creadas con Google suelen llegar sin apellidos o teléfono:
+        // se marcan ya en rojo para que el cliente los complete.
+        for (const key of ['firstName', 'lastName', 'phone']) {
+          const control = this.contactForm.get(key)!;
+          if (control.invalid) control.markAsTouched();
+        }
+        this.missingProfileData.set(this.contactForm.invalid);
       }
       this.loadSavedAddresses();
     }
@@ -908,8 +967,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   initForms(): void {
     this.contactForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
+      firstName: ['', [Validators.required, Validators.pattern(/\S/)]],
+      lastName: ['', [Validators.required, Validators.pattern(/\S/)]],
       phone: ['', Validators.required],
     });
 
@@ -920,7 +979,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       city: [''],
       postal_code: [''],
       province: [''],
-    });
+    }, { validators: postcodeMatchesProvince('province', 'postal_code') });
 
     this.shippingForm = this.fb.group({
       address: ['', Validators.required],
@@ -929,6 +988,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       state: ['', Validators.required],
       country: ['ES', Validators.required],
       notes: [''],
+    }, { validators: postcodeMatchesProvince('state', 'postalCode') });
+
+    // Al escribir el CP, se propone la provincia correspondiente si no hay ninguna
+    this.shippingForm.get('postalCode')!.valueChanges.subscribe(cp => {
+      const state = this.shippingForm.get('state')!;
+      const suggested = provinceFromPostcode(cp);
+      if (suggested && !state.value && /^\d{5}$/.test(String(cp))) state.setValue(suggested);
     });
   }
 
@@ -993,6 +1059,22 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   selectSavedAddress(addr: Address): void {
+    // Direcciones guardadas antes de la lista de provincias: si la provincia no
+    // es válida o no casa con el CP, se abre el formulario para corregirla.
+    const province = canonicalProvince(addr.province);
+    const cpOk = province && provinceFromPostcode(addr.postal_code) === province;
+    if (!province || !cpOk) {
+      this._selectedAddress = null;
+      this.selectedAddressId.set('new');
+      this.shippingForm.patchValue({
+        address: addr.street, city: addr.city, postalCode: addr.postal_code,
+        state: province ?? '', country: 'ES',
+      });
+      this.contactForm.patchValue({ firstName: addr.first_name, lastName: addr.last_name, phone: addr.phone });
+      this.shippingForm.markAllAsTouched();
+      return;
+    }
+    addr = { ...addr, province };
     this._selectedAddress = addr;
     // Patch shippingForm FIRST so that when contactForm.patchValue triggers
     // statusChanges (and tryInitStripe), the address values are already ready.
@@ -1020,6 +1102,25 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     if (this.isFormValid() && !this.stripeInitTriggered) {
       this.initStripeElement();
     }
+  }
+
+  /**
+   * Guarda en la cuenta los datos de contacto que el cliente ha completado o
+   * cambiado en el checkout (nombre, apellidos, teléfono) para próximos pedidos.
+   */
+  private saveContactDataToProfile(): void {
+    const user = this.authService.currentUser();
+    if (!user) return;
+    const { firstName, lastName, phone } = this.contactForm.getRawValue();
+    const changes: Record<string, string> = {};
+    if ((firstName ?? '').trim() && firstName.trim() !== (user.first_name ?? '')) changes['first_name'] = firstName.trim();
+    if ((lastName ?? '').trim() && lastName.trim() !== (user.last_name ?? '')) changes['last_name'] = lastName.trim();
+    if ((phone ?? '').trim() && phone !== (user.phone ?? '')) changes['phone'] = phone;
+    if (!Object.keys(changes).length) return;
+    this.userService.updateProfile(changes).subscribe({
+      next: updated => this.authService.updateCurrentUser(updated),
+      error: () => {},  // no bloquea la compra
+    });
   }
 
   private buildCheckoutData() {
@@ -1109,7 +1210,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     if (this.orderNumber && this.paymentIntentId) {
       try {
         await firstValueFrom(
-          this.orderService.preConfirm(this.orderNumber, this.paymentIntentId, TERMS_VERSION, this.buildBilling()),
+          this.orderService.preConfirm(this.orderNumber, this.paymentIntentId, TERMS_VERSION, this.buildBilling(),
+            this.buildCheckoutData().shipping_address, this.buildCheckoutData().guest_email),
         );
       } catch (err: any) {
         this.error.set(err?.message || 'No se pudo preparar el pago. Inténtalo de nuevo.');
@@ -1117,6 +1219,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
         return;
       }
     }
+
+    this.saveContactDataToProfile();
 
     if (this.authService.isAuthenticated() && this.selectedAddressId() === 'new' && this.saveNewAddress()) {
       this.userService.createAddress({

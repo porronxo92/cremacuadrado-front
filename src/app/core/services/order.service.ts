@@ -147,13 +147,17 @@ export class OrderService {
    * order. The PaymentIntent id proves ownership.
    */
   preConfirm(orderNumber: string, paymentIntentId: string, termsVersion: string,
-             billing: BillingDetails | null): Observable<ApiMessage> {
+             billing: BillingDetails | null, shippingAddress?: unknown, guestEmail?: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${this.checkoutUrl}/pre-confirm`, {
       order_number: orderNumber,
       payment_intent_id: paymentIntentId,
       accept_terms: true,
       terms_version: termsVersion,
       billing,
+      // Datos finales del formulario: el pedido se creó al preparar Stripe y el
+      // cliente puede haber corregido la dirección o el teléfono después.
+      shipping_address: shippingAddress,
+      guest_email: guestEmail,
     });
   }
 }

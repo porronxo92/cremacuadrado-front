@@ -69,6 +69,9 @@ export class AuthService {
     return this.http.post<AuthTokens>(`${this.apiUrl}/login`, credentials).pipe(
       tap(tokens => this.storeTokens(tokens)),
       switchMap(tokens => this.fetchCurrentUser().pipe(map(() => tokens))),
+      // El servidor une el carrito de invitado con el del usuario (o descarta el
+      // del usuario si ya no está vigente): hay que mostrar ese resultado ya.
+      tap(() => this.cartService.loadCart()),
       tap(() => this.isLoadingSignal.set(false)),
       catchError(error => {
         this.isLoadingSignal.set(false);
@@ -124,6 +127,12 @@ export class AuthService {
     this.fetchCurrentUser().subscribe();
   }
 
+  /** Actualiza el usuario en memoria y en localStorage tras editar el perfil. */
+  updateCurrentUser(user: User): void {
+    this.currentUserSignal.set(user);
+    this.storeUser(user);
+  }
+
   /**
    * Fetch the current user profile and update the signal, waiting for the
    * response — used by login() so navigation after login (e.g. returnUrl
@@ -156,6 +165,7 @@ export class AuthService {
     return this.http.post<AuthTokens>(`${this.apiUrl}/google`, { id_token: idToken }).pipe(
       tap(tokens => this.storeTokens(tokens)),
       switchMap(tokens => this.fetchCurrentUser().pipe(map(() => tokens))),
+      tap(() => this.cartService.loadCart()),
       catchError(error => {
         throw error;
       })
