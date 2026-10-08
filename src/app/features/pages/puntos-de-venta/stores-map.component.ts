@@ -31,6 +31,9 @@ const CARTO_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{
     .stores-map .leaflet-popup-content strong { display: block; color: ${BRAND}; font-size: 0.95rem; }
     .stores-map .leaflet-popup-content a { color: ${BRAND}; }
     .stores-map .store-approx { display: block; color: #6B6456; font-size: 0.72rem; }
+    .stores-map .store-pin { filter: drop-shadow(0 2px 3px rgba(28, 26, 20, 0.35)); }
+    .stores-map .store-pin svg { display: block; transform-origin: 50% 100%; transition: transform 0.15s ease; }
+    .stores-map .store-pin:hover svg, .stores-map .store-pin:focus-visible svg { transform: scale(1.12); }
   `],
 })
 export class StoresMapComponent implements OnChanges, OnDestroy {
@@ -43,7 +46,8 @@ export class StoresMapComponent implements OnChanges, OnDestroy {
   private L?: typeof Leaflet;
   private map?: Leaflet.Map;
   private layer?: Leaflet.LayerGroup;
-  private markers = new Map<number, Leaflet.CircleMarker>();
+  private markers = new Map<number, Leaflet.Marker>();
+  private icon?: Leaflet.DivIcon;
 
   constructor() {
     afterNextRender(async () => {
@@ -72,6 +76,17 @@ export class StoresMapComponent implements OnChanges, OnDestroy {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
     }).addTo(this.map);
     this.layer = L.layerGroup().addTo(this.map);
+    // Chincheta crema con borde granate y el logo (assets/images/logo.svg) dentro;
+    // la punta inferior marca la ubicación.
+    this.icon = L.divIcon({
+      className: 'store-pin',
+      html: `<svg width="36" height="46" viewBox="0 0 36 46" aria-hidden="true">`
+        + `<path d="M18 1C8.6 1 1 8.6 1 18c0 12.4 17 27 17 27s17-14.6 17-27C35 8.6 27.4 1 18 1z" fill="#F4F1E9" stroke="${BRAND}" stroke-width="2"/>`
+        + `<image href="/assets/images/logo.svg" x="8.5" y="7.9" width="19" height="20.3"/></svg>`,
+      iconSize: [36, 46],
+      iconAnchor: [18, 45],
+      popupAnchor: [0, -40],
+    });
     this.render();
   }
 
@@ -98,9 +113,8 @@ export class StoresMapComponent implements OnChanges, OnDestroy {
         lat += radius * Math.cos(angle);
         lng += radius * Math.sin(angle) * 1.3;
       }
-      const marker = L.circleMarker([lat, lng], {
-        radius: 9, color: '#fff', weight: 2, fillColor: BRAND, fillOpacity: 0.95,
-      }).bindPopup(this.popup(store));
+      const marker = L.marker([lat, lng], { icon: this.icon, title: store.name, riseOnHover: true })
+        .bindPopup(this.popup(store));
       marker.addTo(this.layer!);
       this.markers.set(store.id, marker);
       points.push([lat, lng]);
