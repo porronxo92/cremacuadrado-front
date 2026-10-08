@@ -30,7 +30,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </section>
 
       <!-- ── Bloque 1: Por qué CremaCuadrado ────────────────────── -->
-      <app-collapsible-block title="Por qué CremaCuadrado en tu tienda" [initialOpen]="true">
+      <app-collapsible-block title="Por qué CremaCuadrado en tu tienda" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
         </svg>
@@ -84,7 +84,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </app-collapsible-block>
 
       <!-- ── Bloque 2: Condiciones comerciales ──────────────────── -->
-      <app-collapsible-block title="Condiciones comerciales" [initialOpen]="true">
+      <app-collapsible-block title="Condiciones comerciales" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"></path>
           <line x1="8" y1="7" x2="16" y2="7"></line>
@@ -156,7 +156,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </app-collapsible-block>
 
       <!-- ── Bloque 3: Lo que incluye ser punto de venta ────────── -->
-      <app-collapsible-block title="Lo que incluye ser punto de venta" [initialOpen]="true">
+      <app-collapsible-block title="Lo que incluye ser punto de venta" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 11l18-5v12L3 14v-3z"></path>
           <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
@@ -211,7 +211,9 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </app-collapsible-block>
 
       <!-- ── Bloque 4: Testimonios ───────────────────────────────── -->
-      <app-collapsible-block title="Lo que dicen nuestros puntos de venta" [initialOpen]="true">
+      <!-- Oculto hasta tener testimonios reales: activar con showTestimonials = true -->
+      @if (showTestimonials) {
+      <app-collapsible-block title="Lo que dicen nuestros puntos de venta" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path>
           <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path>
@@ -232,6 +234,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
           </div>
         </div>
       </app-collapsible-block>
+      }
 
       <!-- ── Bloque 5: Formulario (siempre visible) ─────────────── -->
       <section class="pt-form-block" id="formulario-punto-de-venta">
@@ -743,6 +746,9 @@ export class ParaTiendasComponent {
   private fb = inject(FormBuilder);
   private paraTiendasService = inject(ParaTiendasService);
   private seo = inject(SeoService);
+
+  /** Bloque «Lo que dicen nuestros puntos de venta»: oculto hasta tener testimonios reales. */
+  readonly showTestimonials = false;
 
   readonly submitState = signal<SubmitState>('idle');
 
