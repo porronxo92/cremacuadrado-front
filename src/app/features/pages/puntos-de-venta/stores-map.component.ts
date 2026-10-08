@@ -42,7 +42,9 @@ export class StoresMapComponent implements OnChanges, OnDestroy {
   constructor() {
     afterNextRender(async () => {
       if (!this.isBrowser) return;
-      this.L = await import('leaflet');
+      // Leaflet 1.x es CommonJS: en el bundle de producción la API llega en `default`.
+      const mod = await import('leaflet');
+      this.L = ((mod as unknown as { default?: typeof Leaflet }).default ?? mod) as typeof Leaflet;
       this.init();
     });
   }
