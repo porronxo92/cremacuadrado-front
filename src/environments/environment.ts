@@ -17,5 +17,7 @@ export const environment = {
   googleClientId: '295611820895-lufk6h45v7b3afsq9j2bntui4459lu59.apps.googleusercontent.com',  // e.g. '123456789-abc.apps.googleusercontent.com'
   // Número de WhatsApp de contacto, en formato internacional sin '+' ni espacios (ej. 34623924886)
   whatsappPhoneNumber: '34623924886',
+  // Clave pública de CARTO Basemaps (ver environment.prod.ts).
+  cartoApiKey: 'cb1_4eez_1_f3e91d736a66662fab05a3b1',
 };
 

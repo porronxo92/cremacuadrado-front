@@ -4,9 +4,15 @@ import {
 import { isPlatformBrowser } from '@angular/common';
 import type * as Leaflet from 'leaflet';
 import { PointOfSale } from '../../../core/models';
+import { environment } from '../../../../environments/environment';
 
 const BRAND = '#7B1716';
 const SPAIN_CENTER: [number, number] = [40.2, -3.7];
+
+// Clave pública de CARTO Basemaps (environment.cartoApiKey): sin ella las
+// teselas raster salen con la marca de agua «API key required».
+const CARTO_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'
+  + (environment.cartoApiKey ? `?key=${encodeURIComponent(environment.cartoApiKey)}` : '');
 
 /**
  * Mapa de puntos de venta con Leaflet + teselas de CARTO (datos de OpenStreetMap).
@@ -60,7 +66,7 @@ export class StoresMapComponent implements OnChanges, OnDestroy {
   private init(): void {
     const L = this.L!;
     this.map = L.map(this.mapEl.nativeElement, { scrollWheelZoom: false }).setView(SPAIN_CENTER, 6);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    L.tileLayer(CARTO_TILES, {
       subdomains: 'abcd',
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> · &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
