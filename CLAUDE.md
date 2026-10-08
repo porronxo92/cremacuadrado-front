@@ -182,8 +182,8 @@ Zona inferior (tras los CTAs):
 
 **Flujo de checkout** (una página, 3 secciones):
 1. `/carrito` — resumen
-2. `/checkout` — 1 Contacto (enlace "¿Ya tienes cuenta? Inicia sesión"; invitado por defecto) · 2 Dirección de envío (+ factura con NIF opcional) · 3 Pago Stripe (Payment Element)
-3. Botón "Pedido con obligación de pago" (texto legal obligatorio)
+2. `/checkout` — 1 Contacto (enlace "¿Ya tienes cuenta? Inicia sesión"; invitado por defecto; si el email del invitado ya tiene cuenta —`POST /auth/email-status` al salir del campo— aviso para iniciar sesión, sin bloquear el pago) · 2 Dirección de envío (+ factura con NIF opcional) · 3 Pago Stripe (Payment Element)
+3. Botón "Confirmar y pagar" (art. 98.2 TRLGDCU: el texto debe dejar claro que obliga a pagar)
 4. Stripe redirige a `/gracias`
 
 > Decisión de negocio: **no hay incentivo de la cuchara** al crear cuenta por ahora, y no hay paso de identificación separado (Google / crear cuenta / invitado). No añadirlos sin confirmarlo.

@@ -175,6 +175,11 @@ export class AuthService {
   /**
    * Request password reset email
    */
+  /** Checkout de invitado: ¿este email ya tiene cuenta? */
+  emailStatus(email: string): Observable<{ registered: boolean }> {
+    return this.http.post<{ registered: boolean }>(`${this.apiUrl}/email-status`, { email });
+  }
+
   forgotPassword(email: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${this.apiUrl}/forgot-password`, { email });
   }

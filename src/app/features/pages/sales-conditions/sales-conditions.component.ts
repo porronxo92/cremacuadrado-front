@@ -52,7 +52,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
           <li>Indica tus datos de contacto y la dirección de envío (puedes comprar como invitado o con tu cuenta).
             Si necesitas factura con NIF, marca la casilla correspondiente.</li>
           <li>Revisa el resumen: productos, gastos de envío y total con IVA. Puedes corregir cualquier dato antes de pagar.</li>
-          <li>Acepta estas condiciones y pulsa <strong>«Pedido con obligación de pago»</strong>. En ese momento se
+          <li>Acepta estas condiciones y pulsa <strong>«Confirmar y pagar»</strong>. En ese momento se
             perfecciona el contrato.</li>
           <li>Te enviaremos por email la confirmación del pedido con su resumen, estas condiciones y la factura.</li>
         </ol>

@@ -138,6 +138,7 @@ import { environment } from '@env/environment';
         <div class="newsletter__inner">
           <div class="newsletter__text">
             <h2 class="newsletter__title">RECETAS Y NOVEDADES</h2>
+            <p class="newsletter__offer">Suscríbete y te enviamos un código de bienvenida con un <strong>10&nbsp;% de descuento</strong> para tu primer pedido.</p>
             <p class="newsletter__sub">Sin spam. Solo lo que merece tu bandeja de entrada.</p>
           </div>
           <form class="newsletter__form" (submit)="subscribeNewsletter($event)">
@@ -614,6 +615,15 @@ import { environment } from '@env/environment';
       letter-spacing: -0.02em;
       color: $brand;
       margin: 0 0 0.35rem;
+    }
+
+    .newsletter__offer {
+      font-family: 'Lora', serif;
+      font-size: 1rem;
+      line-height: 1.5;
+      color: $ink;
+      margin: 0 0 0.35rem;
+      strong { color: $brand; }
     }
 
     .newsletter__sub {

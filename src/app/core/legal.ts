@@ -3,7 +3,7 @@
  * TERMS_VERSION / PRIVACY_VERSION del backend (app/config.py): súbelas
  * en ambos sitios cuando cambie el texto publicado.
  */
-export const TERMS_VERSION = '2026-10';
+export const TERMS_VERSION = '2026-10b';
 export const PRIVACY_VERSION = '2026-10';
 export const COOKIES_VERSION = '2026-10';
 

@@ -88,14 +88,27 @@ import { firstValueFrom } from 'rxjs';
                       id="email"
                       formControlName="email"
                       autocomplete="email"
+                      (blur)="checkExistingAccount()"
                       [class.error]="showError(contactForm, 'email')"
                       [attr.aria-invalid]="showError(contactForm, 'email')"
-                      [attr.aria-describedby]="showError(contactForm, 'email') ? 'email-error' : null">
+                      [attr.aria-describedby]="showError(contactForm, 'email') ? 'email-error' : (existingAccount() ? 'existing-account' : null)">
                     @if (showError(contactForm, 'email')) {
                       <span class="error-text" id="email-error">
                         {{ contactForm.get('email')?.hasError('required') ? 'Escribe tu email para recibir la confirmación del pedido' : 'Revisa el email: debe tener el formato nombre@dominio.com' }}
                       </span>
                     }
+                    <!-- Email ya registrado: invitar a iniciar sesión para que el pedido
+                         quede en su cuenta (no bloquea la compra como invitado). -->
+                    <div aria-live="polite">
+                      @if (existingAccount()) {
+                        <p class="existing-account" id="existing-account">
+                          Ya tienes una cuenta con este email.
+                          <a routerLink="/auth/login" [queryParams]="{returnUrl: '/checkout'}"
+                             [state]="{ email: contactForm.value.email }">Inicia sesión antes de pagar</a>
+                          para que el pedido quede guardado en tu cuenta.
+                        </p>
+                      }
+                    </div>
                   </div>
 
                   @if (missingProfileData()) {
@@ -428,7 +441,8 @@ import { firstValueFrom } from 'rxjs';
                   <span class="spinner spinner--on-brand" aria-hidden="true"></span>
                   Procesando...
                 } @else {
-                  Pedido con obligación de pago
+                  <!-- Art. 98.2 TRLGDCU: el botón debe indicar sin ambigüedad que obliga a pagar. -->
+                  Confirmar y pagar
                 }
               </button>
 
@@ -565,8 +579,18 @@ import { firstValueFrom } from 'rxjs';
 
     .login-prompt { background: var(--color-bg-alt); }
 
+    .existing-account {
+      margin: 0.5rem 0 0;
+      padding: 0.75rem 1rem;
+      border-radius: 2px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      a { color: var(--color-brand); font-weight: 600; text-decoration: underline; }
+    }
+
     .coupon-guest-warning,
-    .profile-hint {
+    .profile-hint,
+    .existing-account {
       background: rgba(230, 193, 90, 0.18);
       border: 1px solid rgba(200, 138, 26, 0.45);
       color: #5C4300;
@@ -997,6 +1021,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   acceptTerms = signal(false);
   /** El usuario logado tenía datos de contacto incompletos (p. ej. registro con Google). */
   missingProfileData = signal(false);
+  /** El email del invitado ya tiene cuenta (POST /auth/email-status). */
+  existingAccount = signal(false);
+  private lastCheckedEmail = '';
   readonly shippingProvinces = SHIPPING_PROVINCES;
   readonly allProvinces = PROVINCES;
 
@@ -1082,6 +1109,21 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     el.focus({ preventScroll: true });
   }
 
+  /** Invitado con un email que ya tiene cuenta → aviso para iniciar sesión. */
+  checkExistingAccount(): void {
+    const control = this.contactForm.get('email')!;
+    const email = String(control.value || '').trim().toLowerCase();
+    if (this.authService.isAuthenticated() || control.invalid || email === this.lastCheckedEmail) return;
+    this.lastCheckedEmail = email;
+    this.authService.emailStatus(email).subscribe({
+      next: ({ registered }) => {
+        if (String(control.value || '').trim().toLowerCase() === email) this.existingAccount.set(registered);
+      },
+      // Sin respuesta (p. ej. límite de peticiones) no se muestra nada: la compra como invitado sigue.
+      error: () => { this.lastCheckedEmail = ''; },
+    });
+  }
+
   onTermsChange(checked: boolean): void {
     this.acceptTerms.set(checked);
     if (checked) this.termsError.set(false);
@@ -1117,6 +1159,9 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       }
       this.loadSavedAddresses();
     }
+
+    // Si cambia el email, el aviso de cuenta existente deja de aplicar hasta el próximo blur.
+    this.contactForm.get('email')!.valueChanges.subscribe(() => this.existingAccount.set(false));
 
     // Watch form status changes to trigger Stripe init
     this.contactForm.statusChanges.subscribe(() => { this.tryInitStripe(); this.refreshErrorSummary(); });

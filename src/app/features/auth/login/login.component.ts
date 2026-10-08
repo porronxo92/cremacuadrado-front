@@ -336,6 +336,10 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
       password: ['', Validators.required],
       rememberMe: [false]
     });
+    // Desde el checkout («Ya tienes una cuenta con este email») llega el email
+    // en el estado de navegación (no en la URL, para no dejarlo en el historial).
+    const email = this.router.getCurrentNavigation()?.extras.state?.['email'];
+    if (typeof email === 'string') this.loginForm.patchValue({ email });
   }
 
   ngAfterViewInit(): void {
