@@ -58,3 +58,9 @@ Desktop.ini
 .agents/
 .claude/skills/
 skills-lock.json
+
+# Playwright
+e2e/.artifacts/
+playwright-report/
+test-results/
+e2e/screenshots/
