@@ -53,8 +53,8 @@ interface PointOfSale {
                       </span>
                     </td>
                     <td class="actions">
-                      <button class="btn btn--icon" (click)="edit(store)">✏️</button>
-                      <button class="btn btn--icon btn--danger" (click)="remove(store)">🗑</button>
+                      <button class="btn btn--icon" (click)="edit(store)" [attr.aria-label]="'Editar ' + store.name" title="Editar"><span aria-hidden="true">✏️</span></button>
+                      <button class="btn btn--icon btn--danger" (click)="remove(store)" [attr.aria-label]="'Eliminar ' + store.name" title="Eliminar"><span aria-hidden="true">🗑</span></button>
                     </td>
                   </tr>
                 }

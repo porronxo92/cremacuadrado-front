@@ -81,13 +81,13 @@ interface AdminBlogPost {
                   </td>
                   <td>{{ post.published_at ? (post.published_at | date:'dd/MM/yyyy') : '—' }}</td>
                   <td class="actions">
-                    <a class="btn btn--icon" [routerLink]="['/admin/blog', post.id]" title="Editar">✏️</a>
+                    <a class="btn btn--icon" [routerLink]="['/admin/blog', post.id]" title="Editar" [attr.aria-label]="'Editar ' + post.title"><span aria-hidden="true">✏️</span></a>
                     @if (post.status === 'published') {
-                      <button class="btn btn--icon" title="Despublicar" (click)="unpublish(post)">⏸</button>
+                      <button class="btn btn--icon" title="Despublicar" [attr.aria-label]="'Despublicar ' + post.title" (click)="unpublish(post)"><span aria-hidden="true">⏸</span></button>
                     } @else {
-                      <button class="btn btn--icon" title="Publicar" (click)="publish(post)">▶</button>
+                      <button class="btn btn--icon" title="Publicar" [attr.aria-label]="'Publicar ' + post.title" (click)="publish(post)"><span aria-hidden="true">▶</span></button>
                     }
-                    <button class="btn btn--icon btn--danger" title="Eliminar" (click)="deletePost(post)">🗑</button>
+                    <button class="btn btn--icon btn--danger" title="Eliminar" [attr.aria-label]="'Eliminar ' + post.title" (click)="deletePost(post)"><span aria-hidden="true">🗑</span></button>
                   </td>
                 </tr>
               }

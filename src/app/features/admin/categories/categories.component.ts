@@ -52,8 +52,8 @@ type Tab = 'products' | 'blog';
                     <td>{{ cat.name }}</td>
                     <td><code>{{ cat.slug }}</code></td>
                     <td class="actions">
-                      <button class="btn btn--icon" (click)="edit(cat)">✏️</button>
-                      <button class="btn btn--icon btn--danger" (click)="remove(cat)">🗑</button>
+                      <button class="btn btn--icon" (click)="edit(cat)" [attr.aria-label]="'Editar ' + cat.name" title="Editar"><span aria-hidden="true">✏️</span></button>
+                      <button class="btn btn--icon btn--danger" (click)="remove(cat)" [attr.aria-label]="'Eliminar ' + cat.name" title="Eliminar"><span aria-hidden="true">🗑</span></button>
                     </td>
                   </tr>
                 }
