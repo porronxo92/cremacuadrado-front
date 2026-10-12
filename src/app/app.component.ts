@@ -17,7 +17,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
   imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, ToastComponent, AnnouncementBarComponent, MiniCartComponent, WhatsappButtonComponent, CookieBannerComponent],
   template: `
     <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
-    <div class="app">
+    <div class="app" [class.app--fab]="!isAdminRoute()">
       @if (!isAdminRoute()) {
         <app-announcement-bar />
         <app-header />
@@ -45,6 +45,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
     
     .main-content {
       flex: 1;
+    }
+
+    /* Reserva el hueco del botón flotante de WhatsApp (alto + margen + zona segura)
+       para que ningún control quede inalcanzable debajo (WCAG 2.4.11). */
+    .app--fab {
+      padding-bottom: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px));
     }
   `],
 })

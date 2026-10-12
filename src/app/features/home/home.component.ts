@@ -28,7 +28,7 @@ import { environment } from '@env/environment';
       <div class="container">
         <div class="products__header">
           <h2 class="products__title">LAS CREMAS</h2>
-          <p class="products__sub">Pistacho manchego. Dos expresiones del mismo amor.</p>
+          <p class="products__sub">Dos cremas de pistacho manchego: Pura y Crunchy.</p>
         </div>
 
         @if (loadingProducts()) {
@@ -42,7 +42,7 @@ import { environment } from '@env/environment';
                 <a [routerLink]="['/tienda', product.slug]" class="product-card__img-wrap">
                   <img
                     [ngSrc]="product.primary_image || '/assets/images/placeholder.jpg'"
-                    [alt]="product.name + ' — crema de pistacho manchego'"
+                    [alt]="product.name + ', crema de pistacho manchego'"
                     fill>
                   @if (getSelectedVariant(product)?.compare_price; as prior) {
                     <span class="product-card__badge">Antes {{ prior | currency:'EUR' }}</span>
@@ -88,7 +88,7 @@ import { environment } from '@env/environment';
       <section class="reviews">
         <div class="container">
           <h2 class="reviews__title">LO QUE DICEN</h2>
-          <p class="reviews__sub">Opiniones de clientes de 4 y 5 estrellas · consulta todas en cada producto</p>
+          <p class="reviews__sub">Reseñas de clientes con 4 y 5 estrellas. Las encuentras todas en cada producto.</p>
           <div class="reviews__grid">
             @for (review of reviews(); track review.id) {
               <blockquote class="review-card">
@@ -109,24 +109,24 @@ import { environment } from '@env/environment';
     <!-- Bloque 4: B2B -->
     <section class="b2b">
       <div class="container">
-        <h2 class="b2b__title">¿TIENES UN NEGOCIO?</h2>
-        <p class="b2b__sub">La crema de pistacho que tus clientes no encuentran en ningún supermercado</p>
+        <h2 class="b2b__title">PARA TU NEGOCIO</h2>
+        <p class="b2b__sub">Crema de pistacho manchego para tiendas, restaurantes y obradores.</p>
         <div class="b2b__grid">
           <div class="b2b__card">
             <div class="b2b__card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
             <h3 class="b2b__card-title">TIENDAS GOURMET</h3>
-            <p class="b2b__card-text">Un producto diferente, de origen conocido, con margen real. Fideliza a tus clientes más exigentes.</p>
-            <a routerLink="/para-tiendas" class="b2b__card-cta">Conocer condiciones →</a>
+            <p class="b2b__card-text">Una crema de origen conocido y con margen para tu tienda.</p>
+            <a routerLink="/para-tiendas" class="b2b__card-cta">Ver condiciones →</a>
           </div>
           <div class="b2b__card">
             <div class="b2b__card-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <h3 class="b2b__card-title">RESTAURANTES Y OBRADORES</h3>
-            <p class="b2b__card-text">El ingrediente que diferencia tus postres, cremas y maridajes. Precio profesional, calidad constante.</p>
-            <a routerLink="/para-tiendas" class="b2b__card-cta">Conocer condiciones →</a>
+            <p class="b2b__card-text">Para postres, cremas y maridajes, a precio profesional.</p>
+            <a routerLink="/para-tiendas" class="b2b__card-cta">Ver condiciones →</a>
           </div>
         </div>
       </div>
@@ -139,7 +139,7 @@ import { environment } from '@env/environment';
           <div class="newsletter__text">
             <h2 class="newsletter__title">RECETAS Y NOVEDADES</h2>
             <p class="newsletter__offer">Suscríbete y te enviamos un código de bienvenida con un <strong>10&nbsp;% de descuento</strong> para tu primer pedido.</p>
-            <p class="newsletter__sub">Sin spam. Solo lo que merece tu bandeja de entrada.</p>
+            <p class="newsletter__sub">Sin spam: un email cuando hay algo que contar.</p>
           </div>
           <form class="newsletter__form" (submit)="subscribeNewsletter($event)">
             <input
@@ -240,9 +240,11 @@ import { environment } from '@env/environment';
       overflow: hidden;
       transition: box-shadow 200ms, transform 200ms;
 
-      &:hover {
-        box-shadow: 0 12px 32px rgba($ink, 0.08);
-        transform: translateY(-2px);
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          box-shadow: 0 12px 32px rgba($ink, 0.08);
+          transform: translateY(-2px);
+        }
       }
     }
 
@@ -312,32 +314,46 @@ import { environment } from '@env/environment';
     }
 
     .variant-btn {
-      padding: 0.25rem 0.65rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      min-width: 56px;
+      padding: 0.25rem 1rem;
       border: 1.5px solid $border;
-      border-radius: 20px;
+      border-radius: 22px;
       background: transparent;
-      color: $muted;
+      color: $ink;
       font-family: 'Poppins', sans-serif;
-      font-size: 0.68rem;
+      font-size: 0.8rem;
       font-weight: 600;
       cursor: pointer;
       transition: border-color 150ms, color 150ms, background 150ms;
       line-height: 1.4;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
 
-      &:hover:not(:disabled) {
-        border-color: $brand;
-        color: $brand;
+      // Hover solo en dispositivos con puntero real: en táctil se quedaba «pegado»
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not(.variant-btn--active) {
+          border-color: $brand;
+          color: $brand;
+        }
       }
 
-      &--active {
+      // Activo: blanco sobre granate (≈ 11:1), mismo aspecto con o sin hover/foco
+      &--active,
+      &--active:hover,
+      &--active:focus,
+      &--active:active {
         border-color: $brand;
         background: $brand;
-        color: white;
+        color: $bg;
       }
 
       &:disabled {
         border-color: rgba($ink, 0.12);
-        color: rgba($ink, 0.3);
+        color: $muted;
         cursor: not-allowed;
         text-decoration: line-through;
       }
@@ -709,7 +725,7 @@ export class HomeComponent implements OnInit {
     });
     this.seo.set({
       title: 'Crema de Pistacho Manchego Artesanal',
-      description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Descubre Pura (100% pistacho) y Crunchy. Envío a toda España.',
+      description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Pura, con 100% pistacho, y Crunchy. Envíos a la península.',
       path: '/',
     });
     this.seo.setJsonLd('ld-organization', {
@@ -761,7 +777,7 @@ export class HomeComponent implements OnInit {
 
     this.cartService.addItem(variant.id, 1).subscribe({
       next: () => this.miniCartService.open(),
-      error: () => this.toastService.error('Error al añadir el producto'),
+      error: () => this.toastService.error('No hemos podido añadir el producto. Inténtalo de nuevo.'),
     });
   }
 

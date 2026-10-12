@@ -74,7 +74,9 @@ export interface ProductFormat {
       touch-action: manipulation;
 
       // Seleccionado: borde granate de 2px + check (contraste ≥ 3:1 y no depende solo del color)
-      &:hover { border-color: rgba($brand, 0.45); }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(.is-active) { border-color: rgba($brand, 0.45); }
+      }
       &.is-best:not(.is-active) { border-color: $accent; }
       &.is-active { border: 2px solid $brand; padding: 7.5px 5.5px; background: rgba($brand, 0.04); }
     }

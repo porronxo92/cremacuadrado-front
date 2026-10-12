@@ -47,6 +47,13 @@ import { RouterModule } from '@angular/router';
       min-height: 560px;
       overflow: hidden;
       background: $ink;
+
+      // Móvil: hero más bajo para que el CTA principal quede en el primer pantallazo
+      // (360×800 y 390×844 con barra de anuncio + cabecera ≈ 104px).
+      @media (max-width: 768px) {
+        height: clamp(460px, 68svh, 560px);
+        min-height: 0;
+      }
     }
 
     .hero__video {
@@ -81,6 +88,11 @@ import { RouterModule } from '@angular/router';
       align-items: flex-start;
       gap: 1.25rem;
       max-width: 760px;
+
+      @media (max-width: 768px) {
+        padding: 2rem 1.25rem 2rem;
+        gap: 1rem;
+      }
 
       @media (min-width: 769px) {
         padding: 3rem 5vw 5rem;
@@ -137,6 +149,7 @@ import { RouterModule } from '@angular/router';
     .hero__btn-primary {
       display: inline-flex;
       align-items: center;
+      min-height: 48px;
       background: $accent;
       color: $ink;
       padding: 0.8rem 2rem;

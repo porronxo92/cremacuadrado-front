@@ -128,7 +128,7 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
         </form>
 
         @if (googleEnabled) {
-          <div class="divider"><span>o regístrate con</span></div>
+          <div class="auth-divider" role="separator"><span class="auth-divider__line" aria-hidden="true"></span><span class="auth-divider__text">o regístrate con</span><span class="auth-divider__line" aria-hidden="true"></span></div>
           @if (!googleLoaded()) {
             <button type="button" class="google-placeholder" (click)="loadGoogle()" [disabled]="googleLoading()">
               {{ googleLoading() ? 'Cargando Google…' : 'Continuar con Google' }}
@@ -283,10 +283,25 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
 
     .optional { font-weight: 400; color: #999; font-size: 0.8rem; }
 
-    .divider {
-      display: flex; align-items: center; margin: 1.5rem 0 1rem; gap: 0.75rem;
-      &::before, &::after { content: ''; flex: 1; height: 1px; background: #ddd; }
-      span { color: #999; font-size: 0.85rem; white-space: nowrap; }
+    // Nombre propio: .divider existe en styles.scss (barra decorativa 3rem × 2px amarilla) y se colaba aquí
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin: 1.5rem 0 1rem;
+    }
+    .auth-divider__line {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 1px;
+      background: #d4d0c6;
+    }
+    .auth-divider__text {
+      flex: 0 0 auto;
+      color: #6B6456;
+      font-size: 0.85rem;
+      text-align: center;
     }
 
     .google-placeholder {
@@ -345,6 +360,10 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
       acceptTerms: [false, Validators.requiredTrue],
       marketingOptIn: [false]
     }, { validators: this.passwordMatchValidator });
+
+    // El email de confirmación a invitados enlaza a /auth/register?email=<email>
+    const prefill = this.route.snapshot.queryParamMap.get('email');
+    if (prefill) this.registerForm.patchValue({ email: prefill });
   }
 
   ngAfterViewInit(): void {

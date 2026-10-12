@@ -89,8 +89,11 @@
 }
 
 html {
+  --fab-clearance: 5rem; // botón flotante WhatsApp 56px + 1.25rem de margen + holgura
   font-size: 16px;
+  scroll-padding-bottom: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px)); // el foco por teclado no queda bajo elementos fijos
   scroll-behavior: smooth;
+  overflow-x: clip; // red de seguridad: clip no crea contenedor de scroll, así que position: sticky sigue funcionando
 }
 
 body {
@@ -100,6 +103,7 @@ body {
   line-height: 1.6;
   color: var(--color-text);
   background-color: var(--color-bg);
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
