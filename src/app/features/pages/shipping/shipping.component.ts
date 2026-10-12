@@ -46,7 +46,7 @@ import { SeoService } from '../../../core/services/seo.service';
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.8 12.2 19.79 19.79 0 0 1 1.74 3.6 2 2 0 0 1 3.71 1.4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.07a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               </div>
               <h3>Soporte al cliente</h3>
-              <p>ayuda&#64;cremacuadrado.com</p>
+              <p>info&#64;cremacuadrado.com</p>
             </article>
             <article class="feature-card">
               <div class="feature-card__icon">
@@ -152,7 +152,7 @@ import { SeoService } from '../../../core/services/seo.service';
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     <strong>Mi pedido no llega</strong>
                   </div>
-                  <p>Escríbenos a <a href="mailto:ayuda@cremacuadrado.com">ayuda&#64;cremacuadrado.com</a> con tu número de pedido. Lo localizamos y te informamos a la mayor brevedad.</p>
+                  <p>Escríbenos a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a> con tu número de pedido. Lo localizamos y te informamos a la mayor brevedad.</p>
                 </div>
                 <div class="alert-card alert-card--warning">
                   <div class="alert-card__header">
@@ -161,7 +161,7 @@ import { SeoService } from '../../../core/services/seo.service';
                   </div>
                   <p>Embalamos con cariño, pero a veces ocurren imprevistos. Si recibes un tarro dañado:</p>
                   <ul>
-                    <li>Envía una foto del daño a <a href="mailto:ayuda@cremacuadrado.com">ayuda&#64;cremacuadrado.com</a></li>
+                    <li>Envía una foto del daño a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a></li>
                     <li>Reclámanoslo lo antes posible tras la recepción</li>
                     <li>Gestionaremos <strong>devolución</strong> o <strong>reenvío gratuito</strong></li>
                   </ul>
@@ -182,10 +182,6 @@ import { SeoService } from '../../../core/services/seo.service';
                   <a href="mailto:info@cremacuadrado.com" class="contact-btn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     info&#64;cremacuadrado.com
-                  </a>
-                  <a href="mailto:ayuda@cremacuadrado.com" class="contact-btn contact-btn--alt">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    ayuda&#64;cremacuadrado.com
                   </a>
                 </div>
               </section>

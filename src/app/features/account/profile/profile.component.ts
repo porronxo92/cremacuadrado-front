@@ -389,7 +389,7 @@ export class AccountProfileComponent implements OnInit {
     this.deleting.set(true);
     this.userService.deleteMyAccount().subscribe({
       next: () => {
-        this.toastService.success('Tu cuenta se ha eliminado');
+        this.toastService.success('Hemos eliminado tu cuenta');
         this.authService.logoutLocal();
         this.router.navigate(['/']);
       },

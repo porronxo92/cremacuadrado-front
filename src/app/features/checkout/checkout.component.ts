@@ -238,7 +238,7 @@ import { firstValueFrom } from 'rxjs';
 
                     <div class="form-group">
                       <label for="notes">Notas del pedido (opcional)</label>
-                      <textarea id="notes" formControlName="notes" rows="3" placeholder="Instrucciones especiales para la entrega..."></textarea>
+                      <textarea id="notes" formControlName="notes" rows="3" placeholder="Indicaciones para la entrega"></textarea>
                     </div>
                   </form>
 
@@ -341,7 +341,7 @@ import { firstValueFrom } from 'rxjs';
                 @if (stripeInitializing()) {
                   <div class="stripe-loading" role="status">
                     <span class="spinner" aria-hidden="true"></span>
-                    Preparando formulario de pago...
+                    Preparando el formulario de pago…
                   </div>
                 }
 

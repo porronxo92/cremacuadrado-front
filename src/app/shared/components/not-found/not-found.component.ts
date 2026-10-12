@@ -13,7 +13,7 @@ import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
       <div class="not-found__content">
         <h1>404</h1>
         <h2>Página no encontrada</h2>
-        <p>Lo sentimos, la página que buscas no existe o ha sido movida.</p>
+        <p>Esta página no existe o ha cambiado de dirección.</p>
         <a routerLink="/" class="not-found__btn">Volver al inicio</a>
       </div>
     </div>

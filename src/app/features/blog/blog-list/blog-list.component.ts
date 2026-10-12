@@ -105,7 +105,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
           } @else if (posts().length === 0) {
             <div class="empty">
               <h2>No hay artículos disponibles</h2>
-              <p>Próximamente publicaremos nuevo contenido</p>
+              <p>Pronto publicaremos contenido nuevo</p>
             </div>
           } @else {
             <div class="blog-grid">
@@ -477,7 +477,7 @@ export class BlogListComponent implements OnInit {
       this.categorySlug.set(categorySlug);
       this.seo.set({
         title: this.pageTitle(),
-        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho manchego — El Archivo de CremaCuadrado.',
+        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho manchego en El Archivo de CremaCuadrado.',
         path: categorySlug ? `/el-archivo/categoria/${categorySlug}` : '/el-archivo',
       });
       this.loadPosts();

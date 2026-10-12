@@ -20,7 +20,7 @@ import { Order } from '../../../core/models';
             </svg>
           </div>
           
-          <h1>{{ isPaymentFailed ? 'Pago no completado' : '¡Pedido confirmado!' }}</h1>
+          <h1>{{ isPaymentFailed ? 'Pago no completado' : 'Pedido confirmado' }}</h1>
           <p class="success-message">{{ statusMessage }}</p>
 
           @if (isPaymentFailed) {
@@ -306,10 +306,10 @@ export class CheckoutSuccessComponent implements OnInit {
 
   get statusMessage(): string {
     switch (this.redirectStatus()) {
-      case 'succeeded': return '¡Pago confirmado! Gracias por tu pedido.';
-      case 'processing': return 'Tu pago está siendo procesado. Te confirmaremos por email.';
-      case 'requires_payment_method': return 'El pago no se ha completado. Por favor inténtalo de nuevo.';
-      default: return 'Gracias por tu compra. Hemos enviado un email de confirmación.';
+      case 'succeeded': return 'Pago confirmado. Gracias por tu pedido.';
+      case 'processing': return 'Estamos procesando tu pago. Te confirmaremos por email.';
+      case 'requires_payment_method': return 'El pago no se ha completado. Inténtalo de nuevo.';
+      default: return 'Gracias por tu compra. Te hemos enviado un email de confirmación.';
     }
   }
 

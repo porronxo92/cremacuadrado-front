@@ -21,8 +21,8 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
         <span class="pt-hero__deco pt-hero__deco--2" aria-hidden="true">PV</span>
         <div class="pt-hero__content">
           <span class="pt-hero__eyebrow">Para tiendas gourmet y delicatessen</span>
-          <h1 class="pt-hero__title">Dale a tu cliente algo que no encuentra en ningún supermercado</h1>
-          <p class="pt-hero__subtitle">Crema de pistacho manchego artesanal. Con historia, con identidad y con todo el soporte que necesitas para venderla.</p>
+          <h1 class="pt-hero__title">Crema de pistacho para tu tienda</h1>
+          <p class="pt-hero__subtitle">Crema de pistacho manchego artesanal que no se vende en supermercados, con material y soporte para que la vendas.</p>
           <button type="button" class="pt-hero__cta" (click)="scrollToForm()">
             Quiero ser punto de venta →
           </button>
@@ -44,7 +44,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">Producto exclusivo</h3>
-            <p class="pt-card__desc">No está en supermercados. Diferencia tu surtido y da a tu cliente una razón para volver.</p>
+            <p class="pt-card__desc">No se vende en supermercados. Diferencia tu surtido y dale al cliente un motivo para volver.</p>
           </div>
 
           <div class="pt-card">
@@ -57,7 +57,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">12 meses de caducidad</h3>
-            <p class="pt-card__desc">Sin riesgo de merma. Stock tranquilo sin presión de rotación rápida.</p>
+            <p class="pt-card__desc">Menos riesgo de merma y sin prisa por rotar el stock.</p>
           </div>
 
           <div class="pt-card">
@@ -68,7 +68,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">Historia que contar</h3>
-            <p class="pt-card__desc">Cuando tu cliente pregunta qué es esto, tienes una respuesta con alma. Eso fideliza.</p>
+            <p class="pt-card__desc">Cuando un cliente pregunta qué es, tienes algo que contarle: de dónde viene el pistacho y cómo se hace la crema.</p>
           </div>
 
           <div class="pt-card">
@@ -205,7 +205,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">Te mencionamos en redes</h3>
-            <p class="pt-card__desc">Publicamos sobre tu tienda cuando empezáis a vender.</p>
+            <p class="pt-card__desc">Publicamos sobre tu tienda cuando empiezas a vender.</p>
           </div>
         </div>
       </app-collapsible-block>
@@ -254,7 +254,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
               <p class="pt-form-success__title">Solicitud recibida</p>
-              <p class="pt-form-success__desc">Os llamamos en 48 horas. Gracias por tu interés en CremaCuadrado.</p>
+              <p class="pt-form-success__desc">Te llamamos en 48 horas.</p>
             </div>
           } @else {
             <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -322,7 +322,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 purpose="gestionar tu solicitud como punto de venta y contactarte con información comercial sobre ella"
                 legalBasis="tu consentimiento y la aplicación de medidas precontractuales a petición tuya" />
 
-              <p class="pt-form__note">Sin compromiso. Os llamamos en 48 horas. Si os interesa conocer el producto antes de decidir, os enviamos una muestra gratuita.</p>
+              <p class="pt-form__note">Sin compromiso. Te llamamos en 48 horas. Si prefieres probar el producto antes de decidir, te enviamos una muestra gratuita.</p>
 
               @if (submitState() === 'error') {
                 <div class="pt-form-error">
@@ -332,7 +332,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               }
 
               <button type="submit" class="pt-form__submit" [disabled]="form.invalid || submitState() === 'loading'">
-                {{ submitState() === 'loading' ? 'Enviando...' : 'Conocer precios de venta' }}
+                {{ submitState() === 'loading' ? 'Enviando…' : 'Conocer precios de venta' }}
               </button>
 
             </form>

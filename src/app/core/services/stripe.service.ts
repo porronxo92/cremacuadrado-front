@@ -40,7 +40,7 @@ export class StripeService {
     });
 
     if (result.error) {
-      return { error: { message: result.error.message ?? 'Error al procesar el pago' } };
+      return { error: { message: result.error.message ?? 'No hemos podido procesar el pago. Inténtalo de nuevo.' } };
     }
     return {};
   }

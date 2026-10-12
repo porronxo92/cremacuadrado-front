@@ -855,7 +855,7 @@ export class AccountOrdersComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => {
-        this.toastService.error('Error al cargar los pedidos');
+        this.toastService.error('No hemos podido cargar tus pedidos');
         this.loading.set(false);
       }
     });
@@ -909,12 +909,12 @@ export class AccountOrdersComponent implements OnInit {
 
     this.orderService.cancelOrder(orderNumber).subscribe({
       next: () => {
-        this.toastService.success('Pedido cancelado correctamente');
+        this.toastService.success('Pedido cancelado');
         this.closeModal();
         this.loadOrders(this.currentPage());
       },
       error: (err: Error) => {
-        this.toastService.error('Error al cancelar el pedido: ' + err.message);
+        this.toastService.error('No hemos podido cancelar el pedido: ' + err.message);
       }
     });
   }

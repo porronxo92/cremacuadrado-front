@@ -18,7 +18,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
         @if (cartService.isLoading()) {
           <div class="loading" role="status">
             <div class="spinner" aria-hidden="true"></div>
-            <p>Cargando carrito...</p>
+            <p>Cargando carrito…</p>
           </div>
         } @else if (cartService.itemCount() === 0) {
           <div class="empty-cart">
@@ -28,7 +28,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
               <path d="m1 1 4 4 2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
             </svg>
             <h2>Tu carrito está vacío</h2>
-            <p>Descubre nuestras cremas de pistacho manchego.</p>
+            <p>Todavía no has añadido nada. Mira las cremas Pura y Crunchy.</p>
             <a routerLink="/tienda" class="cc-btn cc-btn--primary">Ver productos</a>
           </div>
         } @else {

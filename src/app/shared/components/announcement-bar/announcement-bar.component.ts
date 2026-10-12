@@ -3,9 +3,9 @@ import { isPlatformBrowser } from '@angular/common';
 import { runAfterStable } from '../../../core/utils/after-stable';
 
 const MESSAGES = [
-  '🚚 Envío gratis en pedidos +48€ — Península',
-  '⏱️ Entrega en 48-72h · Pistacho manchego de Ciudad Real',
-  '🌿 100% natural · Sin aditivos · Sin conservantes',
+  'Envío gratis en pedidos desde 48€ (península)',
+  'Entrega en 48-72h · Pistacho manchego de Ciudad Real',
+  '100% natural · Sin aditivos · Sin conservantes',
 ];
 
 @Component({

@@ -15,8 +15,8 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
           <div class="footer__section">
             <h3 class="footer__title">CremaCuadrado</h3>
             <p class="footer__text">
-              Crema de pistacho artesanal elaborada con los mejores pistachos manchegos de Ciudad Real.
-              100% natural, sin aditivos. El sabor auténtico del pistacho.
+              Crema de pistacho manchego artesanal, elaborada en Ciudad Real.
+              100% natural, sin aditivos.
             </p>
           </div>
           

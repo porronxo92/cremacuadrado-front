@@ -25,9 +25,9 @@ type PurchaseType = 'once' | 'sub';
 const SUBSCRIPTION_ENABLED = false;
 
 const FAQS = [
-  { q: '¿Por qué el aceite está separado?', a: 'Es el aceite natural del pistacho — señal de que no hay aditivos. Completamente normal: remueve bien antes de cada uso.' },
-  { q: '¿Cuánto tiempo dura la crema?', a: '12 meses desde la elaboración. Una vez abierto, consumir en 4 semanas en lugar fresco y seco.' },
-  { q: '¿Cómo se conserva?', a: 'Temperatura ambiente, alejada de la luz directa. No necesita nevera. El frío puede endurecer la crema.' },
+  { q: '¿Por qué el aceite está separado?', a: 'Es el aceite natural del pistacho y señal de que no lleva aditivos. Es normal: remueve bien antes de cada uso.' },
+  { q: '¿Cuánto tiempo dura la crema?', a: '12 meses desde la elaboración. Una vez abierta, consúmela en 4 semanas y guárdala en un lugar fresco y seco.' },
+  { q: '¿Cómo se conserva?', a: 'A temperatura ambiente y lejos de la luz directa. No necesita nevera: el frío puede endurecer la crema.' },
 ];
 
 function gramsFromFormat(format: string): number {
@@ -92,7 +92,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             <!-- Desktop -->
             <div class="pd__gallery-desktop">
               <div class="pd__main-img">
-                <img [ngSrc]="selectedImage() || firstImage()" [alt]="product()!.name + ' — crema de pistacho manchego'" fill priority>
+                <img [ngSrc]="selectedImage() || firstImage()" [alt]="product()!.name + ', crema de pistacho manchego'" fill priority>
               </div>
               @if (currentImages().length > 1) {
                 <div class="pd__thumbs">
@@ -244,7 +244,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                             (click)="addToCart()"
                             [disabled]="!selectedVariant()?.is_in_stock || addingToCart()">
                             @if (addingToCart()) {
-                              <span class="pd__cta-spinner"></span>Añadiendo...
+                              <span class="pd__cta-spinner"></span>Añadiendo…
                             } @else if (!selectedVariant()?.is_in_stock) {
                               Agotado
                             } @else {
@@ -313,7 +313,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
                           </li>
                         </ul>
                         <button class="pd__cta pd__cta--sub" (click)="activateSubscription()">
-                          Suscribirme — próximamente
+                          Suscribirme (próximamente)
                         </button>
                       </div>
                     }
@@ -412,7 +412,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               }
             }
             @if (activeTab() === 'como-usarlo') {
-              <p class="pd__tab-text">Ideal para untar en tostadas, mezclar con yogur, usar en smoothies o como base de salsas y postres. Remueve bien antes de usar para integrar el aceite natural.</p>
+              <p class="pd__tab-text">Úntala en tostadas, mézclala con yogur, añádela a smoothies o úsala de base para salsas y postres. Remueve antes de usar para integrar el aceite natural.</p>
             }
           </div>
         </div>
@@ -442,7 +442,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               <label class="pd__review-label" for="reviewTitle">Título (opcional)</label>
               <input type="text" id="reviewTitle" [(ngModel)]="reviewTitle" name="reviewTitle" />
               <label class="pd__review-label" for="reviewComment">Tu opinión</label>
-              <textarea id="reviewComment" placeholder="Cuéntanos tu experiencia..." [(ngModel)]="reviewComment" name="reviewComment" rows="3"></textarea>
+              <textarea id="reviewComment" placeholder="Cuéntanos qué tal la has probado" [(ngModel)]="reviewComment" name="reviewComment" rows="3"></textarea>
               <button type="submit" class="pd__review-submit" [disabled]="submittingReview()">
                 {{ submittingReview() ? 'Enviando…' : 'Enviar reseña' }}
               </button>
@@ -467,7 +467,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
               </div>
             }
           } @else {
-            <p class="pd__reviews-empty">Todavía no hay opiniones sobre este producto. ¡Sé la primera persona en compartir la tuya!</p>
+            <p class="pd__reviews-empty">Todavía no hay opiniones de este producto. Puedes ser la primera persona en dejar la tuya.</p>
           }
           <p class="reviews-note">Solo publicamos opiniones de clientes con cuenta. La etiqueta «Compra verificada» indica que la persona recibió un pedido con ese producto. Revisamos cada opinión antes de publicarla y no eliminamos las negativas salvo que incumplan nuestras normas (lenguaje ofensivo o datos personales).</p>
         </div>
@@ -1127,7 +1127,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
 
     this.seo.set({
       title: product.name,
-      description: description || `${product.name} — crema de pistacho manchego artesanal. CremaCuadrado.`,
+      description: description || `${product.name}, crema de pistacho manchego artesanal elaborada en Ciudad Real. CremaCuadrado.`,
       path,
       image: images[0],
       type: 'product',
@@ -1212,7 +1212,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
         this.reviewRating = 5;
         this.reviewTitle = '';
         this.reviewComment = '';
-        this.toastService.success('¡Gracias! Tu reseña se publicará en cuanto sea moderada.');
+        this.toastService.success('Gracias. Publicaremos tu reseña en cuanto la revisemos.');
       },
       error: (err) => {
         this.submittingReview.set(false);
@@ -1248,7 +1248,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   activateSubscription(): void {
-    this.toastService.success('Suscripción mensual — próximamente disponible');
+    this.toastService.success('La suscripción mensual llegará pronto.');
   }
 
   onGalleryScroll(): void {
@@ -1277,7 +1277,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       },
       error: () => {
         this.addingToCart.set(false);
-        this.toastService.error('Error al añadir el producto');
+        this.toastService.error('No hemos podido añadir el producto. Inténtalo de nuevo.');
       },
     });
   }
