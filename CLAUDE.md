@@ -334,7 +334,7 @@ Todos los formularios y botones de compra deben manejar:
 
 ### Reglas UX y accesibilidad (skill `ui-ux-pro-max`)
 
-Reglas tomadas de la skill instalada en `.agents/skills/ui-ux-pro-max` (WCAG 2.2, Apple HIG, Material). Prioridad: 1 accesibilidad → 2 táctil → 3 rendimiento → 5 responsive → 6 tipografía/color → 7 animación → 8 formularios → 9 navegación. Las líneas rojas de marca y de UX de este documento mandan sobre la skill.
+Reglas tomadas de la skill instalada en `.claude/skills/ui-ux-pro-max` (WCAG 2.2, Apple HIG, Material). Prioridad: 1 accesibilidad → 2 táctil → 3 rendimiento → 5 responsive → 6 tipografía/color → 7 animación → 8 formularios → 9 navegación. Las líneas rojas de marca y de UX de este documento mandan sobre la skill.
 
 **Accesibilidad**
 - Contraste de texto ≥ 4,5:1 (texto grande ≥ 3:1); bordes de controles, iconos con significado y estados seleccionados ≥ 3:1. Sobre crema `#F4F1E9`: granate 9,4:1 ✅, `#6B6456` 5,2:1 ✅, **amarillo `#E6C15A` 1,5:1 ❌ y verde `#A2BA1C` 1,9:1 ❌** → amarillo y verde solo como acento o fondo, nunca como texto ni como único indicador de estado.
@@ -365,7 +365,7 @@ Reglas tomadas de la skill instalada en `.agents/skills/ui-ux-pro-max` (WCAG 2.2
 
 **Uso de la skill**
 - Instalación local (`.agents/` y `.claude/skills/` están en `.gitignore`): `npx skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max`
-- Búsqueda: `python .agents/skills/ui-ux-pro-max/scripts/search.py "<consulta>" --domain ux` (o `--stack angular`). En Windows, con `PYTHONIOENCODING=utf-8`. Las rutas `${CLAUDE_PLUGIN_ROOT}/...` del `SKILL.md` no aplican a esta instalación.
+- Búsqueda: `python .claude/skills/ui-ux-pro-max/scripts/search.py "<consulta>" --domain ux` (o `--stack angular`). En Windows, con `PYTHONIOENCODING=utf-8`. En `.claude/skills/ui-ux-pro-max/SKILL.md` las rutas `${CLAUDE_PLUGIN_ROOT}/...` ya apuntan a `frontend/.claude/skills/ui-ux-pro-max` (se ejecuta desde la raíz del monorepo). Skills de terceros y licencias: `.claude/skills/THIRD_PARTY.md`.
 - No usar `--design-system` ni `--persist`: la identidad de marca ya está definida aquí.
 - Las guías `--stack angular` están escritas para Angular 22; el proyecto usa Angular 18 (descartar las de zoneless, etc.).
 
