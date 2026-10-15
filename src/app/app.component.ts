@@ -47,10 +47,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
       flex: 1;
     }
 
-    /* Reserva el hueco del botón flotante de WhatsApp (alto + margen + zona segura)
-       para que ningún control quede inalcanzable debajo (WCAG 2.4.11). */
+    /* Hueco del botón flotante de WhatsApp (alto + margen + zona segura) para que
+       ningún control quede inalcanzable debajo (WCAG 2.4.11). Lo aplica el pie en
+       su propio padding, así el hueco toma el fondo del pie y no queda una franja
+       de otro color tras él. */
     .app--fab {
-      padding-bottom: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px));
+      --footer-fab-clearance: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px));
     }
   `],
 })

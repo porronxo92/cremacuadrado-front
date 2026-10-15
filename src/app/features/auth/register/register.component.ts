@@ -147,6 +147,15 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
     </div>
   `,
   styles: [`
+
+    /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
+    app-phone-input {
+      --field-height: 0;
+      --field-border: 1px solid #ddd;
+      --field-radius: 4px;
+      --field-bg: #fff;
+      --field-focus-color: #4a7c4e;
+    }
     .auth-page {
       min-height: calc(100vh - 140px);
       display: flex;

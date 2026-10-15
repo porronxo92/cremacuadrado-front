@@ -98,7 +98,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
     .footer {
       background: #1A1208;
       color: #F4F1E9;
-      padding: 3.5rem 0 1.25rem;
+      padding: 3.5rem 0 calc(1.25rem + var(--footer-fab-clearance, 0px));
       margin-top: auto;
     }
     

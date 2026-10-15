@@ -155,6 +155,15 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
     </div>
   `,
   styles: [`
+
+    /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
+    app-phone-input {
+      --field-height: 0;
+      --field-border: 1px solid #ddd;
+      --field-radius: 4px;
+      --field-bg: #fff;
+      --field-focus-color: #4a7c4e;
+    }
     .privacy-toggle { display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 1.25rem; cursor: pointer; line-height: 1.5;
       input { margin-top: 0.25rem; width: 18px; height: 18px; flex-shrink: 0; } }
     .privacy-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }

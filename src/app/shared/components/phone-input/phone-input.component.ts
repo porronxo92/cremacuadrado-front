@@ -33,8 +33,24 @@ import { PHONE_PREFIXES } from '../../../core/data/spain';
   `,
   styles: [`
     .phone { display: flex; gap: 0.5rem; }
-    .phone__prefix { flex: 0 0 auto; width: auto !important; min-width: 6.5rem; }
-    .phone__number { flex: 1 1 auto; min-width: 0; }
+    /* Los estilos de campo del formulario padre no atraviesan la encapsulación de
+       este componente: se aplican aquí. Por defecto, el campo de marca del checkout;
+       cada formulario puede ajustarlo con las variables --field-*. */
+    .phone__prefix, .phone__number {
+      box-sizing: border-box;
+      min-height: var(--field-height, 48px);
+      padding: var(--field-padding, 0.75rem);
+      border: var(--field-border, 1px solid var(--color-border));
+      border-radius: var(--field-radius, 2px);
+      background: var(--field-bg, #FFFDF8);
+      color: var(--color-text);
+      font-family: var(--font-ui);
+      font-size: 1rem; // ≥16px: evita el zoom automático de iOS
+      transition: border-color 150ms;
+      &:focus { border-color: var(--field-focus-color, var(--color-brand)); }
+    }
+    .phone__prefix { flex: 0 0 auto; width: auto; min-width: 6.5rem; }
+    .phone__number { flex: 1 1 auto; min-width: 0; width: 100%; }
     .phone--invalid .phone__number, .phone--invalid .phone__prefix { border-color: var(--color-error, #A01C1C) !important; }
   `],
 })

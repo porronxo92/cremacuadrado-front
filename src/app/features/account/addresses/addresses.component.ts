@@ -171,6 +171,15 @@ import { PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPost
     </div>
   `,
   styles: [`
+
+    /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
+    app-phone-input {
+      --field-height: 0;
+      --field-border: 1px solid #ddd;
+      --field-radius: 4px;
+      --field-bg: #fff;
+      --field-focus-color: #4a7c4e;
+    }
     .error-text { display: block; color: #e74c3c; font-size: 0.8rem; margin-top: 0.25rem; }
     .addresses-page {
     }
