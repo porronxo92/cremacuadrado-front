@@ -402,10 +402,23 @@ import { firstValueFrom } from 'rxjs';
 
               <div class="summary-row">
                 <span>Envío</span>
-                <span>
-                  @if (shippingCost === 0) { Gratis } @else { {{ shippingCost | currency:'EUR':'symbol':'1.2-2':'es' }} }
+                <span class="ship-value">
+                  @if (shippingDiscount > 0) {
+                    <s class="ship-old"><span class="sr-only">antes </span>{{ shippingDiscount | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
+                    <strong class="ship-free">Gratis</strong>
+                    <small class="ship-note">Cupón {{ cartService.cart()?.coupon?.code }}</small>
+                  } @else if (shippingCost === 0) { Gratis } @else { {{ shippingCost | currency:'EUR':'symbol':'1.2-2':'es' }} }
                 </span>
               </div>
+
+              @if (cartService.cart()?.coupon; as cpn) {
+                @if (cpn.applies === false && cpn.message) {
+                  <p class="coupon-info" role="status">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span><strong>{{ cpn.code }}:</strong> {{ cpn.message }}</span>
+                  </p>
+                }
+              }
 
               <hr>
 
@@ -578,6 +591,26 @@ import { firstValueFrom } from 'rxjs';
     }
 
     .login-prompt { background: var(--color-bg-alt); }
+
+    .ship-value { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.3; }
+    .ship-old { color: var(--color-text-light); font-size: 0.85rem; }
+    .ship-free { color: var(--color-text); font-weight: 600; }
+    .ship-note { font-size: 0.75rem; color: var(--color-text-light); }
+
+    .coupon-info {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      margin: 0.5rem 0;
+      padding: 0.6rem 0.75rem;
+      border-radius: 2px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      background: rgba(230, 193, 90, 0.18);
+      border: 1px solid rgba(200, 138, 26, 0.45);
+      color: #5C4300;
+      svg { flex-shrink: 0; margin-top: 2px; }
+    }
 
     .existing-account {
       margin: 0.5rem 0 0;
@@ -1131,6 +1164,11 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   }
 
   constructor() {}
+
+  /** Envío anulado por cupón (el backend envía Decimal como texto). */
+  get shippingDiscount(): number {
+    return Number(this.cartService.cart()?.shipping_discount ?? 0) || 0;
+  }
 
   get shippingCost(): number {
     // Use the shipping cost already calculated by the backend (accounts for discount)

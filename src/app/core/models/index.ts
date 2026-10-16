@@ -162,7 +162,10 @@ export interface Cart {
   items: CartItem[];
   subtotal: number;
   coupon: CouponInfo | null;
+  /** Descuento solo sobre productos. */
   discount: number;
+  /** Envío anulado por un cupón de envío gratis (0 si no). Puede llegar como texto. */
+  shipping_discount?: number | string;
   shipping_cost: number;
   shipping_message: string | null;
   total: number;
@@ -188,9 +191,14 @@ export interface CartItem {
 
 export interface CouponInfo {
   code: string;
-  discount_type: 'percent' | 'fixed';
+  discount_type: 'percent' | 'fixed' | 'free_shipping';
   discount_value: number;
+  /** Descuento efectivo. */
   discount_amount: number;
+  /** false si el cupón está guardado pero no aplica a este pedido. */
+  applies?: boolean;
+  /** Motivo por el que no aplica. */
+  message?: string | null;
 }
 
 // Order interfaces
@@ -257,6 +265,7 @@ export interface CheckoutValidation {
   errors: string[];
   subtotal: number;
   shipping_cost: number;
+  shipping_discount?: number | string;
   discount: number;
   tax: number;
   total: number;

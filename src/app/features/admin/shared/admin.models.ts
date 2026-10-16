@@ -160,7 +160,7 @@ export interface AdminCoupon {
   id: number;
   code: string;
   description: string | null;
-  discount_type: 'percent' | 'fixed';
+  discount_type: 'percent' | 'fixed' | 'free_shipping';
   discount_value: number;
   min_order_amount: number;
   max_discount_amount: number | null;

@@ -124,10 +124,10 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
             <span>Subtotal</span>
             <strong>{{ cartService.subtotal() | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
           </div>
-          @if ((cartService.cart()?.shipping_cost || 0) > 0) {
+          @if ((+(cartService.cart()?.shipping_cost || 0)) > 0) {
             <p class="mini-cart__shipping-notice">{{ cartService.cart()?.shipping_message }}</p>
           } @else {
-            <p class="mini-cart__shipping-free"><span aria-hidden="true">✓</span> Envío gratis</p>
+            <p class="mini-cart__shipping-free"><span aria-hidden="true">✓</span> {{ cartService.cart()?.shipping_message || 'Envío gratis' }}</p>
           }
           <button type="button" class="mini-cart__cta" (click)="goToCart()">
             Tramitar pedido

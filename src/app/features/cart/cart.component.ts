@@ -92,25 +92,31 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
                 <span>{{ cartService.cart()?.subtotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
-              @if ((cartService.cart()?.discount || 0) > 0) {
+              @if (discountAmount() > 0) {
                 <div class="summary-row summary-row--discount">
-                  <span>Descuento ({{ cartService.cart()?.coupon?.code }})</span>
-                  <span>−{{ cartService.cart()?.discount | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                  <span>Descuento @if (cartService.cart()?.coupon?.code) { ({{ cartService.cart()?.coupon?.code }}) }</span>
+                  <span>−{{ discountAmount() | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                 </div>
               }
 
               <div class="summary-row">
                 <span>Envío</span>
-                <span>
-                  @if ((cartService.cart()?.shipping_cost || 0) === 0) {
+                <span class="ship-value">
+                  @if (shippingDiscount() > 0) {
+                    <span>
+                      <s class="ship-old"><span class="sr-only">antes </span>{{ shippingDiscount() | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
+                      <strong class="ship-free">Gratis</strong>
+                    </span>
+                    <small class="ship-note">Cupón {{ cartService.cart()?.coupon?.code }}</small>
+                  } @else if (shippingCost() === 0) {
                     Gratis
                   } @else {
-                    {{ cartService.cart()?.shipping_cost | currency:'EUR':'symbol':'1.2-2':'es' }}
+                    {{ shippingCost() | currency:'EUR':'symbol':'1.2-2':'es' }}
                   }
                 </span>
               </div>
 
-              @if ((cartService.cart()?.shipping_cost || 0) > 0) {
+              @if (shippingCost() > 0 && shippingDiscount() === 0) {
                 <div class="shipping-notice">
                   <p>{{ cartService.cart()?.shipping_message }}</p>
                   <div class="progress-bar" role="progressbar"
@@ -124,10 +130,20 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
               <!-- Cupón: plegado por defecto (solo para clientes con cuenta) -->
               <div class="coupon-section">
                 @if (cartService.cart()?.coupon; as coupon) {
-                  <div class="coupon-applied">
-                    <span>Cupón <strong>{{ coupon.code }}</strong> aplicado</span>
-                    <button type="button" class="link-btn" (click)="removeCoupon()">Quitar</button>
-                  </div>
+                  @if (coupon.applies === false) {
+                    <div class="coupon-info" role="status">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <p><strong>Cupón {{ coupon.code }} no aplicado.</strong> {{ coupon.message }}</p>
+                    </div>
+                    <button type="button" class="link-btn" (click)="removeCoupon()"
+                      [attr.aria-label]="'Quitar el cupón ' + coupon.code">Quitar cupón</button>
+                  } @else {
+                    <div class="coupon-applied">
+                      <span>Cupón <strong>{{ coupon.code }}</strong> aplicado@if (coupon.discount_type === 'free_shipping') { · envío gratis }</span>
+                      <button type="button" class="link-btn" (click)="removeCoupon()"
+                        [attr.aria-label]="'Quitar el cupón ' + coupon.code">Quitar</button>
+                    </div>
+                  }
                 } @else {
                   <button type="button" class="coupon-toggle"
                     (click)="couponOpen.set(!couponOpen())"
@@ -501,6 +517,26 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
       }
     }
 
+    .ship-value { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.3; }
+    .ship-old { margin-right: 0.35rem; font-size: 0.85rem; }
+    .ship-free { color: var(--color-text); font-weight: 600; }
+    .ship-note { font-size: 0.75rem; }
+
+    .coupon-info {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      padding: 0.6rem 0.75rem;
+      border-radius: 2px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      background: rgba(230, 193, 90, 0.18);
+      border: 1px solid rgba(200, 138, 26, 0.45);
+      color: #5C4300;
+      svg { flex-shrink: 0; margin-top: 2px; }
+      p { margin: 0; }
+    }
+
     .coupon-applied {
       display: flex;
       align-items: center;
@@ -681,10 +717,15 @@ export class CartComponent implements OnInit {
   readonly couponOpen = signal(false);
   readonly busy = signal(false);
 
+  // Los Decimal del backend llegan como texto: convertir antes de comparar.
+  readonly discountAmount = computed(() => Number(this.cartService.cart()?.discount ?? 0) || 0);
+  readonly shippingDiscount = computed(() => Number(this.cartService.cart()?.shipping_discount ?? 0) || 0);
+  readonly shippingCost = computed(() => Number(this.cartService.cart()?.shipping_cost ?? 0) || 0);
+
   /** % hacia el envío gratis; el servidor lo calcula sobre el subtotal tras descuentos. */
   readonly freeShippingProgress = computed(() => {
     const cart = this.cartService.cart();
-    const base = (cart?.subtotal ?? 0) - (cart?.discount ?? 0);
+    const base = (Number(cart?.subtotal) || 0) - (Number(cart?.discount) || 0);
     return Math.max(0, Math.min(100, Math.round((base / FREE_SHIPPING_THRESHOLD) * 100)));
   });
 

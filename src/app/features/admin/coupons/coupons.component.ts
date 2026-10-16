@@ -63,7 +63,8 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
                           @if (c.description) { <span class="sub">{{ c.description }}</span> }</div>
                       </td>
                       <td data-label="Descuento">
-                        {{ c.discount_type === 'percent' ? c.discount_value + ' %' : (c.discount_value | currency:'EUR') }}
+                        @if (c.discount_type === 'free_shipping') { Envío gratis }
+                        @else { {{ c.discount_type === 'percent' ? c.discount_value + ' %' : (c.discount_value | currency:'EUR') }} }
                         @if (c.min_order_amount > 0) { <span class="sub">mín. {{ c.min_order_amount | currency:'EUR' }}</span> }
                       </td>
                       <td class="num" data-label="Usos">
@@ -107,14 +108,20 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
               <input type="text" [(ngModel)]="form.description" maxlength="255"></label>
             <div class="adm-grid--2">
               <label class="adm-field"><span>Tipo</span>
-                <select [(ngModel)]="form.discount_type">
+                <select [(ngModel)]="form.discount_type" [attr.aria-describedby]="form.discount_type === 'free_shipping' ? 'free-shipping-help' : null">
                   <option value="percent">Porcentaje</option>
                   <option value="fixed">Importe fijo</option>
+                  <option value="free_shipping">Envío gratis</option>
                 </select>
               </label>
-              <label class="adm-field"><span>Valor {{ form.discount_type === 'percent' ? '(%)' : '(€)' }}</span>
-                <input type="number" [(ngModel)]="form.discount_value" min="0" step="0.01"></label>
+              @if (form.discount_type !== 'free_shipping') {
+                <label class="adm-field"><span>Valor {{ form.discount_type === 'percent' ? '(%)' : '(€)' }}</span>
+                  <input type="number" [(ngModel)]="form.discount_value" min="0" step="0.01"></label>
+              }
             </div>
+            @if (form.discount_type === 'free_shipping') {
+              <p class="adm-muted" id="free-shipping-help">Anula el coste de envío (4,95 €). Solo se aplica a pedidos que pagan envío: por debajo de 48 € tras descuentos. Con pedidos mayores el cliente verá que el cupón no se aplica.</p>
+            }
             <div class="adm-grid--2">
               <label class="adm-field"><span>Pedido mínimo (€)</span>
                 <input type="number" [(ngModel)]="form.min_order_amount" min="0" step="0.01"></label>
@@ -293,7 +300,7 @@ export class AdminCouponsComponent implements OnInit {
   // ── Form ───────────────────────────────────────────────────────────────
   private emptyForm() {
     return {
-      code: '', description: '', discount_type: 'percent' as 'percent' | 'fixed', discount_value: 10 as number | null,
+      code: '', description: '', discount_type: 'percent' as 'percent' | 'fixed' | 'free_shipping', discount_value: 10 as number | null,
       min_order_amount: 0 as number | null, max_discount_amount: null as number | null, usage_limit: null as number | null,
       valid_from: '', valid_until: '', is_active: true,
     };
@@ -322,11 +329,12 @@ export class AdminCouponsComponent implements OnInit {
 
   save(): void {
     const fm = this.form;
-    if (!fm.code.trim() || !fm.discount_value || fm.discount_value <= 0) {
+    const isShipping = fm.discount_type === 'free_shipping';
+    if (!fm.code.trim() || (!isShipping && (!fm.discount_value || fm.discount_value <= 0))) {
       this.formError.set('El código y el valor del descuento son obligatorios');
       return;
     }
-    if (fm.discount_type === 'percent' && fm.discount_value > 100) {
+    if (fm.discount_type === 'percent' && (fm.discount_value ?? 0) > 100) {
       this.formError.set('Un porcentaje no puede superar el 100 %');
       return;
     }
@@ -340,7 +348,7 @@ export class AdminCouponsComponent implements OnInit {
     const payload = {
       description: fm.description || null,
       discount_type: fm.discount_type,
-      discount_value: fm.discount_value,
+      discount_value: isShipping ? 0 : fm.discount_value,
       min_order_amount: fm.min_order_amount || 0,
       max_discount_amount: fm.discount_type === 'percent' ? (fm.max_discount_amount || null) : null,
       usage_limit: fm.usage_limit || null,
