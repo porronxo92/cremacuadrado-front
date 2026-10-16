@@ -98,20 +98,20 @@ test.describe('2. cabecera móvil', () => {
 
 // ---------------------------------------------------------------- 3. Hero
 test.describe('3. hero', () => {
-  test('CTA «Descubrir la crema» visible sin scroll en móvil / altura completa en escritorio', async ({ page }, info) => {
+  test('CTA «Descubrir la crema» visible sin scroll (móvil y escritorio)', async ({ page }, info) => {
     await mockApi(page);
     await settle(page, '/');
     const cta = page.locator('.hero__btn-primary');
     await expect(cta).toBeVisible();
     await expect(cta).toHaveText(/Descubrir la crema/);
-    const box = (await cta.boundingBox())!;
-    const ih = await page.evaluate(() => window.innerHeight);
-    await shot(page, info, 'hero', ['mobile-360', 'mobile-390'].includes(info.project.name));
-    if (info.project.name === 'desktop') {
-      const h = await page.locator('section.hero').evaluate((e) => e.getBoundingClientRect().height);
-      expect(h, 'hero de escritorio a altura completa').toBeGreaterThanOrEqual(ih - 1);
-    } else {
-      expect(box.y + box.height, `[${info.project.name}] bottom del CTA=${Math.round(box.y + box.height)} debe ser < innerHeight=${ih}`).toBeLessThan(ih);
+    await shot(page, info, 'hero', ['mobile-360', 'mobile-390', 'desktop'].includes(info.project.name));
+    // En escritorio, además, un portátil de 1280×720
+    const viewports = info.project.name === 'desktop' ? [null, { width: 1280, height: 720 }] : [null];
+    for (const vp of viewports) {
+      if (vp) await page.setViewportSize(vp);
+      const box = (await cta.boundingBox())!;
+      const ih = await page.evaluate(() => window.innerHeight);
+      expect(box.y + box.height, `[${info.project.name}${vp ? ' 1280×720' : ''}] bottom del CTA=${Math.round(box.y + box.height)} debe ser < innerHeight=${ih}`).toBeLessThan(ih);
     }
   });
 });

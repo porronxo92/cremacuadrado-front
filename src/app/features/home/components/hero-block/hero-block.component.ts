@@ -43,8 +43,11 @@ import { RouterModule } from '@angular/router';
     .hero {
       position: relative;
       width: 100%;
-      height: 100dvh;
-      min-height: 560px;
+      // Escritorio: alto visible menos barra de anuncio (32px) y cabecera (73px), para que
+      // los CTA (anclados abajo) entren en el primer pantallazo. Tope para monitores altos.
+      height: calc(100svh - 105px);
+      min-height: 480px;
+      max-height: 820px;
       overflow: hidden;
       background: $ink;
 
