@@ -67,8 +67,26 @@ import { environment } from '@env/environment';
                   }
                   <div class="product-card__footer">
                     <span class="product-card__price">{{ (getSelectedVariant(product)?.price ?? 0) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
-                    <button class="product-card__cta" (click)="addToCart(product)" [disabled]="!(getSelectedVariant(product)?.is_in_stock)">
-                      {{ (getSelectedVariant(product)?.is_in_stock) ? 'Añadir al carrito' : 'Sin stock' }}
+                    @if (getSelectedVariant(product); as sv) {
+                      @if (sv.is_in_stock) {
+                        <div class="qty" role="group" [attr.aria-label]="'Cantidad de ' + product.name">
+                          <button type="button" class="qty__btn" (click)="changeQty(product, sv, -1)"
+                            [disabled]="quantity(product) <= 1"
+                            [attr.aria-label]="'Quitar una unidad de ' + product.name + ' ' + sv.format">−</button>
+                          <span class="qty__val" aria-live="polite" aria-atomic="true"><span class="sr-only">Cantidad: </span>{{ quantity(product) }}</span>
+                          <button type="button" class="qty__btn" (click)="changeQty(product, sv, 1)"
+                            [disabled]="quantity(product) >= maxQty(sv)"
+                            [attr.aria-label]="'Añadir una unidad de ' + product.name + ' ' + sv.format">+</button>
+                        </div>
+                      }
+                    }
+                    <button type="button" class="product-card__cta" (click)="addToCart(product)"
+                      [disabled]="!(getSelectedVariant(product)?.is_in_stock) || addingId() === product.id"
+                      [attr.aria-busy]="addingId() === product.id"
+                      [attr.aria-label]="(getSelectedVariant(product)?.is_in_stock) ? 'Añadir al carrito: ' + quantity(product) + ' × ' + product.name + ' ' + (getSelectedVariant(product)?.format ?? '') : null">
+                      @if (!(getSelectedVariant(product)?.is_in_stock)) { Sin stock }
+                      @else if (addingId() === product.id) { Añadiendo… }
+                      @else { <span class="product-card__cta-long">Añadir al carrito</span><span class="product-card__cta-short" aria-hidden="true">Añadir</span> }
                     </button>
                   </div>
                 </div>
@@ -372,8 +390,47 @@ import { environment } from '@env/environment';
     .product-card__footer {
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    // Selector de cantidad (mismo patrón que la compra rápida de /tienda)
+    .qty {
+      display: inline-flex;
+      align-items: center;
+      margin-left: auto;
+      border: 1.5px solid $brand;
+      border-radius: 24px;
+      background: $bg;
+      overflow: hidden;
+    }
+
+    .qty__btn {
+      width: 44px;
+      height: 44px;
+      border: none;
+      background: $bg;
+      color: $brand;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled) { background: $brand; color: $bg; }
+      }
+      &:disabled { opacity: 0.35; cursor: default; }
+    }
+
+    .qty__val {
+      min-width: 2rem;
+      text-align: center;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: $ink;
     }
 
     .product-card__price {
@@ -388,6 +445,8 @@ import { environment } from '@env/environment';
     .product-card__cta {
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      min-height: 48px;
       padding: 0.6rem 1.25rem;
       background: $bg;
       color: $brand;
@@ -407,6 +466,99 @@ import { environment } from '@env/environment';
         color: rgba($ink, 0.35);
         cursor: not-allowed;
       }
+    }
+
+    .product-card__cta-short { display: none; }
+
+    // ── Móvil: tarjeta compacta (miniatura centrada + formatos, y fila de compra debajo)
+    @media (max-width: 600px) {
+      .products__header { margin-bottom: 1.25rem; }
+      .products__grid { gap: 0.75rem; }
+
+      .product-card {
+        display: grid;
+        grid-template-columns: 96px minmax(0, 1fr);
+        grid-template-areas:
+          "img name"
+          "img variants"
+          "footer footer";
+        column-gap: 0.85rem;
+        row-gap: 0.35rem;
+        align-items: start;
+        padding: 0.75rem;
+      }
+
+      .product-card__body { display: contents; }
+
+      .product-card__img-wrap {
+        grid-area: img;
+        width: 96px;
+        aspect-ratio: 1;
+        border-radius: 6px;
+
+        img { object-fit: cover; object-position: center; }
+      }
+
+      .product-card__badge {
+        top: 0.3rem;
+        left: 0.3rem;
+        font-size: 0.75rem;
+        padding: 0.1rem 0.35rem;
+      }
+
+      .product-card__name {
+        grid-area: name;
+        font-size: 1.3rem;
+        line-height: 1.05;
+        margin: 0.1rem 0 0;
+      }
+
+      .product-card__tagline { display: none; }
+
+      .product-card__variants {
+        grid-area: variants;
+        gap: 0.35rem;
+        margin: 0;
+      }
+
+      .variant-btn {
+        min-width: 48px;
+        padding: 0.2rem 0.7rem;
+        font-size: 0.78rem;
+      }
+
+      .product-card__footer {
+        grid-area: footer;
+        gap: 0.5rem;
+        padding-top: 0.65rem;
+        margin-top: 0.3rem;
+        border-top: 1px solid $border;
+        flex-wrap: nowrap;
+      }
+
+      .product-card__price { font-size: 1.5rem; }
+
+      .product-card__cta {
+        flex: 1 1 auto;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+      }
+
+      .product-card__cta-long { display: none; }
+      .product-card__cta-short { display: inline; }
+
+      .products__more { margin-top: 1.5rem; }
+    }
+
+    @media (max-width: 360px) {
+      .product-card { grid-template-columns: 80px minmax(0, 1fr); column-gap: 0.65rem; }
+      .product-card__img-wrap { width: 80px; }
+      .product-card__name { font-size: 1.15rem; }
+      .product-card__variants { gap: 0.25rem; flex-wrap: nowrap; }
+      .variant-btn { min-width: 44px; padding: 0.2rem 0.45rem; font-size: 0.75rem; }
+      .qty__btn { width: 40px; height: 44px; }
+      .qty__val { min-width: 1.6rem; }
+      .product-card__cta { padding: 0.5rem; }
     }
 
     .products__more {
@@ -723,6 +875,8 @@ export class HomeComponent implements OnInit {
   newsletterConsent = false;
   private newsletterService = inject(NewsletterService);
   readonly selectedVariants = new Map<number, ProductVariant>();
+  readonly quantities = signal<Record<number, number>>({});
+  readonly addingId = signal<number | null>(null);
 
   ngOnInit(): void {
     this.productService.getFeaturedReviews(4, 4).subscribe({
@@ -771,6 +925,23 @@ export class HomeComponent implements OnInit {
     event.preventDefault();
     event.stopPropagation();
     this.selectedVariants.set(product.id, variant);
+    // La cantidad nunca supera el stock del formato elegido
+    if (this.quantity(product) > this.maxQty(variant)) {
+      this.quantities.update(q => ({ ...q, [product.id]: this.maxQty(variant) }));
+    }
+  }
+
+  quantity(product: ProductListItem): number {
+    return this.quantities()[product.id] ?? 1;
+  }
+
+  maxQty(variant: ProductVariant): number {
+    return Math.max(1, variant.stock ?? 1);
+  }
+
+  changeQty(product: ProductListItem, variant: ProductVariant, delta: number): void {
+    const next = Math.min(this.maxQty(variant), Math.max(1, this.quantity(product) + delta));
+    this.quantities.update(q => ({ ...q, [product.id]: next }));
   }
 
   addToCart(product: ProductListItem): void {
@@ -781,9 +952,18 @@ export class HomeComponent implements OnInit {
       return;
     }
 
-    this.cartService.addItem(variant.id, 1).subscribe({
-      next: () => this.miniCartService.open(),
-      error: () => this.toastService.error('No hemos podido añadir el producto. Inténtalo de nuevo.'),
+    if (this.addingId() !== null) return;
+    this.addingId.set(product.id);
+    this.cartService.addItem(variant.id, this.quantity(product)).subscribe({
+      next: () => {
+        this.addingId.set(null);
+        this.quantities.update(q => ({ ...q, [product.id]: 1 }));
+        this.miniCartService.open();
+      },
+      error: (err) => {
+        this.addingId.set(null);
+        this.toastService.error(err?.message || 'No hemos podido añadir el producto. Inténtalo de nuevo.');
+      },
     });
   }
 
