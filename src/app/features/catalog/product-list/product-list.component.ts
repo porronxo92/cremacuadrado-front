@@ -467,7 +467,7 @@ export class ProductListComponent implements OnInit {
   ngOnInit(): void {
     this.seo.set({
       title: 'Tienda: Crema de Pistacho Pura y Crunchy',
-      description: 'Compra online crema de pistacho manchego: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envíos a la península.',
+      description: 'Compra online crema de pistacho manchego: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envíos a península y Baleares.',
       path: '/tienda',
     });
 

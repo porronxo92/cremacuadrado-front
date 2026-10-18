@@ -22,7 +22,7 @@ import { RouterModule } from '@angular/router';
         <h1 class="hero__h1">CREMA DE<br>PISTACHO<br>MANCHEGO</h1>
         <p class="hero__tagline">100% natural · sin aditivos · Ciudad Real</p>
         <div class="hero__ctas">
-          <a routerLink="/tienda" class="hero__btn-primary">Descubrir la crema</a>
+          <a href="/#productos" class="hero__btn-primary" (click)="goToProducts($event)">Comprar ahora</a>
           <a routerLink="/nuestro-metodo" class="hero__btn-secondary">
             Nuestro método
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
@@ -187,6 +187,18 @@ export class HeroBlockComponent implements AfterViewInit {
   @ViewChild('videoEl') videoEl?: ElementRef<HTMLVideoElement>;
 
   private platformId = inject(PLATFORM_ID);
+
+  /** Lleva a la sección de productos de la home sin salir de la página. */
+  goToProducts(event: Event): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const target = document.getElementById('productos');
+    if (!target) return;  // sin la sección: deja que el enlace navegue
+    event.preventDefault();
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    // Foco en el título (tabindex="-1") para teclado y lector de pantalla, sin saltos extra
+    (target.querySelector('h2') as HTMLElement | null)?.focus({ preventScroll: true });
+  }
 
   ngAfterViewInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;

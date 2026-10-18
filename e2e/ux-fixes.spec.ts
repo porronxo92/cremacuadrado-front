@@ -98,12 +98,12 @@ test.describe('2. cabecera móvil', () => {
 
 // ---------------------------------------------------------------- 3. Hero
 test.describe('3. hero', () => {
-  test('CTA «Descubrir la crema» visible sin scroll (móvil y escritorio)', async ({ page }, info) => {
+  test('CTA «Comprar ahora» visible sin scroll (móvil y escritorio)', async ({ page }, info) => {
     await mockApi(page);
     await settle(page, '/');
     const cta = page.locator('.hero__btn-primary');
     await expect(cta).toBeVisible();
-    await expect(cta).toHaveText(/Descubrir la crema/);
+    await expect(cta).toHaveText(/Comprar ahora/);
     await shot(page, info, 'hero', ['mobile-360', 'mobile-390', 'desktop'].includes(info.project.name));
     // En escritorio, además, un portátil de 1280×720
     const viewports = info.project.name === 'desktop' ? [null, { width: 1280, height: 720 }] : [null];
@@ -112,6 +112,31 @@ test.describe('3. hero', () => {
       const box = (await cta.boundingBox())!;
       const ih = await page.evaluate(() => window.innerHeight);
       expect(box.y + box.height, `[${info.project.name}${vp ? ' 1280×720' : ''}] bottom del CTA=${Math.round(box.y + box.height)} debe ser < innerHeight=${ih}`).toBeLessThan(ih);
+    }
+  });
+});
+
+test.describe('3b. hero → productos y trilogía compacta', () => {
+  test('«Comprar ahora» lleva a #productos sin salir de la home', async ({ page }) => {
+    await mockApi(page);
+    await settle(page, '/');
+    await page.locator('.hero__btn-primary').click();
+    const section = page.locator('section#productos');
+    await expect(section.locator('h2')).toBeInViewport({ ratio: 0.9 });
+    await expect(section.locator('h2')).toBeFocused();
+    expect(new URL(page.url()).pathname).toBe('/');
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+  });
+
+  test('la trilogía es una franja baja', async ({ page }, info) => {
+    await mockApi(page);
+    await settle(page, '/');
+    const h = (await page.locator('app-trilogia-block').boundingBox())!.height;
+    const max = info.project.name === 'desktop' ? 220 : 290;
+    expect(h, `[${info.project.name}] altura de la trilogía=${Math.round(h)}px (máx. ${max})`).toBeLessThanOrEqual(max);
+    await expect(page.getByRole('heading', { name: 'La trilogía del sabor' })).toBeVisible();
+    for (const n of ['Tostado', 'Repelado', 'Molino de piedra']) {
+      await expect(page.locator('app-trilogia-block').getByRole('heading', { name: n })).toBeVisible();
     }
   });
 });

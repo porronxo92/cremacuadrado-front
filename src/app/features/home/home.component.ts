@@ -24,10 +24,10 @@ import { environment } from '@env/environment';
     <app-trilogia-block />
 
     <!-- Bloque 2: Los dos productos -->
-    <section class="products">
+    <section class="products" id="productos">
       <div class="container">
         <div class="products__header">
-          <h2 class="products__title">LAS CREMAS</h2>
+          <h2 class="products__title" tabindex="-1">LAS CREMAS</h2>
           <p class="products__sub">Dos cremas de pistacho manchego: Pura y Crunchy.</p>
         </div>
 
@@ -178,14 +178,20 @@ import { environment } from '@env/environment';
 
     // ── Productos ─────────────────────────────────────────
     .products {
-      padding: 5rem 0;
+      padding: 2.5rem 0 5rem;
       background: white;
+      scroll-margin-top: 105px;  // cabecera sticky + barra de anuncio
+
+      @media (max-width: 768px) { padding: 1.75rem 0 4rem; }
     }
 
     .products__header {
       text-align: center;
-      margin-bottom: 3rem;
+      margin-bottom: 1.75rem;
     }
+
+    .products__title:focus { outline: none; }
+    .products__title:focus-visible { outline: revert; }
 
     .products__title {
       font-family: 'Teko', sans-serif;
@@ -725,7 +731,7 @@ export class HomeComponent implements OnInit {
     });
     this.seo.set({
       title: 'Crema de Pistacho Manchego Artesanal',
-      description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Pura, con 100% pistacho, y Crunchy. Envíos a la península.',
+      description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Pura, con 100% pistacho, y Crunchy. Envíos a península y Baleares.',
       path: '/',
     });
     this.seo.setJsonLd('ld-organization', {

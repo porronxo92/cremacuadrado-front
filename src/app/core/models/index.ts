@@ -265,6 +265,7 @@ export interface CheckoutValidation {
   errors: string[];
   subtotal: number;
   shipping_cost: number;
+  shipping_zone?: 'peninsula' | 'baleares' | 'quote';
   shipping_discount?: number | string;
   discount: number;
   tax: number;

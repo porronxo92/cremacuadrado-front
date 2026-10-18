@@ -4,19 +4,19 @@ const STEPS = [
   {
     number: '01',
     name: 'Tostado',
-    phrase: 'El calor activa los aceites naturales del pistacho, concentrando el sabor hasta su punto óptimo.',
+    phrase: 'El calor activa los aceites y concentra el sabor.',
     icon: 'assets/images/tostado.svg',
   },
   {
     number: '02',
     name: 'Repelado',
-    phrase: 'Retiramos la piel para obtener la cremosidad y el color verde intenso sin amargor residual.',
+    phrase: 'Sin piel: más cremosidad y sin amargor.',
     icon: 'assets/images/repelado.svg',
   },
   {
     number: '03',
     name: 'Molino de piedra',
-    phrase: 'La piedra tritura lentamente sin calentar el aceite: la textura perfecta en su estado más puro.',
+    phrase: 'Muele despacio, sin calentar el aceite.',
     icon: 'assets/images/molido.svg',
   },
 ];
@@ -25,32 +25,30 @@ const STEPS = [
   selector: 'app-trilogia-block',
   standalone: true,
   template: `
-    <section class="trilogia">
+    <section class="trilogia" aria-labelledby="trilogia-title">
       <div class="trilogia__container">
         <div class="trilogia__header">
-          <h2 class="trilogia__title">LA TRILOGÍA DEL SABOR</h2>
+          <h2 class="trilogia__title" id="trilogia-title">LA TRILOGÍA DEL SABOR</h2>
           <p class="trilogia__subtitle">Método desarrollado a base de prueba y error</p>
         </div>
-        <div class="trilogia__grid">
+        <ul class="trilogia__grid">
           @for (step of steps; track step.number) {
-            <div class="trilogia__step">
-              <div class="trilogia__step-top">
-                <span class="trilogia__step-num">{{ step.number }}</span>
-                <div class="trilogia__step-icon">
-                  <img [src]="step.icon" [alt]="step.name" width="28" height="28" loading="lazy">
-                </div>
+            <li class="trilogia__step">
+              <span class="trilogia__step-icon">
+                <img [src]="step.icon" alt="" width="24" height="24" loading="lazy">
+              </span>
+              <div class="trilogia__step-text">
+                <h3 class="trilogia__step-name">{{ step.name }}</h3>
+                <p class="trilogia__step-phrase">{{ step.phrase }}</p>
               </div>
-              <h3 class="trilogia__step-name">{{ step.name }}</h3>
-              <p class="trilogia__step-phrase">{{ step.phrase }}</p>
-            </div>
+            </li>
           }
-        </div>
+        </ul>
       </div>
     </section>
   `,
   styles: [`
     $brand:  #7B1716;
-    $accent: #E6C15A;
     $bg:     #F4F1E9;
     $ink:    #1C1A14;
     $muted:  #6B6456;
@@ -60,96 +58,85 @@ const STEPS = [
 
     .trilogia {
       background: $bg;
-      padding: 4rem 0 5rem;
+      padding: 1.5rem 0 1.75rem;
+
+      @media (max-width: 768px) { padding: 1rem 0 1.25rem; }
     }
 
     .trilogia__container {
       max-width: 1100px;
       margin: 0 auto;
       padding: 0 1.5rem;
+
+      @media (max-width: 768px) { padding: 0 0.75rem; }
     }
 
     .trilogia__header {
       text-align: center;
-      margin-bottom: 3.5rem;
+      margin-bottom: 1rem;
+
+      @media (max-width: 768px) { margin-bottom: 0.75rem; }
     }
 
     .trilogia__title {
       font-family: 'Teko', sans-serif;
       font-weight: 700;
-      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-size: clamp(1.5rem, 3vw, 1.9rem);
+      line-height: 1.1;
       text-transform: uppercase;
       letter-spacing: -0.02em;
       color: $brand;
-      margin: 0 0 0.5rem;
+      margin: 0 0 0.15rem;
     }
 
     .trilogia__subtitle {
       font-family: 'Lora', serif;
       font-style: italic;
-      font-size: 1rem;
+      font-size: 0.875rem;
       color: $muted;
       margin: 0;
-      line-height: 1.6;
+      line-height: 1.4;
     }
 
     .trilogia__grid {
+      list-style: none;
+      margin: 0;
+      padding: 0;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 2rem;
-
-      @media (max-width: 768px) {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
-        max-width: 480px;
-        margin: 0 auto;
-      }
+      gap: 1rem;
     }
 
     .trilogia__step {
       display: flex;
-      flex-direction: column;
-      gap: 0.85rem;
-      padding: 1.75rem 1.5rem;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0.9rem;
       border: 1px solid $border;
       border-radius: 6px;
       background: white;
-      transition: box-shadow 200ms;
 
-      &:hover {
-        box-shadow: 0 8px 24px rgba($ink, 0.06);
+      @media (max-width: 768px) {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.35rem;
+        padding: 0.6rem 0.4rem;
       }
     }
 
-    .trilogia__step-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .trilogia__step-num {
-      font-family: 'Teko', sans-serif;
-      font-weight: 700;
-      font-size: 2.4rem;
-      line-height: 1;
-      color: $accent;
-      letter-spacing: -0.02em;
-    }
-
     .trilogia__step-icon {
-      width: 52px;
-      height: 52px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: rgba($brand, 0.06);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: $brand;
       flex-shrink: 0;
 
       img {
-        width: 28px;
-        height: 28px;
+        width: 22px;
+        height: 22px;
         object-fit: contain;
       }
     }
@@ -157,7 +144,8 @@ const STEPS = [
     .trilogia__step-name {
       font-family: 'Teko', sans-serif;
       font-weight: 700;
-      font-size: 1.4rem;
+      font-size: 1.15rem;
+      line-height: 1.1;
       text-transform: uppercase;
       letter-spacing: -0.01em;
       color: $ink;
@@ -166,10 +154,12 @@ const STEPS = [
 
     .trilogia__step-phrase {
       font-family: 'Lora', serif;
-      font-size: 0.88rem;
+      font-size: 0.8125rem;
       color: $muted;
-      line-height: 1.65;
-      margin: 0;
+      line-height: 1.4;
+      margin: 0.1rem 0 0;
+
+      @media (max-width: 768px) { font-size: 0.75rem; }
     }
   `]
 })

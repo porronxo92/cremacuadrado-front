@@ -2,6 +2,7 @@ import { Component, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-shipping-page',
@@ -128,14 +129,20 @@ import { SeoService } from '../../../core/services/seo.service';
                     </thead>
                     <tbody>
                       <tr><td>Península</td><td>4,95 € · gratis desde 48 €</td><td>48–72 h</td></tr>
-                      <tr><td>Islas Baleares</td><td>De momento no enviamos</td><td>—</td></tr>
-                      <tr><td>Canarias / Ceuta / Melilla</td><td>De momento no enviamos</td><td>—</td></tr>
+                      <tr><td>Islas Baleares</td><td>7,95 € · sin envío gratis por importe</td><td>Algo más que la península</td></tr>
+                      <tr><td>Canarias / Ceuta / Melilla</td><td>Presupuesto por WhatsApp</td><td>—</td></tr>
                     </tbody>
                   </table>
                 </div>
                 <div class="callout">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                  <p>Para envíos internacionales escríbenos a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a>.</p>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <p>El cupón de envío gratis también anula el envío a Baleares.</p>
+                </div>
+                <div class="callout">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <p>Canarias, Ceuta y Melilla tienen trámites de aduana, así que no cobramos esos envíos desde la web: calculamos el envío a medida.
+                    <a [href]="whatsappUrl" target="_blank" rel="noopener">Pide presupuesto por WhatsApp<span class="sr-only"> (se abre en WhatsApp)</span></a>.
+                    Para envíos internacionales escríbenos a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a>.</p>
                 </div>
               </section>
 
@@ -808,6 +815,7 @@ import { SeoService } from '../../../core/services/seo.service';
 export class ShippingPageComponent {
   private seo = inject(SeoService);
   tocOpen = signal(false);
+  readonly whatsappUrl = `https://wa.me/${environment.whatsappPhoneNumber}?text=${encodeURIComponent('Hola, quiero pedir presupuesto de envío a Canarias, Ceuta o Melilla.')}`;
 
   constructor() {
     this.seo.set({

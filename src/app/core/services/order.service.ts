@@ -34,13 +34,17 @@ export class OrderService {
   /**
    * Get shipping cost calculation
    */
-  getShippingCost(): Observable<{
-    cost: number;
+  getShippingCost(postalCode?: string): Observable<{
+    /** Decimal: puede llegar como texto. */
+    cost: number | string;
+    shipping_zone?: 'peninsula' | 'baleares' | 'quote';
     free_shipping_threshold: number;
     amount_for_free_shipping: number | null;
     message: string | null;
   }> {
-    return this.http.get<any>(`${this.checkoutUrl}/shipping-cost`, { headers: this.getCartSessionHeader() });
+    const params: Record<string, string> = {};
+    if (postalCode) params['postal_code'] = postalCode;
+    return this.http.get<any>(`${this.checkoutUrl}/shipping-cost`, { headers: this.getCartSessionHeader(), params });
   }
 
   /**

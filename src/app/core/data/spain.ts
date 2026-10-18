@@ -26,8 +26,11 @@ export const PROVINCES: Province[] = RAW
   .map(([code, name]) => ({ code, name, peninsular: !NON_PENINSULAR.has(code) }))
   .sort((a, b) => collator.compare(a.name, b.name));
 
-/** Provincias a las que se envía (las condiciones de venta limitan los envíos a la península). */
-export const SHIPPING_PROVINCES = PROVINCES.filter(p => p.peninsular);
+/**
+ * Provincias del selector de envío: todas, también Baleares (tarifa propia) y
+ * Canarias, Ceuta y Melilla (presupuesto por WhatsApp), para poder explicar cada caso.
+ */
+export const SHIPPING_PROVINCES = PROVINCES;
 
 export function provinceCode(name: string | null | undefined): string | null {
   const n = (name ?? '').trim().toLowerCase();

@@ -1,4 +1,5 @@
-import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -9,19 +10,14 @@ import { StripeService } from '../../core/services/stripe.service';
 import { UserService } from '../../core/services/user.service';
 import { Address, BillingDetails } from '../../core/models';
 import { normalizeTaxId, taxIdValidator } from '../../core/utils/tax-id';
-import { EXCLUDED_POSTCODE_PREFIXES, TERMS_VERSION } from '../../core/legal';
+import { BALEARES_SHIPPING_COST, TERMS_VERSION, shippingZone, ShippingZone } from '../../core/legal';
 import {
-  PROVINCES, SHIPPING_PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPostcode,
+  PROVINCES, SHIPPING_PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceCode, provinceFromPostcode,
 } from '../../core/data/spain';
 import { PhoneInputComponent } from '../../shared/components/phone-input/phone-input.component';
-import { AbstractControl, ValidationErrors } from '@angular/forms';
-
-/** Shipping scope from the sales conditions: peninsular Spain only. */
-function peninsulaPostcode(control: AbstractControl): ValidationErrors | null {
-  const value = String(control.value || '').trim();
-  return value.length >= 2 && EXCLUDED_POSTCODE_PREFIXES.includes(value.slice(0, 2)) ? { outOfArea: true } : null;
-}
-import { firstValueFrom } from 'rxjs';
+import { environment } from '@env/environment';
+import { Subject, firstValueFrom, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-checkout',
@@ -231,7 +227,7 @@ import { firstValueFrom } from 'rxjs';
                       <div class="form-group">
                         <label for="country">País *</label>
                         <select id="country" formControlName="country" autocomplete="shipping country">
-                          <option value="ES">España (península)</option>
+                          <option value="ES">España</option>
                         </select>
                       </div>
                     </div>
@@ -248,6 +244,27 @@ import { firstValueFrom } from 'rxjs';
                       Guardar esta dirección para futuros pedidos
                     </label>
                   }
+                }
+
+                <!-- Aviso de zona de envío (Baleares: informativo; Canarias/Ceuta/Melilla: bloqueo explicado) -->
+                <div class="zone-notice" role="status">
+                  @if (zone() === 'baleares') {
+                    <p class="zone-info">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                      <span>Envío a Islas Baleares: 7,95 €. El envío gratis desde 48 € es solo para la península.</span>
+                    </p>
+                  }
+                </div>
+
+                @if (zone() === 'quote') {
+                  <section class="quote-panel" id="quote-panel" tabindex="-1" aria-labelledby="quote-panel-title">
+                    <h3 id="quote-panel-title">Envíos a Canarias, Ceuta y Melilla</h3>
+                    <p>Hay trámites de aduana y calculamos el envío a medida. Escríbenos por WhatsApp con tu pedido y te pasamos el presupuesto.</p>
+                    <a class="btn btn--primary" [href]="quoteWhatsappUrl()" target="_blank" rel="noopener">
+                      Pedir presupuesto por WhatsApp
+                      <span class="sr-only">(se abre en WhatsApp)</span>
+                    </a>
+                  </section>
                 }
 
                 <label class="check-option invoice-toggle">
@@ -403,10 +420,14 @@ import { firstValueFrom } from 'rxjs';
               <div class="summary-row">
                 <span>Envío</span>
                 <span class="ship-value">
-                  @if (shippingDiscount > 0) {
-                    <s class="ship-old"><span class="sr-only">antes </span>{{ shippingDiscount | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
+                  @if (zone() === 'quote') {
+                    A presupuestar
+                  } @else if (shippingDiscount > 0) {
+                    <s class="ship-old"><span class="sr-only">antes </span>{{ (zone() === 'baleares' ? balearesCost : shippingDiscount) | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
                     <strong class="ship-free">Gratis</strong>
                     <small class="ship-note">Cupón {{ cartService.cart()?.coupon?.code }}</small>
+                  } @else if (zone() === 'baleares') {
+                    @if (balearesShipping() !== null) { {{ balearesShipping() | currency:'EUR':'symbol':'1.2-2':'es' }} } @else { Calculando… }
                   } @else if (shippingCost === 0) { Gratis } @else { {{ shippingCost | currency:'EUR':'symbol':'1.2-2':'es' }} }
                 </span>
               </div>
@@ -424,8 +445,11 @@ import { firstValueFrom } from 'rxjs';
 
               <div class="summary-row summary-row--total">
                 <span>Total <small class="vat-note">(IVA incluido)</small></span>
-                <span>{{ cartService.cart()?.total | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                <span>{{ displayTotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
+              @if (zone() === 'quote') {
+                <p class="total-note">Total sin envío: lo presupuestamos por WhatsApp.</p>
+              }
 
               <label class="terms-check" [class.has-error]="termsError()">
                 <input type="checkbox" id="acceptTerms" [checked]="acceptTerms()"
@@ -466,7 +490,7 @@ import { firstValueFrom } from 'rxjs';
               }
 
               <p class="terms-notice">
-                Envío a España peninsular en 48–72 h. Trataremos tus datos para gestionar el pedido
+                Envío a la península en 48–72 h; a Baleares, algo más. Trataremos tus datos para gestionar el pedido
                 (ejecución del contrato). Más información en la <a routerLink="/privacidad" target="_blank">política de privacidad</a>.
               </p>
             </div>
@@ -611,6 +635,43 @@ import { firstValueFrom } from 'rxjs';
       color: #5C4300;
       svg { flex-shrink: 0; margin-top: 2px; }
     }
+
+    .zone-info {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      margin: 1rem 0 0;
+      padding: 0.75rem 1rem;
+      border-radius: 2px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      background: var(--color-bg-alt);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+      svg { flex-shrink: 0; margin-top: 3px; color: var(--color-brand); }
+    }
+
+    .quote-panel {
+      margin: 1rem 0 0;
+      padding: 1.25rem;
+      border: 2px solid var(--color-brand);
+      border-radius: 2px;
+      background: var(--color-bg-alt);
+      scroll-margin-top: 100px;
+
+      h3 {
+        margin: 0 0 0.5rem;
+        font-family: var(--font-ui);
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--color-brand);
+      }
+      p { margin: 0 0 1rem; font-size: 0.95rem; line-height: 1.5; color: var(--color-text); }
+      .btn { width: 100%; }
+      @media (min-width: 600px) { .btn { width: auto; } }
+    }
+
+    .total-note { margin: -0.25rem 0 0.5rem; font-size: 0.8rem; color: var(--color-text-light); text-align: right; }
 
     .existing-account {
       margin: 0.5rem 0 0;
@@ -1025,6 +1086,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
   private stripeService = inject(StripeService);
   private userService = inject(UserService);
   private document = inject(DOCUMENT);
+  private destroyRef = inject(DestroyRef);
 
   cartService = inject(CartService);
   authService = inject(AuthService);
@@ -1073,7 +1135,6 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   postalCodeError(): string | null {
     const c = this.shippingForm.get('postalCode')!;
-    if (c.hasError('outOfArea')) return 'De momento solo enviamos a la península. Escríbenos a info@cremacuadrado.com';
     if (c.hasError('provinceMismatch')) return 'El código postal no corresponde a la provincia seleccionada';
     if (!c.touched) return null;
     if (c.hasError('required')) return 'Escribe el código postal';
@@ -1106,11 +1167,13 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       const cp = s['postalCode'];
       add(cp.invalid, 'postalCode',
         cp.hasError('required') ? 'Falta el código postal'
-          : cp.hasError('outOfArea') ? 'Solo enviamos a la península'
           : cp.hasError('provinceMismatch') ? 'El código postal no corresponde a la provincia'
           : 'El código postal no es válido');
       add(s['state'].invalid, 'state', 'Falta la provincia');
     }
+    // Canarias, Ceuta y Melilla: no se cobra en la web; el enlace lleva al panel con el presupuesto por WhatsApp.
+    add(this.zone() === 'quote', 'quote-panel',
+      'No podemos cobrar envíos a Canarias, Ceuta ni Melilla desde la web: pide presupuesto por WhatsApp');
 
     if (this.needsInvoice()) {
       const b = this.billingForm.controls;
@@ -1170,6 +1233,49 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     return Number(this.cartService.cart()?.shipping_discount ?? 0) || 0;
   }
 
+  /** Zona de envío según el CP escrito (o la provincia, si el CP aún está incompleto). */
+  zone = computed<ShippingZone>(() => {
+    const cp = this.postalCodeValue().trim();
+    if (/^\d{5}$/.test(cp)) return shippingZone(cp);
+    const code = provinceCode(this.stateValue());
+    return code ? shippingZone(code) : 'peninsula';
+  });
+
+  /** Envío a Baleares según el backend (null mientras se consulta). */
+  balearesShipping = signal<number | null>(null);
+  readonly balearesCost = BALEARES_SHIPPING_COST;
+  private postalCodeValue = signal('');
+  private stateValue = signal('');
+  private shippingQuery$ = new Subject<string | null>();
+
+  /** Total del resumen: el del carrito con el envío de la zona (importes que calcula el backend). */
+  get displayTotal(): number {
+    const cart = this.cartService.cart();
+    const total = Number(cart?.total ?? 0) || 0;
+    const zone = this.zone();
+    if (zone === 'peninsula') return total;
+    const withoutShipping = total - (Number(cart?.shipping_cost ?? 0) || 0);
+    if (zone === 'quote') return Math.round(withoutShipping * 100) / 100;
+    if (this.shippingDiscount > 0 || this.balearesShipping() === null) return total;
+    return Math.round((withoutShipping + this.balearesShipping()!) * 100) / 100;
+  }
+
+  /** Mensaje prellenado para pedir presupuesto de envío por WhatsApp. */
+  quoteWhatsappUrl(): string {
+    const cp = this.postalCodeValue().trim();
+    const province = this.stateValue() || provinceFromPostcode(cp) || '';
+    const lines = (this.cartService.cart()?.items ?? []).map(i =>
+      `- ${i.quantity} × ${i.product_name}${i.variant_format ? ' ' + i.variant_format : ''}`);
+    const text = [
+      'Hola, quiero pedir presupuesto de envío para este pedido.',
+      `Provincia: ${province || 'sin indicar'}`,
+      `Código postal: ${cp || 'sin indicar'}`,
+      'Pedido:',
+      ...lines,
+    ].join('\n');
+    return `https://wa.me/${environment.whatsappPhoneNumber}?text=${encodeURIComponent(text)}`;
+  }
+
   get shippingCost(): number {
     // Use the shipping cost already calculated by the backend (accounts for discount)
     return this.cartService.cart()?.shipping_cost ?? 4.95;
@@ -1177,6 +1283,15 @@ export class CheckoutComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initForms();
+
+    // Envío a Baleares: lo calcula el backend (GET /checkout/shipping-cost?postal_code=…).
+    this.shippingQuery$.pipe(
+      switchMap(cp => cp === null ? of(null) : this.orderService.getShippingCost(cp).pipe(
+        map(r => Number(r.cost)),
+        catchError(() => of(this.balearesCost)),
+      )),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe(cost => this.balearesShipping.set(cost));
 
     if (this.authService.isAuthenticated()) {
       const user = this.authService.currentUser();
@@ -1231,7 +1346,7 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     this.shippingForm = this.fb.group({
       address: ['', Validators.required],
       city: ['', Validators.required],
-      postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/), peninsulaPostcode]],
+      postalCode: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
       state: ['', Validators.required],
       country: ['ES', Validators.required],
       notes: [''],
@@ -1242,10 +1357,26 @@ export class CheckoutComponent implements OnInit, OnDestroy {
       const state = this.shippingForm.get('state')!;
       const suggested = provinceFromPostcode(cp);
       if (suggested && !state.value && /^\d{5}$/.test(String(cp))) state.setValue(suggested);
+      this.postalCodeValue.set(String(cp ?? ''));
+      this.refreshZone();
+    });
+    this.shippingForm.get('state')!.valueChanges.subscribe(state => {
+      this.stateValue.set(String(state ?? ''));
+      this.refreshZone();
     });
   }
 
+  /** Al entrar en Baleares con CP completo, pide el envío real al backend. */
+  private refreshZone(): void {
+    const cp = this.postalCodeValue().trim();
+    const query = this.zone() === 'baleares' && /^\d{5}$/.test(cp) ? cp : null;
+    if (query === null) this.balearesShipping.set(null);
+    this.shippingQuery$.next(query);
+    this.refreshErrorSummary();
+  }
+
   isFormValid(): boolean {
+    if (this.zone() === 'quote') return false;
     if (this.selectedAddressId() !== 'new') {
       return this.contactForm.valid;
     }
@@ -1466,6 +1597,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
           this.orderService.preConfirm(this.orderNumber, this.paymentIntentId, TERMS_VERSION, this.buildBilling(),
             this.buildCheckoutData().shipping_address, this.buildCheckoutData().guest_email),
         );
+        // pre-confirm recalcula el importe si la dirección cambió de zona (península ↔ Baleares)
+        await this.stripeService.refreshAmount();
       } catch (err: any) {
         this.error.set(err?.message || 'No se pudo preparar el pago. Inténtalo de nuevo.');
         this.processing.set(false);

@@ -38,9 +38,12 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
         <p>Los precios se muestran en euros e <strong>incluyen el IVA</strong>. Antes de pagar verás desglosado el
           precio de los productos, los gastos de envío y el importe total.</p>
         <ul>
-          <li>Envío a España peninsular: 4,95 €. <strong>Gratis</strong> para pedidos de 48 € o más (tras descuentos).</li>
-          <li>De momento no enviamos a Baleares, Canarias, Ceuta, Melilla ni al extranjero. Para estos destinos
-            escríbenos a <a href="mailto:{{ company.email }}">{{ company.email }}</a>.</li>
+          <li>Envío a la península: 4,95 €. <strong>Gratis</strong> para pedidos de 48 € o más (tras descuentos).</li>
+          <li>Envío a Islas Baleares: 7,95 €, sin envío gratis por importe. Un cupón de envío gratis sí anula este coste.</li>
+          <li>Canarias, Ceuta y Melilla: no se pueden pagar desde la web, porque hay trámites de aduana y calculamos
+            el envío a medida. Pide presupuesto por WhatsApp o escríbenos a
+            <a href="mailto:{{ company.email }}">{{ company.email }}</a>.</li>
+          <li>De momento no enviamos al extranjero.</li>
         </ul>
         <p>Cuando anunciemos una rebaja indicaremos el precio más bajo aplicado en los 30 días anteriores.</p>
       </section>
