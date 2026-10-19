@@ -434,52 +434,47 @@ const SWIPE_PX = 40;
       to { transform: scaleX(1); }
     }
 
-    // ── Escritorio: foto a la izquierda, cabecera y lista completa a la derecha ──
+    // ── Escritorio: foto 4:3 a la izquierda, cabecera y lista completa a la derecha ──
     @container (min-width: 880px) {
-      .trilogia { padding-block: var(--spacing-3xl); }
-
       .trilogia__container {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        max-width: 1080px;
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
         grid-template-areas: 'stage head' 'stage side';
-        column-gap: 80px;
-        row-gap: 36px;
+        column-gap: 56px;
+        row-gap: 20px;
         align-items: start;
       }
 
-      .trilogia__header {
-        align-self: end;
-        gap: 14px;
-      }
+      .trilogia__header { align-self: end; }
 
       .trilogia__eyebrow { font-size: 13px; }
 
-      .trilogia__title {
-        font-size: 84px;
-        line-height: 0.86;
-        white-space: normal;
-        text-wrap: balance;
-      }
+      .trilogia__title { font-size: min(56px, 5.4cqi); }   // en una línea también a 880 px
 
-      .trilogia__subtitle {
-        font-size: 19px;
-        line-height: 1.5;
-        max-width: 34ch;
+      .trilogia__subtitle { font-size: 17px; }
+
+      // La foto ocupa el alto de la columna derecha (cabecera + lista), sin hueco debajo
+      .trilogia__stage {
+        aspect-ratio: auto;
+        align-self: stretch;
+        min-height: 320px;
       }
 
       .trilogia__scrim { display: block; }
 
       .trilogia__now {
-        left: 24px;
-        right: 24px;
-        bottom: 24px;
-        gap: 20px;
+        left: 16px;
+        right: 16px;
+        bottom: 16px;
+        gap: 14px;
       }
 
       .trilogia__badge {
-        width: 112px;
-        height: 112px;
-        box-shadow: 0 10px 30px rgba(38, 18, 12, 0.25);
+        width: 76px;
+        height: 76px;
       }
+
+      .trilogia__now-name { font-size: 32px; }
 
       .trilogia__now-text {
         position: static;
@@ -502,10 +497,10 @@ const SWIPE_PX = 40;
       .trilogia__step {
         grid-area: auto;
         display: grid;
-        grid-template-columns: 64px minmax(0, 1fr);
-        column-gap: 18px;
-        align-items: start;
-        padding: 20px 0 22px;
+        grid-template-columns: 48px minmax(0, 1fr);
+        column-gap: 14px;
+        align-items: center;
+        padding: 12px 0 14px;
         opacity: 0.62;
         transition: opacity var(--transition-slow);
 
@@ -517,16 +512,16 @@ const SWIPE_PX = 40;
       .trilogia__step-icon {
         display: grid;
         place-items: center;
-        width: 64px;
-        height: 64px;
+        width: 48px;
+        height: 48px;
         border-radius: 50%;
         box-sizing: border-box;
         border: 1.5px solid $ring;
         transition: background var(--transition-slow), border-color var(--transition-slow);
 
         img {
-          width: 40px;
-          height: 40px;
+          width: 30px;
+          height: 30px;
           object-fit: contain;
         }
 
@@ -543,7 +538,7 @@ const SWIPE_PX = 40;
       }
 
       .trilogia__step-btn {
-        font-size: 25px;
+        font-size: 21px;
         pointer-events: auto;
 
         &::after {
@@ -553,11 +548,12 @@ const SWIPE_PX = 40;
         }
       }
 
-      .trilogia__step-phrase { font-size: 16px; }
+      .trilogia__step-text { gap: 2px; }
+      .trilogia__step-phrase { font-size: 15px; }
 
       .trilogia__bar {
         bottom: 0;
-        left: 82px;
+        left: 62px;
         right: 0;
         width: auto;
         height: 2px;
