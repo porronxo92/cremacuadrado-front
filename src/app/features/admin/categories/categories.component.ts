@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -21,7 +21,7 @@ type Tab = 'products' | 'blog';
 
 @Component({
     selector: 'app-admin-categories',
-    imports: [CommonModule, FormsModule, ImageUploaderComponent],
+    imports: [FormsModule, ImageUploaderComponent],
     template: `
     <div class="admin-categories">
       <div class="page-header">

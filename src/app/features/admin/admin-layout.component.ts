@@ -1,6 +1,6 @@
 import { Component, HostListener, ViewEncapsulation, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { AdminConfirmHostComponent } from './shared/admin-ui.components';
 
@@ -28,7 +28,7 @@ const ICONS: Record<string, string> = {
 
 @Component({
     selector: 'app-admin-layout',
-    imports: [CommonModule, RouterModule, AdminConfirmHostComponent],
+    imports: [RouterModule, AdminConfirmHostComponent],
     encapsulation: ViewEncapsulation.None,
     styleUrls: ['./shared/admin-shell.scss', './shared/admin-shell-data.scss', './admin-layout.component.scss'],
     template: `

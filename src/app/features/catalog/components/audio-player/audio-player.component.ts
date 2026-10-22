@@ -1,9 +1,9 @@
 import { Component, Input, OnDestroy, ViewChild, ElementRef, signal, computed, PLATFORM_ID, inject } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
     selector: 'app-audio-player',
-    imports: [CommonModule],
+    imports: [],
     template: `
     <div class="audio-player" [class.is-playing]="isPlaying()">
       <audio #audioEl [src]="src" (timeupdate)="onTimeUpdate()" (loadedmetadata)="onMetadata()" (ended)="onEnded()"></audio>

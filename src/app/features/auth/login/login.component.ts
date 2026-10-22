@@ -1,5 +1,5 @@
 import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
@@ -10,7 +10,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
 
 @Component({
     selector: 'app-login',
-    imports: [CommonModule, RouterModule, ReactiveFormsModule],
+    imports: [RouterModule, ReactiveFormsModule],
     template: `
     <div class="auth-page">
       <div class="auth-card">

@@ -3,7 +3,7 @@ import {
   computed, inject, input, output, signal,
   DOCUMENT
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { BadgeTone } from './admin-labels';
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -23,7 +23,7 @@ export class AdminBadgeComponent {
 // ═════════════════════════════════════════════════════════════════════════
 @Component({
     selector: 'adm-pagination',
-    imports: [CommonModule],
+    imports: [],
     template: `
     @if (total() > 0) {
       <nav class="adm-pagination" aria-label="Paginación">
@@ -220,7 +220,7 @@ export class AdminConfirmHostComponent {
 // ═════════════════════════════════════════════════════════════════════════
 @Component({
     selector: 'adm-stat',
-    imports: [CommonModule],
+    imports: [DecimalPipe],
     template: `
     <span class="adm-stat__label">{{ label }}</span>
     <strong class="adm-stat__value">{{ value }}</strong>

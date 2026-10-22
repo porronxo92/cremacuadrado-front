@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -37,7 +37,7 @@ function slugify(text: string): string {
 
 @Component({
     selector: 'app-admin-blog-editor',
-    imports: [CommonModule, RouterModule, ReactiveFormsModule, MarkdownEditorComponent, ImageUploaderComponent],
+    imports: [RouterModule, ReactiveFormsModule, MarkdownEditorComponent, ImageUploaderComponent],
     template: `
     <div class="blog-editor">
       <div class="page-header">

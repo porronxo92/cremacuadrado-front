@@ -1,12 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
     selector: 'app-forgot-password',
-    imports: [CommonModule, RouterModule, ReactiveFormsModule],
+    imports: [RouterModule, ReactiveFormsModule],
     template: `
     <div class="auth-page">
       <div class="auth-card">

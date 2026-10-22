@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -10,7 +10,7 @@ import { PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPost
 
 @Component({
     selector: 'app-account-addresses',
-    imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
+    imports: [ReactiveFormsModule, PhoneInputComponent],
     template: `
     <div class="addresses-page">
       <div class="page-header">

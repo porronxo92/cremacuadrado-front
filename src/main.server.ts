@@ -1,3 +1,4 @@
+import { provideZoneChangeDetection } from "@angular/core";
 import { BootstrapContext, bootstrapApplication } from '@angular/platform-browser';
 import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
@@ -11,6 +12,6 @@ import { config } from './app/app.config.server';
 registerLocaleData(localeEs);
 
 const bootstrap = (context: BootstrapContext) =>
-    bootstrapApplication(AppComponent, config, context);
+    bootstrapApplication(AppComponent, {...config, providers: [provideZoneChangeDetection(), ...config.providers]}, context);
 
 export default bootstrap;

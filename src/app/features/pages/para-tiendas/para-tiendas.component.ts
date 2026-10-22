@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollapsibleBlockComponent } from '../../../shared/components/collapsible-block/collapsible-block.component';
 import { ParaTiendasService } from '../../../core/services/para-tiendas.service';
@@ -10,7 +10,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 @Component({
     selector: 'app-para-tiendas',
-    imports: [CommonModule, ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
+    imports: [ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
     template: `
     <div class="pt-page">
 

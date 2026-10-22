@@ -1,5 +1,5 @@
 import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
@@ -10,7 +10,7 @@ import { ToastService } from '../../../core/services/toast.service';
  */
 @Component({
     selector: 'app-image-uploader',
-    imports: [CommonModule],
+    imports: [],
     template: `
     <div
       class="uploader"

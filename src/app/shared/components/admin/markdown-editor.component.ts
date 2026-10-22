@@ -1,5 +1,5 @@
 import { Component, ElementRef, forwardRef, inject, Input, signal, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -15,7 +15,7 @@ import { ToastService } from '../../../core/services/toast.service';
  */
 @Component({
     selector: 'app-markdown-editor',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,

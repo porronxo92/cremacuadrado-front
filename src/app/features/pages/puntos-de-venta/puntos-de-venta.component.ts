@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
@@ -11,7 +11,7 @@ import { StoresMapComponent } from './stores-map.component';
 
 @Component({
     selector: 'app-puntos-de-venta',
-    imports: [CommonModule, RouterModule, FormsModule, StoresMapComponent],
+    imports: [RouterModule, FormsModule, StoresMapComponent],
     template: `
     <div class="pdv-page">
 

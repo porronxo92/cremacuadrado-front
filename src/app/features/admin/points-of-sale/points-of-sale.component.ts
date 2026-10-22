@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -22,7 +22,7 @@ interface PointOfSale {
 
 @Component({
     selector: 'app-admin-points-of-sale',
-    imports: [CommonModule, FormsModule],
+    imports: [FormsModule],
     template: `
     <div class="admin-pos">
       <div class="page-header">

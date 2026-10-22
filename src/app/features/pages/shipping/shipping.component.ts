@@ -1,12 +1,12 @@
 import { Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-shipping-page',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <div class="page">
       <!-- Breadcrumb -->

@@ -1,5 +1,5 @@
 ﻿import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -9,7 +9,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
 
 @Component({
     selector: 'app-header',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <header class="header">
       <div class="container">

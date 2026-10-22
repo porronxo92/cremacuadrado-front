@@ -1,10 +1,10 @@
 import { Component, Input, AfterViewInit, ViewChild, ElementRef, PLATFORM_ID, inject } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-hero-block',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <section class="hero">
       <video

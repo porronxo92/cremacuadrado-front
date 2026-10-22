@@ -243,7 +243,9 @@ export function app(): express.Express {
             ([key, value]) => typeof value === 'string' && !['host', 'content-length', 'connection'].includes(key)
           ) as [string, string][]
         ),
-        body: ['GET', 'HEAD'].includes(req.method) ? undefined : (req.body as Buffer),
+        // Buffer is a valid fetch body at runtime; TS 5.9's lib no longer
+        // types Buffer<ArrayBufferLike> as BodyInit (it may be shared memory).
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : (req.body as Buffer as unknown as BodyInit),
       });
       res.status(upstream.status);
       upstream.headers.forEach((value, key) => {

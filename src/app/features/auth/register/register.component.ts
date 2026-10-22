@@ -1,5 +1,5 @@
 import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
@@ -13,7 +13,7 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
 
 @Component({
     selector: 'app-register',
-    imports: [CommonModule, RouterModule, ReactiveFormsModule, PrivacyNoticeComponent, PhoneInputComponent],
+    imports: [RouterModule, ReactiveFormsModule, PrivacyNoticeComponent, PhoneInputComponent],
     template: `
     <div class="auth-page">
       <div class="auth-card">

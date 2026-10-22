@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, ElementRef, ViewChildren, QueryList, AfterViewInit, inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../core/services/seo.service';
 
@@ -12,7 +12,7 @@ interface TimelineEvent {
 
 @Component({
     selector: 'app-about',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <div class="about-page">
       <!-- Hero Banner -->

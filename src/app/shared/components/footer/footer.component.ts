@@ -1,11 +1,11 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 
 @Component({
     selector: 'app-footer',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <footer class="footer">
       <div class="container">

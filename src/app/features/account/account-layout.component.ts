@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 
 @Component({
     selector: 'app-account-layout',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <div class="account-layout">
       <div class="container">

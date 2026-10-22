@@ -1,5 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ContactService } from '../../core/services/contact.service';
@@ -15,7 +15,7 @@ import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/p
 
 @Component({
     selector: 'app-contact',
-    imports: [CommonModule, RouterModule, FormsModule, PrivacyNoticeComponent],
+    imports: [RouterModule, FormsModule, PrivacyNoticeComponent],
     template: `
     <div class="contact-page">
 

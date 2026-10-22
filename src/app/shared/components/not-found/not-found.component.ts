@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { Meta } from '@angular/platform-browser';
 import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 
 @Component({
     selector: 'app-not-found',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <div class="not-found">
       <div class="not-found__content">

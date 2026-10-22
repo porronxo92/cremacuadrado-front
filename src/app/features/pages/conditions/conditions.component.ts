@@ -1,11 +1,11 @@
 import { Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
     selector: 'app-conditions-page',
-    imports: [CommonModule, RouterModule],
+    imports: [RouterModule],
     template: `
     <div class="page">
       <nav class="breadcrumb"><div class="container"><a routerLink="/">Inicio</a><span class="breadcrumb__sep">/</span><span>Aviso Legal</span></div></nav>

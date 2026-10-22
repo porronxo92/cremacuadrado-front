@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
@@ -11,7 +11,7 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
 
 @Component({
     selector: 'app-account-profile',
-    imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
+    imports: [ReactiveFormsModule, PhoneInputComponent],
     template: `
     <div class="profile-page">
       <h1>Mi perfil</h1>
