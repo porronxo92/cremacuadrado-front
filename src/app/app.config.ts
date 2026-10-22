@@ -1,6 +1,6 @@
 import { ApplicationConfig, provideZoneChangeDetection, LOCALE_ID } from '@angular/core';
-import { provideRouter, withViewTransitions, withInMemoryScrolling, withPreloading } from '@angular/router';
-import { provideHttpClient, withInterceptors, withFetch } from '@angular/common/http';
+import { provideRouter, withViewTransitions, withInMemoryScrolling, withPreloading, withRouterConfig } from '@angular/router';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideClientHydration, withHttpTransferCacheOptions, withNoIncrementalHydration } from '@angular/platform-browser';
 
 import { routes } from './app.routes';
@@ -17,12 +17,11 @@ export const appConfig: ApplicationConfig = {
       routes,
       withPreloading(SelectivePreloadingStrategy),
       withViewTransitions(),
+      // v22 cambió el valor por defecto a 'always'; se mantiene el de la v21.
+      withRouterConfig({ paramsInheritanceStrategy: 'emptyOnly' }),
       withInMemoryScrolling({ anchorScrolling: 'enabled', scrollPositionRestoration: 'top' })
     ),
     provideHttpClient(
-      // withFetch(): the fetch-based backend is required for SSR — the
-      // default XHR backend doesn't exist in Node.
-      withFetch(),
       // serverApiUrlInterceptor must run first: it rewrites the request URL
       // on the server, and credentialsInterceptor's prefix check depends on
       // seeing the final URL.

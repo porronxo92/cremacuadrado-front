@@ -406,13 +406,13 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
               <div class="summary-row">
                 <span>Subtotal</span>
-                <span>{{ $safeNavigationMigration(cartService.cart()?.subtotal) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                <span>{{ cartService.cart()?.subtotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
               @if ((cartService.cart()?.discount ?? 0) > 0) {
                 <div class="summary-row summary-row--discount">
                   <span>Descuento {{ cartService.cart()?.coupon?.code ? '(' + cartService.cart()!.coupon!.code + ')' : '' }}</span>
-                  <span>−{{ $safeNavigationMigration(cartService.cart()?.discount) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                  <span>−{{ cartService.cart()?.discount | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                 </div>
               }
 
