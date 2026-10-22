@@ -367,7 +367,7 @@ Reglas tomadas de la skill instalada en `.claude/skills/ui-ux-pro-max` (WCAG 2.2
 - Instalación local (`.agents/` y `.claude/skills/` están en `.gitignore`): `npx skills add https://github.com/nextlevelbuilder/ui-ux-pro-max-skill --skill ui-ux-pro-max`
 - Búsqueda: `python .claude/skills/ui-ux-pro-max/scripts/search.py "<consulta>" --domain ux` (o `--stack angular`). En Windows, con `PYTHONIOENCODING=utf-8`. En `.claude/skills/ui-ux-pro-max/SKILL.md` las rutas `${CLAUDE_PLUGIN_ROOT}/...` ya apuntan a `frontend/.claude/skills/ui-ux-pro-max` (se ejecuta desde la raíz del monorepo). Skills de terceros y licencias: `.claude/skills/THIRD_PARTY.md`.
 - No usar `--design-system` ni `--persist`: la identidad de marca ya está definida aquí.
-- Las guías `--stack angular` están escritas para Angular 22; el proyecto usa Angular 18 (descartar las de zoneless, etc.).
+- Las guías `--stack angular` están escritas para Angular 22, la versión del proyecto; aun así, descartar las de zoneless y OnPush (el proyecto sigue con Zone.js y `ChangeDetectionStrategy.Eager`).
 
 **Otros**
 - Imágenes con `alt` descriptivo incluyendo keyword cuando aplique (para SEO)

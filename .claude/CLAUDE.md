@@ -1,14 +1,15 @@
 # CremaCuadrado - Frontend
 
-> Tienda online de crema de pistacho manchego artesanal. SPA Angular 18 + API REST (Python/FastAPI en Vercel).
+> Tienda online de crema de pistacho manchego artesanal. Angular 22 con SSR + API REST (Python/FastAPI en Vercel).
 
 ---
 
 ## 🚀 Stack Tecnológico
 
 ### Frontend (este repositorio)
-- **Angular 18** — SPA con standalone components, lazy loading, Angular Signals
-- **TypeScript 5.4** — tipado estricto en todo el proyecto
+- **Angular 22** — standalone components, lazy loading, Signals, Zone.js (`provideZoneChangeDetection`); los componentes llevan `ChangeDetectionStrategy.Eager` (en la 22 el valor por defecto es OnPush)
+- **SSR + prerender** — `server.ts` (Express 4 + `CommonEngine` de `@angular/ssr/node`, con `allowedHosts`), servido como función de Vercel desde `api/index.mjs`; builder `@angular/build:application`
+- **TypeScript 6.0** — tipado estricto en todo el proyecto
 - **SCSS** — estilos globales en `src/styles.scss`
 - **Angular Router** — con `withViewTransitions`, `withInMemoryScrolling`, `PreloadAllModules`
 - **HttpClient** — con interceptores: `credentials`, `auth` (JWT), `error`
@@ -32,12 +33,14 @@
 # Desarrollo local (API en localhost:8000)
 npm start           # ng serve → http://localhost:4200
 
-# Build
-npm run build       # development
-npm run build:prod  # production → dist/cremacuadrado/browser/
+# Build (prerender + comprobación de fichas: scripts/check-prerender.mjs)
+npm run build:prod     # production → dist/cremacuadrado/{browser,server}/
+npm run build:staging
 
 # Tests
-npm test
+npm run e2e                       # Playwright (ng serve sin SSR, puerto 4200)
+node scripts/ssr-smoke.mjs        # HTML del SSR con el servidor de dist/ en el puerto 4000
+npm run test:seo:build
 ```
 
 ### Variables de entorno
