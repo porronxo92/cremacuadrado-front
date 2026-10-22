@@ -83,7 +83,7 @@ const EVIL_HOST = 'evil.example';
 // prerenderizadas en el build: las dos valen para un crawler).
 const SSR_PAGES = [
   '/', '/tienda', '/el-archivo', '/nuestro-metodo', '/para-tiendas', '/puntos-de-venta',
-  '/contacto', '/privacidad', '/aviso-legal', '/cookies', '/devoluciones',
+  '/contacto', '/privacidad', '/aviso-legal', '/condiciones-venta', '/cookies', '/devoluciones',
 ];
 const NOT_FOUND = ['/tienda/no-existe-xyz', '/ruta-inventada-xyz'];
 const REDIRECTS = [

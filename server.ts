@@ -34,7 +34,6 @@ const LEGACY_REDIRECTS: Array<{ from: string; to: string }> = [
   { from: '/blog', to: '/el-archivo' },
   { from: '/blog/:slug', to: '/el-archivo/:slug' },
   { from: '/checkout/success', to: '/gracias' },
-  { from: '/condiciones-venta', to: '/aviso-legal' },
   { from: '/pages/sobre-nosotros', to: '/nuestro-metodo' },
   { from: '/nosotros', to: '/nuestro-metodo' },
   { from: '/pages/contacto', to: '/contacto' },
