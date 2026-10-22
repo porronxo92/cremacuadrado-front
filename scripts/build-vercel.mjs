@@ -31,3 +31,6 @@ run('node', ['scripts/generate-prerender-routes.mjs'], {
   PRERENDER_API_URL: process.env.PRERENDER_API_URL ?? apiUrl,
 });
 run('npx', ['ng', 'build', '--configuration', configuration]);
+// Fails the deployment if a prerendered product/post came out as «no
+// encontrado» (API unreachable during the build) instead of publishing it.
+run('node', ['scripts/check-prerender.mjs']);
