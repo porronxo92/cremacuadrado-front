@@ -29,6 +29,16 @@
 // necesita llegar al API de verdad para pintar productos, posts y los 404 de
 // slugs inexistentes. Si Node rechaza el certificado (SELF_SIGNED_CERT_IN_CHAIN),
 // arrancar el servidor con NODE_USE_SYSTEM_CA=1.
+// El PRERENDER de `ng build` (19.2.2x+) no hereda esa variable: lanza sus
+// workers con `env: { NG_ALLOWED_HOSTS: 'localhost' }` y un execArgv propio,
+// que sustituyen el entorno (y NODE_OPTIONS), y cada worker vuelve a leer
+// NODE_USE_SYSTEM_CA de su env. Las fichas /tienda/:slug salen «Producto no
+// encontrado» (SELF_SIGNED_CERT_IN_CHAIN) y check-prerender.mjs para el build.
+// NODE_EXTRA_CA_CERTS sí vale (se lee una vez para todo el proceso) y no
+// desactiva la verificación TLS, solo añade las CA del sistema:
+//   node -e "require('fs').writeFileSync(process.argv[1], require('tls').getCACertificates('system').join('\n'))" <tmp>/system-ca.pem
+//   NODE_USE_SYSTEM_CA=1 NODE_EXTRA_CA_CERTS=<tmp>/system-ca.pem npm run build:prod
+// En Vercel no hay inspección TLS y no hace falta nada de esto.
 //
 // Código de salida: 0 si todo pasa, 1 si falla alguna comprobación, 2 si no se
 // puede contactar con el servidor o los argumentos son incorrectos.

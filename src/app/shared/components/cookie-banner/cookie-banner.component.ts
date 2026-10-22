@@ -164,7 +164,7 @@ export class CookieBannerComponent {
       } else if (this.consent.hasDecided()) {
         this.view.set('main');
       }
-    }, { allowSignalWrites: true });
+    });
 
     // Mientras está abierta: foco dentro y scroll de fondo bloqueado
     effect(() => {

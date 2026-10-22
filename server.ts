@@ -135,7 +135,29 @@ export function app(): express.Express {
   const browserDistFolder = resolve(serverDistFolder, '../browser');
   const indexHtml = join(serverDistFolder, 'index.server.html');
 
-  const commonEngine = new CommonEngine();
+  // allowedHosts (GHSA-x288-3778-4hhx / CVE-2026-27739): from @angular/ssr
+  // 19.2.21 on, render() checks the hostname of the render URL against this
+  // list. With an EMPTY list it doesn't fail: it logs a console.error and
+  // returns the bare index.server.html — <app-root> empty, status 200, no
+  // H1/meta/JSON-LD (angular/angular#68391) — so a missing entry silently
+  // turns SSR off for that environment and only Google notices. With a
+  // non-empty list an unknown hostname throws instead (→ 500 via next(err)).
+  // The render URL is always SITE_ORIGIN (renderUrl()), never the request's
+  // Host, so this only needs the siteUrl hostname of each environment
+  // (environment*.ts) — previews on *.vercel.app render with the staging
+  // origin and need no entry. cremacuadrado.com / www. are here ahead of the
+  // domain cutover (CUTOVER note in environment.prod.ts). Adding a new
+  // environment = add its siteUrl hostname here, or its SSR goes blank.
+  // NG_ALLOWED_HOSTS, if set, REPLACES this list (it doesn't extend it).
+  const commonEngine = new CommonEngine({
+    allowedHosts: [
+      'prd.cremacuadrado.com',
+      'staging.cremacuadrado.com',
+      'cremacuadrado.com',
+      'www.cremacuadrado.com',
+      'localhost',
+    ],
+  });
 
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
@@ -273,7 +295,9 @@ export function app(): express.Express {
   server.get('**', (req, res, next) => {
     const { originalUrl, baseUrl } = req;
 
-    // Angular 18 has no RESPONSE_INIT (that's 19+): this plain mutable object
+    // RESPONSE_INIT (19+) only works with AngularNodeAppEngine, not with
+    // CommonEngine — switching engines is phase 6 of the migration (see
+    // docs/migracion-angular-22.md). Until then this plain mutable object
     // is provided into the component tree via RESPONSE_STATUS, and any
     // component that determines the route doesn't exist (not-found page, a
     // product/post that 404s) sets .code = 404 on it. Same object reference,
@@ -292,10 +316,8 @@ export function app(): express.Express {
         // (*.vercel.app) and prd. still render fine: the origin only feeds
         // the render, it doesn't validate the incoming request, so there's
         // deliberately no 400 for unknown hosts here.
-        // From @angular/ssr 19.2.21 on, CommonEngine also checks this URL
-        // against `allowedHosts` (or NG_ALLOWED_HOSTS): the hostname of
-        // SITE_ORIGIN must be in that list or it silently returns the empty
-        // shell with a 200 (angular/angular#68391).
+        // CommonEngine also checks this URL against `allowedHosts` (see the
+        // constructor above): SITE_ORIGIN's hostname must be in that list.
         url: renderUrl(originalUrl),
         publicPath: browserDistFolder,
         providers: [
