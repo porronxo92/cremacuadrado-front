@@ -135,20 +135,24 @@ export function app(): express.Express {
   const browserDistFolder = resolve(serverDistFolder, '../browser');
   const indexHtml = join(serverDistFolder, 'index.server.html');
 
-  // allowedHosts (GHSA-x288-3778-4hhx / CVE-2026-27739): from @angular/ssr
-  // 19.2.21 on, render() checks the hostname of the render URL against this
-  // list. With an EMPTY list it doesn't fail: it logs a console.error and
-  // returns the bare index.server.html — <app-root> empty, status 200, no
-  // H1/meta/JSON-LD (angular/angular#68391) — so a missing entry silently
-  // turns SSR off for that environment and only Google notices. With a
-  // non-empty list an unknown hostname throws instead (→ 500 via next(err)).
+  // allowedHosts (GHSA-x288-3778-4hhx / CVE-2026-27739): render() checks the
+  // hostname of the render URL against this list and, from @angular/ssr 22
+  // on, THROWS for any hostname not in it, empty list included (→ 500 via
+  // next(err), "URL with hostname … is not allowed" in the function logs;
+  // prerendered pages too, since the SSG lookup runs after the check). On
+  // 19.2.21+ an empty list instead returned the bare index.server.html with
+  // a 200 (angular/angular#68391), i.e. SSR silently off.
   // The render URL is always SITE_ORIGIN (renderUrl()), never the request's
-  // Host, so this only needs the siteUrl hostname of each environment
+  // Host — and CommonEngine doesn't look at Host / X-Forwarded-* at all —
+  // so this only needs the siteUrl hostname of each environment
   // (environment*.ts) — previews on *.vercel.app render with the staging
   // origin and need no entry. cremacuadrado.com / www. are here ahead of the
   // domain cutover (CUTOVER note in environment.prod.ts). Adding a new
-  // environment = add its siteUrl hostname here, or its SSR goes blank.
-  // NG_ALLOWED_HOSTS, if set, REPLACES this list (it doesn't extend it).
+  // environment = add its siteUrl hostname here, or every SSR route 500s.
+  // NG_ALLOWED_HOSTS, if set, REPLACES this list (it doesn't extend it);
+  // AngularNodeAppEngine (phase 6) has the opposite precedence.
+  // CommonEngine is @deprecated since v22 (no removal version announced):
+  // moving to AngularNodeAppEngine is phase 6 of the migration.
   const commonEngine = new CommonEngine({
     allowedHosts: [
       'prd.cremacuadrado.com',

@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Prueba de humo del SSR (migración Angular 18 → 22, Fase 0.4).
 //
-// Por qué existe: si a CommonEngine le falta `allowedHosts` (19.2.21+,
-// 20.3.17+, 21.1.5+), Angular deja de renderizar en el servidor, responde 200
-// con `<app-root></app-root>` vacío y solo deja un console.error
-// (angular/angular#68391). Los e2e no lo ven porque el navegador pinta la
+// Por qué existe: si a CommonEngine le falta un host en `allowedHosts`,
+// en 19.2.21+/20.3.17+/21.1.5+ deja de renderizar en el servidor, responde
+// 200 con `<app-root></app-root>` vacío y solo deja un console.error
+// (angular/angular#68391); desde la 22 lanza un error (500 en todas las rutas
+// que pasan por el motor). Los e2e no ven lo primero porque el navegador pinta la
 // página igual; Google indexaría páginas vacías. Este script mira el HTML
 // CRUDO que devuelve el servidor, sin ejecutar JS, que es lo que ve un crawler.
 //
@@ -29,15 +30,15 @@
 // necesita llegar al API de verdad para pintar productos, posts y los 404 de
 // slugs inexistentes. Si Node rechaza el certificado (SELF_SIGNED_CERT_IN_CHAIN),
 // arrancar el servidor con NODE_USE_SYSTEM_CA=1.
-// El PRERENDER de `ng build` (19.2.2x+) no hereda esa variable: lanza sus
-// workers con `env: { NG_ALLOWED_HOSTS: 'localhost' }` y un execArgv propio,
-// que sustituyen el entorno (y NODE_OPTIONS), y cada worker vuelve a leer
-// NODE_USE_SYSTEM_CA de su env. Las fichas /tienda/:slug salen «Producto no
-// encontrado» (SELF_SIGNED_CERT_IN_CHAIN) y check-prerender.mjs para el build.
-// NODE_EXTRA_CA_CERTS sí vale (se lee una vez para todo el proceso) y no
-// desactiva la verificación TLS, solo añade las CA del sistema:
+// El PRERENDER de `ng build` en 19.2.2x lanzaba sus workers con
+// `env: { NG_ALLOWED_HOSTS: 'localhost' }` sin copiar process.env, así que no
+// heredaban NODE_USE_SYSTEM_CA (fichas «Producto no encontrado» por
+// SELF_SIGNED_CERT_IN_CHAIN). Desde la 22 copian el entorno
+// (@angular/build prerender.js: `env: { ...process.env, NG_ALLOWED_HOSTS }`)
+// y basta con NODE_USE_SYSTEM_CA=1 también para `npm run build:prod`. Si
+// vuelve a fallar, NODE_EXTRA_CA_CERTS (se lee una vez para todo el proceso,
+// no desactiva la verificación TLS) con las CA del sistema exportadas:
 //   node -e "require('fs').writeFileSync(process.argv[1], require('tls').getCACertificates('system').join('\n'))" <tmp>/system-ca.pem
-//   NODE_USE_SYSTEM_CA=1 NODE_EXTRA_CA_CERTS=<tmp>/system-ca.pem npm run build:prod
 // En Vercel no hay inspección TLS y no hace falta nada de esto.
 //
 // Código de salida: 0 si todo pasa, 1 si falla alguna comprobación, 2 si no se
