@@ -12,10 +12,9 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
 import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
 
 @Component({
-  selector: 'app-register',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, PrivacyNoticeComponent, PhoneInputComponent],
-  template: `
+    selector: 'app-register',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, PrivacyNoticeComponent, PhoneInputComponent],
+    template: `
     <div class="auth-page">
       <div class="auth-card">
         <h1>Crear cuenta</h1>
@@ -146,7 +145,7 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
 
     /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
     app-phone-input {

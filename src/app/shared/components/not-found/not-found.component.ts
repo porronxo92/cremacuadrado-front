@@ -5,10 +5,9 @@ import { Meta } from '@angular/platform-browser';
 import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 
 @Component({
-  selector: 'app-not-found',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-not-found',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="not-found">
       <div class="not-found__content">
         <h1>404</h1>
@@ -18,7 +17,7 @@ import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .not-found {
       min-height: 60vh;
       display: flex;

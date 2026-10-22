@@ -25,10 +25,9 @@ interface AdminReview {
 }
 
 @Component({
-  selector: 'app-admin-reviews',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-reviews',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -120,7 +119,7 @@ interface AdminReview {
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .list { display: flex; flex-direction: column; gap: 0.75rem; }
     .review header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem;
       > div { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; } }
@@ -130,7 +129,7 @@ interface AdminReview {
     .comment { margin: 0.35rem 0 0; line-height: 1.6; }
     .response { margin: 0.75rem 0 0; padding: 0.6rem 0.8rem; background: var(--adm-surface-alt); border-left: 3px solid var(--adm-accent); font-size: 0.85rem; }
     .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
-  `],
+  `]
 })
 export class AdminReviewsComponent implements OnInit {
   private api = inject(AdminApiService);

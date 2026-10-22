@@ -10,10 +10,9 @@ import { Router } from '@angular/router';
 import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
 
 @Component({
-  selector: 'app-account-profile',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
-  template: `
+    selector: 'app-account-profile',
+    imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
+    template: `
     <div class="profile-page">
       <h1>Mi perfil</h1>
 
@@ -154,7 +153,7 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
 
     /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
     app-phone-input {

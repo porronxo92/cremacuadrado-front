@@ -5,10 +5,9 @@ import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 
 @Component({
-  selector: 'app-mini-cart',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-mini-cart',
+    imports: [CommonModule, RouterModule],
+    template: `
     <!-- Overlay -->
     @if (miniCartService.isOpen()) {
       <div
@@ -139,7 +138,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       }
     </aside>
   `,
-  styles: [`
+    styles: [`
     $brand:    #7B1716;
     $accent:   #E6C15A;
     $bg:       #F4F1E9;

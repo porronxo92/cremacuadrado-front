@@ -12,10 +12,9 @@ import { filter, map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
-  selector: 'app-root',
-  standalone: true,
-  imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, ToastComponent, AnnouncementBarComponent, MiniCartComponent, WhatsappButtonComponent, CookieBannerComponent],
-  template: `
+    selector: 'app-root',
+    imports: [CommonModule, RouterOutlet, HeaderComponent, FooterComponent, ToastComponent, AnnouncementBarComponent, MiniCartComponent, WhatsappButtonComponent, CookieBannerComponent],
+    template: `
     <a class="skip-link" href="#contenido-principal">Saltar al contenido</a>
     <div class="app" [class.app--fab]="!isAdminRoute()">
       @if (!isAdminRoute()) {
@@ -36,7 +35,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .app {
       display: flex;
       flex-direction: column;
@@ -54,7 +53,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
     .app--fab {
       --footer-fab-clearance: calc(var(--fab-clearance) + env(safe-area-inset-bottom, 0px));
     }
-  `],
+  `]
 })
 export class AppComponent {
   private router = inject(Router);

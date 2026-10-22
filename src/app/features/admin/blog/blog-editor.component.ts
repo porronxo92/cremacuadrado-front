@@ -36,10 +36,9 @@ function slugify(text: string): string {
 }
 
 @Component({
-  selector: 'app-admin-blog-editor',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, MarkdownEditorComponent, ImageUploaderComponent],
-  template: `
+    selector: 'app-admin-blog-editor',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, MarkdownEditorComponent, ImageUploaderComponent],
+    template: `
     <div class="blog-editor">
       <div class="page-header">
         <h1>{{ isNew() ? 'Nueva entrada' : 'Editar entrada' }}</h1>
@@ -122,7 +121,7 @@ function slugify(text: string): string {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .blog-editor { padding: 2rem; font-family: 'Poppins', sans-serif; max-width: 1200px; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; }
@@ -157,7 +156,7 @@ function slugify(text: string): string {
       table th, table td { padding: 0.6rem 0.5rem !important; }
       button, .btn, select, input { min-height: 40px; }
     }
-  `],
+  `]
 })
 export class AdminBlogEditorComponent implements OnInit {
   private http = inject(HttpClient);

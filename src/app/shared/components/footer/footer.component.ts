@@ -4,10 +4,9 @@ import { RouterModule } from '@angular/router';
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 
 @Component({
-  selector: 'app-footer',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-footer',
+    imports: [CommonModule, RouterModule],
+    template: `
     <footer class="footer">
       <div class="container">
         <div class="footer__grid">
@@ -94,7 +93,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
       </div>
     </footer>
   `,
-  styles: [`
+    styles: [`
     .footer {
       background: #1A1208;
       color: #F4F1E9;

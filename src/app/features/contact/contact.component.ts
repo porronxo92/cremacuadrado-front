@@ -14,10 +14,9 @@ interface FaqItem {
 import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
 
 @Component({
-  selector: 'app-contact',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, PrivacyNoticeComponent],
-  template: `
+    selector: 'app-contact',
+    imports: [CommonModule, RouterModule, FormsModule, PrivacyNoticeComponent],
+    template: `
     <div class="contact-page">
 
       <!-- Hero -->
@@ -232,7 +231,7 @@ import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/p
 
     </div>
   `,
-  styles: [`
+    styles: [`
     $brand:   #7B1716;
     $accent:  #E6C15A;
     $bg:      #F4F1E9;

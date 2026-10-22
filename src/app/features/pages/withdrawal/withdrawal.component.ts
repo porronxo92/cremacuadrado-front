@@ -24,10 +24,9 @@ interface WithdrawalReceipt {
  * formulario del Anexo B del TRLGDCU.
  */
 @Component({
-  selector: 'app-withdrawal',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, LegalLayoutComponent, PrivacyNoticeComponent],
-  template: `
+    selector: 'app-withdrawal',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, LegalLayoutComponent, PrivacyNoticeComponent],
+    template: `
     <app-legal-layout title="Desistir de un pedido" [toc]="toc">
       <section id="derecho">
         <h2>Tu derecho de desistimiento</h2>
@@ -98,7 +97,7 @@ interface WithdrawalReceipt {
       </section>
     </app-legal-layout>
   `,
-  styles: [`
+    styles: [`
     .wd-form { background: #fff; border: 1px solid #D9D3C5; border-radius: 6px; padding: 1.25rem; }
     .wd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; @media (max-width: 600px) { grid-template-columns: 1fr; } }
     .wd-full { grid-column: 1 / -1; }
@@ -108,7 +107,7 @@ interface WithdrawalReceipt {
       background: #7B1716; color: #F4F1E9; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer;
       &:disabled { opacity: 0.5; cursor: not-allowed; } }
     .wd-error { color: #a3261f; font-family: 'Poppins', sans-serif; font-size: 0.85rem; margin: 1rem 0 0; }
-  `],
+  `]
 })
 export class WithdrawalComponent {
   private http = inject(HttpClient);

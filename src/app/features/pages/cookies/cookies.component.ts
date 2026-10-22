@@ -12,10 +12,9 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
  * en CookieConsentService y sube COOKIES_VERSION para volver a pedir consentimiento.
  */
 @Component({
-  selector: 'app-cookies-page',
-  standalone: true,
-  imports: [RouterModule, LegalLayoutComponent],
-  template: `
+    selector: 'app-cookies-page',
+    imports: [RouterModule, LegalLayoutComponent],
+    template: `
     <app-legal-layout title="Política de cookies" [version]="version" updated="octubre de 2026" [toc]="toc">
       <section id="que-son">
         <h2>1. Qué son</h2>
@@ -84,11 +83,11 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
       </section>
     </app-legal-layout>
   `,
-  styles: [`
+    styles: [`
     .ck-btn { min-height: 48px; padding: 0 1.4rem; border-radius: 20px; border: 1.5px solid #7B1716; background: #F4F1E9;
       color: #7B1716; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer;
       &:hover { background: #7B1716; color: #F4F1E9; } }
-  `],
+  `]
 })
 export class CookiesPageComponent {
   private seo = inject(SeoService);

@@ -11,10 +11,9 @@ export interface ProductFormat {
 }
 
 @Component({
-  selector: 'app-format-selector',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-format-selector',
+    imports: [CommonModule],
+    template: `
     <div class="fmt-grid" role="group" aria-label="Selecciona el formato">
       @for (fmt of formats; track fmt.id) {
         <button
@@ -39,7 +38,7 @@ export interface ProductFormat {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;

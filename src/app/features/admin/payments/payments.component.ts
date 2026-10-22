@@ -12,10 +12,9 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
 type Tab = 'payments' | 'refunds' | 'webhooks';
 
 @Component({
-  selector: 'app-admin-payments',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-payments',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -148,11 +147,11 @@ type Tab = 'payments' | 'refunds' | 'webhooks';
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .err { max-width: 320px; font-size: 0.8rem; color: var(--adm-danger); overflow-wrap: anywhere; }
     .payload { margin: 0; padding: 1rem; background: #1C1A14; color: #F4F1E9; border-radius: 6px; font-size: 0.75rem;
       max-height: 60vh; overflow: auto; white-space: pre-wrap; word-break: break-all; }
-  `],
+  `]
 })
 export class AdminPaymentsComponent implements OnInit {
   private api = inject(AdminApiService);

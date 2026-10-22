@@ -4,10 +4,9 @@ import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 
 @Component({
-  selector: 'app-conditions-page',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-conditions-page',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="page">
       <nav class="breadcrumb"><div class="container"><a routerLink="/">Inicio</a><span class="breadcrumb__sep">/</span><span>Aviso Legal</span></div></nav>
 
@@ -136,7 +135,7 @@ import { SeoService } from '../../../core/services/seo.service';
       </main>
     </div>
   `,
-  styles: [`
+    styles: [`
     $brand: #7B1716; $accent: #E6C15A; $bg: #F4F1E9; $bg-alt: #EDE9DD; $white: #FFFFFF;
     $text: #1A1208; $text-lt: #5A4F3E; $text-mt: #8C7F6A; $border: #D9D3C5;
 

@@ -17,10 +17,9 @@ interface PosLead {
 interface ContactLead { id: number; name: string; email: string; message: string; accepts_marketing: boolean; source: string; created_at: string }
 
 @Component({
-  selector: 'app-admin-leads',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-leads',
+    imports: [CommonModule, FormsModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -166,12 +165,12 @@ interface ContactLead { id: number; name: string; email: string; message: string
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .inline-select { width: auto; min-height: 34px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
     .message { max-width: 380px; }
     .msg-btn { text-align: left; font-weight: 400; color: var(--adm-ink); }
     .full-msg { white-space: pre-wrap; line-height: 1.6; margin: 0; }
-  `],
+  `]
 })
 export class AdminLeadsComponent implements OnInit {
   private api = inject(AdminApiService);

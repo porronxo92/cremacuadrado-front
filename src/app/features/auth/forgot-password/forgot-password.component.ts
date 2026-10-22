@@ -5,10 +5,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-forgot-password',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-forgot-password',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule],
+    template: `
     <div class="auth-page">
       <div class="auth-card">
         <div class="back-link">
@@ -63,7 +62,7 @@ import { AuthService } from '../../../core/services/auth.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .auth-page {
       min-height: calc(100vh - 140px);
       display: flex;

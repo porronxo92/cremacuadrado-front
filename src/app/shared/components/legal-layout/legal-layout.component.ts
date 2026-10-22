@@ -11,11 +11,10 @@ export interface LegalTocItem {
  * con teclado (enlaces con href a cada sección) y estilos del contenido.
  */
 @Component({
-  selector: 'app-legal-layout',
-  standalone: true,
-  imports: [RouterModule],
-  encapsulation: ViewEncapsulation.None,
-  template: `
+    selector: 'app-legal-layout',
+    imports: [RouterModule],
+    encapsulation: ViewEncapsulation.None,
+    template: `
     <div class="legal">
       <nav class="legal__breadcrumb" aria-label="Migas de pan">
         <div class="legal__container"><a routerLink="/">Inicio</a><span aria-hidden="true">/</span><span>{{ title }}</span></div>
@@ -48,7 +47,7 @@ export interface LegalTocItem {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .legal { background: #F4F1E9; min-height: 100vh; padding-bottom: 4rem; }
     .legal__container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
     .legal__breadcrumb { background: #EDE9DD; padding: 0.75rem 0; border-bottom: 1px solid #D9D3C5;
@@ -87,7 +86,7 @@ export interface LegalTocItem {
       th { background: #EDE9DD; }
       .legal-box { background: #fff; border: 1px solid #D9D3C5; border-left: 4px solid #E6C15A; border-radius: 4px; padding: 1rem 1.25rem; margin: 0 0 1rem; }
     }
-  `],
+  `]
 })
 export class LegalLayoutComponent {
   @Input({ required: true }) title = '';

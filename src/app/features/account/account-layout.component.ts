@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-account-layout',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-account-layout',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="account-layout">
       <div class="container">
         <div class="account-layout__grid">
@@ -57,7 +56,7 @@ import { RouterModule } from '@angular/router';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .account-layout {
       padding: 2rem 0;
       min-height: calc(100vh - 140px);

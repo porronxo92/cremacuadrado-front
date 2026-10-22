@@ -15,10 +15,9 @@ const CHART_H = 220;
 const PAD = { top: 12, right: 8, bottom: 26, left: 48 };
 
 @Component({
-  selector: 'app-admin-dashboard',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-dashboard',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -195,7 +194,7 @@ const PAD = { top: 12, right: 8, bottom: 26, left: 48 };
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .is-stale { opacity: 0.55; transition: opacity 0.2s; }
     .attention { display: grid; gap: 0.75rem; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
     .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.5rem; h2 { margin: 0; } }
@@ -221,7 +220,7 @@ const PAD = { top: 12, right: 8, bottom: 26, left: 48 };
       border-bottom: 1px solid var(--adm-border); text-decoration: none; color: inherit; &:last-child { border: 0; } &:hover { color: var(--adm-brand); }
       code { font-weight: 600; color: var(--adm-brand); } }
     .totals { font-size: 0.8rem; text-align: center; }
-  `],
+  `]
 })
 export class AdminDashboardComponent implements OnInit {
   private api = inject(AdminApiService);

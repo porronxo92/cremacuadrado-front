@@ -24,10 +24,9 @@ interface AdminBlogPost {
 }
 
 @Component({
-  selector: 'app-admin-blog-list',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-blog-list',
+    imports: [CommonModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="admin-blog">
       <div class="page-header">
         <h1>Blog &amp; Recetas</h1>
@@ -99,7 +98,7 @@ interface AdminBlogPost {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .admin-blog { padding: 2rem; font-family: 'Poppins', sans-serif; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; }
@@ -134,7 +133,7 @@ interface AdminBlogPost {
     }
     .filters { flex-wrap: wrap; }
     .filters .search { flex: 1 1 200px; min-width: 0; }
-  `],
+  `]
 })
 export class AdminBlogListComponent implements OnInit {
   private http = inject(HttpClient);

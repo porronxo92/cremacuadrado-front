@@ -10,10 +10,9 @@ import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI } from '../shared/admin-ui.components';
 
 @Component({
-  selector: 'app-admin-shipments',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-shipments',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -94,7 +93,7 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
       }
     </div>
   `,
-  styles: [`.err { color: var(--adm-danger); max-width: 280px; overflow-wrap: anywhere; }`],
+    styles: [`.err { color: var(--adm-danger); max-width: 280px; overflow-wrap: anywhere; }`]
 })
 export class AdminShipmentsComponent implements OnInit {
   private api = inject(AdminApiService);

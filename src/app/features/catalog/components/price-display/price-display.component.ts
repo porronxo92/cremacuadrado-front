@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { pricePerHundredGrams } from '../../../../core/utils/format-price';
 
 @Component({
-  selector: 'app-price-display',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-price-display',
+    imports: [CommonModule],
+    template: `
     <div class="price-display">
       <span class="price-display__total">
         {{ price / 100 | currency:'EUR':'symbol':'1.2-2':'es' }}
@@ -21,7 +20,7 @@ import { pricePerHundredGrams } from '../../../../core/utils/format-price';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     $brand: #7B1716;
     $muted: #6B6456;
 

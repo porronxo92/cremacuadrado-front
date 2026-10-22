@@ -6,10 +6,9 @@ import { RouterModule } from '@angular/router';
  * que debe acompañar a cada formulario que recoge datos personales.
  */
 @Component({
-  selector: 'app-privacy-notice',
-  standalone: true,
-  imports: [RouterModule],
-  template: `
+    selector: 'app-privacy-notice',
+    imports: [RouterModule],
+    template: `
     <p class="privacy-notice">
       <strong>Responsable:</strong> CREMACUADRADO SL.
       <strong>Finalidad:</strong> {{ purpose }}.
@@ -20,10 +19,10 @@ import { RouterModule } from '@angular/router';
       Más información en la <a routerLink="/privacidad" target="_blank">política de privacidad</a>.
     </p>
   `,
-  styles: [`
+    styles: [`
     .privacy-notice { font-family: 'Poppins', sans-serif; font-size: 0.72rem; line-height: 1.55; color: inherit; opacity: 0.8; margin: 0.75rem 0 0; }
     .privacy-notice a { color: inherit; text-decoration: underline; }
-  `],
+  `]
 })
 export class PrivacyNoticeComponent {
   @Input() purpose = 'atender tu solicitud';

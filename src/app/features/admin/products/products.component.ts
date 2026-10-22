@@ -54,10 +54,9 @@ function slugify(text: string): string {
 }
 
 @Component({
-  selector: 'app-admin-products',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-products',
+    imports: [CommonModule, FormsModule, ReactiveFormsModule, ...ADMIN_UI],
+    template: `
     <div class="admin-products adm-page">
       <header class="adm-page-header">
         <div>
@@ -507,7 +506,7 @@ function slugify(text: string): string {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .admin-products {
     }
     

@@ -8,10 +8,9 @@ import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-header',
+    imports: [CommonModule, RouterModule],
+    template: `
     <header class="header">
       <div class="container">
         <div class="header__content">
@@ -241,7 +240,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       </div>
     </header>
   `,
-  styles: [`
+    styles: [`
     $brand: #7B1716;
     $accent: #E6C15A;
     $bg: #F4F1E9;

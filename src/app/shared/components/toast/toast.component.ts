@@ -3,10 +3,9 @@ import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
-  selector: 'app-toast',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-toast',
+    imports: [CommonModule],
+    template: `
     <div class="toast-container">
       @for (toast of toastService.toasts(); track toast.id) {
         <div class="toast toast--{{ toast.type }}" (click)="toastService.remove(toast.id)">
@@ -26,7 +25,7 @@ import { ToastService } from '../../../core/services/toast.service';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .toast-container {
       position: fixed;
       top: 1rem;

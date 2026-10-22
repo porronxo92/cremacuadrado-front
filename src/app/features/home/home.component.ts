@@ -15,10 +15,9 @@ import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-blo
 import { environment } from '@env/environment';
 
 @Component({
-  selector: 'app-home',
-  standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, PrivacyNoticeComponent],
-  template: `
+    selector: 'app-home',
+    imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, PrivacyNoticeComponent],
+    template: `
     <!-- Bloque 1: Hero + Trilogía -->
     <app-hero-block videoSrc="assets/videos/crema-pistacho-artesanal-hero.mp4" />
     <app-trilogia-block />
@@ -179,7 +178,7 @@ import { environment } from '@env/environment';
       </div>
     </section>
   `,
-  styles: [`
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;

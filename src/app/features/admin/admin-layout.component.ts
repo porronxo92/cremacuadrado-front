@@ -27,12 +27,11 @@ const ICONS: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-admin-layout',
-  standalone: true,
-  imports: [CommonModule, RouterModule, AdminConfirmHostComponent],
-  encapsulation: ViewEncapsulation.None,
-  styleUrls: ['./shared/admin-shell.scss', './shared/admin-shell-data.scss', './admin-layout.component.scss'],
-  template: `
+    selector: 'app-admin-layout',
+    imports: [CommonModule, RouterModule, AdminConfirmHostComponent],
+    encapsulation: ViewEncapsulation.None,
+    styleUrls: ['./shared/admin-shell.scss', './shared/admin-shell-data.scss', './admin-layout.component.scss'],
+    template: `
     <div class="adm-shell adm-layout">
       <header class="adm-topbar">
         <button class="adm-topbar__toggle" type="button" (click)="toggleMenu()"
@@ -78,7 +77,7 @@ const ICONS: Record<string, string> = {
 
       <adm-confirm-host />
     </div>
-  `,
+  `
 })
 export class AdminLayoutComponent {
   menuOpen = signal(false);

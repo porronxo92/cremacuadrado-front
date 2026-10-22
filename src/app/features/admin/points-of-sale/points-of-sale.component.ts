@@ -21,10 +21,9 @@ interface PointOfSale {
 }
 
 @Component({
-  selector: 'app-admin-points-of-sale',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  template: `
+    selector: 'app-admin-points-of-sale',
+    imports: [CommonModule, FormsModule],
+    template: `
     <div class="admin-pos">
       <div class="page-header">
         <h1>Puntos de venta</h1>
@@ -102,7 +101,7 @@ interface PointOfSale {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .hint { font-size: 0.75rem; color: #6B6456; margin: -0.25rem 0 0.75rem; line-height: 1.4; }
     .coords { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
     .geo-badge { font-size: 0.72rem; padding: 0.15rem 0.5rem; border-radius: 999px; background: #eee; white-space: nowrap; }
@@ -140,7 +139,7 @@ interface PointOfSale {
       table th, table td { padding: 0.6rem 0.5rem !important; }
       button, .btn, select, input { min-height: 40px; }
     }
-  `],
+  `]
 })
 export class AdminPointsOfSaleComponent implements OnInit {
   private http = inject(HttpClient);

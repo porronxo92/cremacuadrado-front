@@ -11,10 +11,9 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
  * del backend (app/config.py). Si cambia, sube PRIVACY_VERSION en ambos lados.
  */
 @Component({
-  selector: 'app-privacy-page',
-  standalone: true,
-  imports: [RouterModule, LegalLayoutComponent],
-  template: `
+    selector: 'app-privacy-page',
+    imports: [RouterModule, LegalLayoutComponent],
+    template: `
     <app-legal-layout title="Política de privacidad" [version]="version" updated="octubre de 2026" [toc]="toc">
       <section id="responsable">
         <h2>1. Responsable del tratamiento</h2>
@@ -151,7 +150,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
           momento desde «Configurar cookies», en el pie de la web.</p>
       </section>
     </app-legal-layout>
-  `,
+  `
 })
 export class PrivacyPageComponent {
   private seo = inject(SeoService);

@@ -11,10 +11,9 @@ import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
 
 @Component({
-  selector: 'app-admin-orders',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-orders',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -324,7 +323,7 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .invoices-title { margin-top: 1rem; }
     .status-select { width: auto; min-height: 34px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
     .actions { display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center; }
@@ -336,7 +335,7 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
     .row-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.85rem; }
     .quote { margin: 0; padding: 0.75rem; background: var(--adm-surface-alt); border-radius: 6px; font-style: italic; }
     @media (max-width: 768px) { .actions { width: 100%; } .status-select { flex: 1; } }
-  `],
+  `]
 })
 export class AdminOrdersComponent implements OnInit {
   private api = inject(AdminApiService);

@@ -12,10 +12,9 @@ import { saveBlob } from '../../core/utils/save-blob';
  * también para compras como invitado.
  */
 @Component({
-  selector: 'app-invoice-download',
-  standalone: true,
-  imports: [RouterModule],
-  template: `
+    selector: 'app-invoice-download',
+    imports: [RouterModule],
+    template: `
     <section class="inv">
       <div class="inv__card">
         <h1>Tu factura</h1>
@@ -31,7 +30,7 @@ import { saveBlob } from '../../core/utils/save-blob';
       </div>
     </section>
   `,
-  styles: [`
+    styles: [`
     .inv { min-height: 60vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; background: #F4F1E9; }
     .inv__card { max-width: 480px; text-align: center; background: #fff; border-radius: 8px; padding: 2.5rem 2rem; }
     h1 { font-family: 'Teko', sans-serif; text-transform: uppercase; color: #7B1716; font-size: 2.4rem; margin: 0 0 1rem; }
@@ -40,7 +39,7 @@ import { saveBlob } from '../../core/utils/save-blob';
     .inv__btn { min-height: 48px; padding: 0 1.5rem; border-radius: 20px; border: 1.5px solid #7B1716; background: #7B1716;
       color: #F4F1E9; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; }
     .inv__link { display: block; margin-top: 1.25rem; color: #7B1716; font-family: 'Poppins', sans-serif; }
-  `],
+  `]
 })
 export class InvoiceDownloadComponent implements OnInit {
   private http = inject(HttpClient);

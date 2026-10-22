@@ -7,10 +7,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
 
 @Component({
-  selector: 'app-cart',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
-  template: `
+    selector: 'app-cart',
+    imports: [CommonModule, RouterModule, FormsModule],
+    template: `
     <div class="cart-page" [class.has-sticky]="!cartService.isLoading() && cartService.itemCount() > 0">
       <div class="container">
         <h1>Tu carrito</h1>
@@ -217,7 +216,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     // Estilo de marca (variables globales de styles.scss). Contenedores 2px, botones 20px.
     $surface: #FAF8F3;
 

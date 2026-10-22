@@ -10,10 +10,9 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
  * Si cambia, sube TERMS_VERSION aquí (core/legal.ts) y en el backend (config.TERMS_VERSION).
  */
 @Component({
-  selector: 'app-sales-conditions',
-  standalone: true,
-  imports: [RouterModule, LegalLayoutComponent],
-  template: `
+    selector: 'app-sales-conditions',
+    imports: [RouterModule, LegalLayoutComponent],
+    template: `
     <app-legal-layout title="Condiciones generales de venta" [version]="version" updated="octubre de 2026" [toc]="toc">
       <section id="vendedor">
         <h2>1. Quién vende</h2>
@@ -125,7 +124,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
           y quedan registradas con él.</p>
       </section>
     </app-legal-layout>
-  `,
+  `
 })
 export class SalesConditionsComponent {
   private seo = inject(SeoService);

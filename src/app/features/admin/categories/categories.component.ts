@@ -20,10 +20,9 @@ interface CategoryItem {
 type Tab = 'products' | 'blog';
 
 @Component({
-  selector: 'app-admin-categories',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ImageUploaderComponent],
-  template: `
+    selector: 'app-admin-categories',
+    imports: [CommonModule, FormsModule, ImageUploaderComponent],
+    template: `
     <div class="admin-categories">
       <div class="page-header">
         <h1>Categorías</h1>
@@ -100,7 +99,7 @@ type Tab = 'products' | 'blog';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .admin-categories { padding: 2rem; font-family: 'Poppins', sans-serif; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; margin-bottom: 1rem; }
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -134,7 +133,7 @@ type Tab = 'products' | 'blog';
       table th, table td { padding: 0.6rem 0.5rem !important; }
       button, .btn, select, input { min-height: 40px; }
     }
-  `],
+  `]
 })
 export class AdminCategoriesComponent implements OnInit {
   private http = inject(HttpClient);

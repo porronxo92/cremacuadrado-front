@@ -21,10 +21,9 @@ export class AdminBadgeComponent {
 // Pagination
 // ═════════════════════════════════════════════════════════════════════════
 @Component({
-  selector: 'adm-pagination',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'adm-pagination',
+    imports: [CommonModule],
+    template: `
     @if (total() > 0) {
       <nav class="adm-pagination" aria-label="Paginación">
         <span class="adm-pagination__info">
@@ -53,7 +52,7 @@ export class AdminBadgeComponent {
         </label>
       </nav>
     }
-  `,
+  `
 })
 export class AdminPaginationComponent {
   page = input.required<number>();
@@ -196,10 +195,9 @@ export class AdminConfirmService {
 }
 
 @Component({
-  selector: 'adm-confirm-host',
-  standalone: true,
-  imports: [AdminModalComponent],
-  template: `
+    selector: 'adm-confirm-host',
+    imports: [AdminModalComponent],
+    template: `
     @if (confirm.current(); as c) {
       <adm-modal [title]="c.title" size="sm" (closed)="confirm.answer(false)">
         <p class="adm-confirm-text">{{ c.message }}</p>
@@ -210,7 +208,7 @@ export class AdminConfirmService {
         </div>
       </adm-modal>
     }
-  `,
+  `
 })
 export class AdminConfirmHostComponent {
   confirm = inject(AdminConfirmService);
@@ -220,10 +218,9 @@ export class AdminConfirmHostComponent {
 // Stat card
 // ═════════════════════════════════════════════════════════════════════════
 @Component({
-  selector: 'adm-stat',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'adm-stat',
+    imports: [CommonModule],
+    template: `
     <span class="adm-stat__label">{{ label }}</span>
     <strong class="adm-stat__value">{{ value }}</strong>
     @if (growth !== null && growth !== undefined) {
@@ -233,7 +230,7 @@ export class AdminConfirmHostComponent {
     }
     @if (hint) { <span class="adm-stat__hint">{{ hint }}</span> }
   `,
-  host: { class: 'adm-stat', '[class.adm-stat--highlight]': 'highlight' },
+    host: { class: 'adm-stat', '[class.adm-stat--highlight]': 'highlight' }
 })
 export class AdminStatComponent {
   @Input() label = '';

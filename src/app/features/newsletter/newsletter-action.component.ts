@@ -8,10 +8,9 @@ type Mode = 'confirm' | 'unsubscribe';
 
 /** /newsletter/confirmar?token=… (doble opt-in) y /newsletter/baja?token=… */
 @Component({
-  selector: 'app-newsletter-action',
-  standalone: true,
-  imports: [RouterModule],
-  template: `
+    selector: 'app-newsletter-action',
+    imports: [RouterModule],
+    template: `
     <section class="nl-action">
       <div class="nl-action__card">
         <h1>{{ mode === 'confirm' ? 'Suscripción' : 'Baja de la newsletter' }}</h1>
@@ -24,7 +23,7 @@ type Mode = 'confirm' | 'unsubscribe';
       </div>
     </section>
   `,
-  styles: [`
+    styles: [`
     .nl-action { min-height: 60vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; background: #F4F1E9; }
     .nl-action__card { max-width: 520px; text-align: center; background: #fff; border-radius: 8px; padding: 2.5rem 2rem; }
     h1 { font-family: 'Teko', sans-serif; text-transform: uppercase; color: #7B1716; font-size: 2.4rem; margin: 0 0 1rem; }
@@ -32,7 +31,7 @@ type Mode = 'confirm' | 'unsubscribe';
     .nl-action__error { color: #a3261f; }
     .nl-action__btn { display: inline-flex; align-items: center; min-height: 48px; margin-top: 1.5rem; padding: 0 1.5rem; border: 1.5px solid #7B1716; border-radius: 20px;
       color: #7B1716; font-family: 'Poppins', sans-serif; font-weight: 600; text-decoration: none; }
-  `],
+  `]
 })
 export class NewsletterActionComponent implements OnInit {
   private route = inject(ActivatedRoute);

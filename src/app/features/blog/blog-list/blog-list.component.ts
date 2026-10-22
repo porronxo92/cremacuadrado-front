@@ -44,10 +44,9 @@ const STATIC_BLOGS: BlogPostListItem[] = [
 ];
 
 @Component({
-  selector: 'app-blog-list',
-  standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterModule],
-  template: `
+    selector: 'app-blog-list',
+    imports: [CommonModule, NgOptimizedImage, RouterModule],
+    template: `
     <div class="blog-page">
       <!-- Hero -->
       <section class="blog-hero">
@@ -152,7 +151,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
       </section>
     </div>
   `,
-  styles: [`
+    styles: [`
     .blog-page {
       min-height: 100vh;
     }

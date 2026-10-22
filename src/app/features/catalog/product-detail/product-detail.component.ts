@@ -64,10 +64,9 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
 }
 
 @Component({
-  selector: 'app-product-detail',
-  standalone: true,
-  imports: [CommonModule, NgOptimizedImage, FormsModule, RouterModule, FormatSelectorComponent, PriceDisplayComponent, AudioPlayerComponent],
-  template: `
+    selector: 'app-product-detail',
+    imports: [CommonModule, NgOptimizedImage, FormsModule, RouterModule, FormatSelectorComponent, PriceDisplayComponent, AudioPlayerComponent],
+    template: `
     <div class="pd">
       @if (loading()) {
         <div class="pd__loading"><div class="spinner"></div></div>
@@ -488,7 +487,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       </div>
     }
   `,
-  styles: [`
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;

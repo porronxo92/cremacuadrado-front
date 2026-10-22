@@ -5,10 +5,9 @@ import { SeoService } from '../../../core/services/seo.service';
 import { environment } from '@env/environment';
 
 @Component({
-  selector: 'app-shipping-page',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-shipping-page',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="page">
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
@@ -199,7 +198,7 @@ import { environment } from '@env/environment';
       </main>
     </div>
   `,
-  styles: [`
+    styles: [`
     /* ═══════════════════════════════════════════════════════════════════════
        VARIABLES
        ═══════════════════════════════════════════════════════════════════════ */

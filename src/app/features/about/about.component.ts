@@ -11,10 +11,9 @@ interface TimelineEvent {
 }
 
 @Component({
-  selector: 'app-about',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-about',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="about-page">
       <!-- Hero Banner -->
       <section class="about-hero">
@@ -80,7 +79,7 @@ interface TimelineEvent {
       </section>
     </div>
   `,
-  styles: [`
+    styles: [`
     // ── Variables locales ───────────────────────────────
     $brand:   #7B1716;
     $accent:  #E6C15A;

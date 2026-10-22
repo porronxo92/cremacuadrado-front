@@ -3,10 +3,9 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 @Component({
-  selector: 'app-hero-block',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-hero-block',
+    imports: [CommonModule, RouterModule],
+    template: `
     <section class="hero">
       <video
         #videoEl
@@ -31,7 +30,7 @@ import { RouterModule } from '@angular/router';
       </div>
     </section>
   `,
-  styles: [`
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;

@@ -16,10 +16,9 @@ function currentMonth(): string {
 }
 
 @Component({
-  selector: 'app-admin-invoices',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-invoices',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -136,9 +135,9 @@ function currentMonth(): string {
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .sub adm-badge { margin-right: 0.35rem; }
-  `],
+  `]
 })
 export class AdminInvoicesComponent implements OnInit {
   private api = inject(AdminApiService);

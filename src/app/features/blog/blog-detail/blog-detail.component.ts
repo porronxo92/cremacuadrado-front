@@ -149,10 +149,9 @@ function normalizeHeading(text: string): string {
 }
 
 @Component({
-  selector: 'app-blog-detail',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-blog-detail',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="blog-detail">
       <div class="container">
         @if (loading()) {
@@ -228,7 +227,7 @@ function normalizeHeading(text: string): string {
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .blog-detail {
       min-height: 100vh;
       padding: 2rem 0 4rem;

@@ -20,10 +20,9 @@ import { Subject, firstValueFrom, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-checkout',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneInputComponent],
-  template: `
+    selector: 'app-checkout',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneInputComponent],
+    template: `
     <div class="checkout-page">
       <div class="container">
         <h1>Finalizar compra</h1>
@@ -499,7 +498,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     // Estilo de marca (variables globales de styles.scss). Contenedores con
     // radio 2px; botones con radio 20px; nunca blanco puro.
     $surface: #FAF8F3;

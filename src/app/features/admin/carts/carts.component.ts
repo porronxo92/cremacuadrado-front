@@ -9,10 +9,9 @@ import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI } from '../shared/admin-ui.components';
 
 @Component({
-  selector: 'app-admin-carts',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-carts',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -107,10 +106,10 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .items { margin: 0; padding: 0; list-style: none; font-size: 0.82rem; }
     @media (max-width: 768px) { .items { text-align: right; } }
-  `],
+  `]
 })
 export class AdminCartsComponent implements OnInit {
   private api = inject(AdminApiService);

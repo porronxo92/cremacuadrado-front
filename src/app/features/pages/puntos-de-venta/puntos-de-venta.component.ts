@@ -10,10 +10,9 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
 import { StoresMapComponent } from './stores-map.component';
 
 @Component({
-  selector: 'app-puntos-de-venta',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, StoresMapComponent],
-  template: `
+    selector: 'app-puntos-de-venta',
+    imports: [CommonModule, RouterModule, FormsModule, StoresMapComponent],
+    template: `
     <div class="pdv-page">
 
       <!-- ── Hero ────────────────────────────────────────────── -->
@@ -178,7 +177,7 @@ import { StoresMapComponent } from './stores-map.component';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     $brand: #7B1716;
     $accent: #E6C15A;
     $bg: #F4F1E9;

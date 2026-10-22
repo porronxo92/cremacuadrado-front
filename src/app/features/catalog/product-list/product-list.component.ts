@@ -16,10 +16,9 @@ const TAGLINES: Record<string, string> = {
 };
 
 @Component({
-  selector: 'app-product-list',
-  standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterModule],
-  template: `
+    selector: 'app-product-list',
+    imports: [CommonModule, NgOptimizedImage, RouterModule],
+    template: `
     <section class="tienda">
       <div class="tienda__hero">
         <p class="tienda__eyebrow">La tienda</p>
@@ -116,7 +115,7 @@ const TAGLINES: Record<string, string> = {
       }
     </section>
   `,
-  styles: [`
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;

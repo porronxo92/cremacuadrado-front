@@ -15,10 +15,9 @@ interface TimelineEvent { date: string; icon: string; text: string; link?: (stri
 type Tab = 'activity' | 'orders' | 'coupons' | 'reviews' | 'cart' | 'addresses';
 
 @Component({
-  selector: 'app-admin-user-detail',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-user-detail',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <a class="adm-link back" routerLink="/admin/clientes">← Clientes</a>
 
@@ -287,7 +286,7 @@ type Tab = 'activity' | 'orders' | 'coupons' | 'reviews' | 'cart' | 'addresses';
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .back { font-size: 0.85rem; }
     .badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }
     .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.9rem; }
@@ -305,7 +304,7 @@ type Tab = 'activity' | 'orders' | 'coupons' | 'reviews' | 'cart' | 'addresses';
     .sec-title { margin: 0; font-size: 0.95rem; }
     .inline-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
     hr { border: 0; border-top: 1px solid var(--adm-border); margin: 0.5rem 0; width: 100%; }
-  `],
+  `]
 })
 export class AdminUserDetailComponent implements OnInit {
   api = inject(AdminApiService);

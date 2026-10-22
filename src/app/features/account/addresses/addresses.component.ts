@@ -9,10 +9,9 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
 import { PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPostcode } from '../../../core/data/spain';
 
 @Component({
-  selector: 'app-account-addresses',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
-  template: `
+    selector: 'app-account-addresses',
+    imports: [CommonModule, ReactiveFormsModule, PhoneInputComponent],
+    template: `
     <div class="addresses-page">
       <div class="page-header">
         <h1>Mis direcciones</h1>
@@ -170,7 +169,7 @@ import { PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceFromPost
       }
     </div>
   `,
-  styles: [`
+    styles: [`
 
     /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
     app-phone-input {

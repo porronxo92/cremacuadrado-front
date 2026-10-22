@@ -7,10 +7,9 @@ import { InvoiceSummary, Order, OrderListItem } from '../../../core/models';
 import { saveBlob } from '../../../core/utils/save-blob';
 
 @Component({
-  selector: 'app-account-orders',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-account-orders',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="orders-page">
       <h1>Mis pedidos</h1>
 
@@ -267,7 +266,7 @@ import { saveBlob } from '../../../core/utils/save-blob';
       }
     </div>
   `,
-  styles: [`
+    styles: [`
     .orders-page {
       h1 {
         font-family: 'Teko', sans-serif;

@@ -9,10 +9,9 @@ import { GoogleIdentityService } from '../../../core/services/google-identity.se
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-login',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule],
+    template: `
     <div class="auth-page">
       <div class="auth-card">
         <h1>Iniciar sesión</h1>
@@ -105,7 +104,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .auth-page {
       min-height: calc(100vh - 140px);
       display: flex;

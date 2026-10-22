@@ -6,10 +6,9 @@ import { CartService } from '../../../core/services/cart.service';
 import { Order } from '../../../core/models';
 
 @Component({
-  selector: 'app-checkout-success',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-checkout-success',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="success-page">
       <div class="container">
         <div class="success-card">
@@ -91,7 +90,7 @@ import { Order } from '../../../core/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .success-page {
       padding: 3rem 0;
       background: #f9f9f9;

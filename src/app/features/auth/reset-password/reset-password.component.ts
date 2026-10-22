@@ -5,10 +5,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
-  selector: 'app-reset-password',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-reset-password',
+    imports: [CommonModule, RouterModule, ReactiveFormsModule],
+    template: `
     <div class="auth-page">
       <div class="auth-card">
         @if (!token()) {
@@ -92,7 +91,7 @@ import { AuthService } from '../../../core/services/auth.service';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .auth-page {
       min-height: calc(100vh - 140px);
       display: flex;

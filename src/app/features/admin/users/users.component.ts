@@ -9,10 +9,9 @@ import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI } from '../shared/admin-ui.components';
 
 @Component({
-  selector: 'app-admin-users',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-users',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -110,7 +109,7 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
       }
     </div>
   `,
-  styles: [`td adm-badge + adm-badge { margin-left: 0.25rem; }`],
+    styles: [`td adm-badge + adm-badge { margin-left: 0.25rem; }`]
 })
 export class AdminUsersComponent implements OnInit {
   private api = inject(AdminApiService);

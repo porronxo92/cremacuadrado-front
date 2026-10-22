@@ -32,10 +32,9 @@ const W_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
  * notificar a la AEPD) y prueba de consentimientos.
  */
 @Component({
-  selector: 'app-admin-compliance',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-compliance',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -186,9 +185,9 @@ const W_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .path { max-width: 380px; overflow-wrap: anywhere; font-size: 0.78rem; }
-  `],
+  `]
 })
 export class AdminComplianceComponent implements OnInit {
   private api = inject(AdminApiService);

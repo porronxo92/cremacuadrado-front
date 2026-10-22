@@ -12,10 +12,9 @@ import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
 
 @Component({
-  selector: 'app-admin-coupons',
-  standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
-  template: `
+    selector: 'app-admin-coupons',
+    imports: [CommonModule, FormsModule, RouterModule, ...ADMIN_UI],
+    template: `
     <div class="adm-page">
       <header class="adm-page-header">
         <div>
@@ -205,14 +204,14 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
       </adm-modal>
     }
   `,
-  styles: [`
+    styles: [`
     .code { font-family: ui-monospace, Consolas, monospace; font-weight: 600; color: var(--adm-brand); }
     tr.is-selected td { background: var(--adm-brand-soft); }
     .one-col { grid-template-columns: minmax(0, 1fr); }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
     .actions { display: flex; gap: 0.35rem; align-items: center; justify-content: flex-end; }
     .usage-tools { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; .adm-field { flex: 1 1 240px; } }
-  `],
+  `]
 })
 export class AdminCouponsComponent implements OnInit {
   private api = inject(AdminApiService);

@@ -6,10 +6,9 @@ import { UserService } from '../../../core/services/user.service';
 import { OrderListItem, User } from '../../../core/models';
 
 @Component({
-  selector: 'app-account-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-account-dashboard',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="account-dashboard">
       <div class="welcome-section">
         <h1>Hola, {{ user()?.first_name || '...' }}!</h1>
@@ -116,7 +115,7 @@ import { OrderListItem, User } from '../../../core/models';
       </div>
     </div>
   `,
-  styles: [`
+    styles: [`
     .account-dashboard {
       padding: 0;
     }

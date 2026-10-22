@@ -9,10 +9,9 @@ import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notic
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 @Component({
-  selector: 'app-para-tiendas',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
-  template: `
+    selector: 'app-para-tiendas',
+    imports: [CommonModule, ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
+    template: `
     <div class="pt-page">
 
       <!-- ── Bloque 0: Hero ─────────────────────────────────────── -->
@@ -342,7 +341,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
     </div>
   `,
-  styles: [`
+    styles: [`
     :host { display: block; }
 
     .pt-page {
