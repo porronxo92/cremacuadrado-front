@@ -64,3 +64,6 @@ e2e/.artifacts/
 playwright-report/
 test-results/
 e2e/screenshots/
+
+# Línea base y resultados de la migración Angular 22
+migration-baseline/
