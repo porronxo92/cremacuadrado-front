@@ -211,7 +211,7 @@ export function app(): express.Express {
 
   // All remaining routes use the Angular engine (SSR, per-request)
   server.get('**', (req, res, next) => {
-    const { protocol, originalUrl, baseUrl, headers } = req;
+    const { originalUrl, baseUrl } = req;
 
     // Angular 18 has no RESPONSE_INIT (that's 19+): this plain mutable object
     // is provided into the component tree via RESPONSE_STATUS, and any
@@ -224,7 +224,19 @@ export function app(): express.Express {
       .render({
         bootstrap,
         documentFilePath: indexHtml,
-        url: `${protocol}://${headers.host}${originalUrl}`,
+        // Fixed origin, never the client's Host / X-Forwarded-* headers
+        // (GHSA-x288-3778-4hhx / CVE-2026-27739): this URL becomes
+        // document.location inside the render, so any relative HttpClient
+        // request, redirect or absolute link built from it would point at
+        // whatever host the attacker sent — SSRF and cache poisoning. Previews
+        // (*.vercel.app) and prd. still render fine: the origin only feeds
+        // the render, it doesn't validate the incoming request, so there's
+        // deliberately no 400 for unknown hosts here.
+        // From @angular/ssr 19.2.21 on, CommonEngine also checks this URL
+        // against `allowedHosts` (or NG_ALLOWED_HOSTS): the hostname of
+        // SITE_ORIGIN must be in that list or it silently returns the empty
+        // shell with a 200 (angular/angular#68391).
+        url: `${SITE_ORIGIN}${originalUrl}`,
         publicPath: browserDistFolder,
         providers: [
           { provide: APP_BASE_HREF, useValue: baseUrl },
