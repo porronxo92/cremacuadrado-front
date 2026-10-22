@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -88,7 +88,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
 
               <div class="summary-row">
                 <span>Subtotal ({{ cartService.itemCount() }} {{ cartService.itemCount() === 1 ? 'artículo' : 'artículos' }})</span>
-                <span>{{ cartService.cart()?.subtotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                <span>{{ $safeNavigationMigration(cartService.cart()?.subtotal) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
               @if (discountAmount() > 0) {
@@ -191,7 +191,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
 
               <div class="summary-row summary-row--total">
                 <span>Total <small>(IVA incluido)</small></span>
-                <span>{{ cartService.cart()?.total | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                <span>{{ $safeNavigationMigration(cartService.cart()?.total) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
               <a routerLink="/checkout" class="cc-btn cc-btn--primary cc-btn--block summary-cta">
@@ -208,7 +208,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
           <div class="sticky-pay">
             <div class="sticky-pay__total">
               <span>Total</span>
-              <strong>{{ cartService.cart()?.total | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
+              <strong>{{ $safeNavigationMigration(cartService.cart()?.total) | currency:'EUR':'symbol':'1.2-2':'es' }}</strong>
             </div>
             <a routerLink="/checkout" class="cc-btn cc-btn--primary">Ir al pago</a>
           </div>
@@ -216,6 +216,7 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     // Estilo de marca (variables globales de styles.scss). Contenedores 2px, botones 20px.
     $surface: #FAF8F3;

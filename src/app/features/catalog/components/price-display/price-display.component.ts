@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { pricePerHundredGrams } from '../../../../core/utils/format-price';
 
@@ -20,6 +20,7 @@ import { pricePerHundredGrams } from '../../../../core/utils/format-price';
       }
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand: #7B1716;
     $muted: #6B6456;

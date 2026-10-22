@@ -1,6 +1,7 @@
 import {
   Component, OnInit, OnDestroy, AfterViewInit,
-  ViewChild, ElementRef, inject, signal, computed, PLATFORM_ID
+  ViewChild, ElementRef, inject, signal, computed, PLATFORM_ID,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -487,6 +488,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
       </div>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;

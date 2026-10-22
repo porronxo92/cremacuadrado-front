@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastService } from '../../../core/services/toast.service';
@@ -165,6 +165,7 @@ interface ContactLead { id: number; name: string; email: string; message: string
       </adm-modal>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .inline-select { width: auto; min-height: 34px; padding: 0.25rem 0.5rem; font-size: 0.8rem; }
     .message { max-width: 380px; }

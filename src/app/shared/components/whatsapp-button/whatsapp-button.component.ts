@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -18,6 +18,7 @@ import { environment } from '../../../../environments/environment';
       </svg>
     </a>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .whatsapp-bubble {
       position: fixed;

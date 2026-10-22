@@ -1,5 +1,6 @@
 import {
   Component, ElementRef, Input, OnChanges, OnDestroy, PLATFORM_ID, ViewChild, ViewEncapsulation, afterNextRender, inject,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import type * as Leaflet from 'leaflet';
@@ -25,6 +26,7 @@ const CARTO_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{
   standalone: true,
   encapsulation: ViewEncapsulation.None,
   template: `<div #map class="stores-map" role="region" aria-label="Mapa de puntos de venta"></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .stores-map { width: 100%; height: 100%; min-height: 380px; z-index: 0; }
     .stores-map .leaflet-popup-content { font-family: 'Poppins', sans-serif; font-size: 0.85rem; line-height: 1.5; }

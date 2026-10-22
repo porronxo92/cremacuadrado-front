@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
@@ -198,6 +198,7 @@ import { environment } from '@env/environment';
       </main>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     /* ═══════════════════════════════════════════════════════════════════════
        VARIABLES

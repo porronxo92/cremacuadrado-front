@@ -1,4 +1,4 @@
-﻿import { Component, inject } from '@angular/core';
+﻿import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
@@ -240,6 +240,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       </div>
     </header>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand: #7B1716;
     $accent: #E6C15A;

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
 import { Meta } from '@angular/platform-browser';
@@ -17,6 +17,7 @@ import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .not-found {
       min-height: 60vh;

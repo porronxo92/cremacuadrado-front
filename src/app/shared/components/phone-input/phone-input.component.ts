@@ -1,4 +1,4 @@
-import { Component, Input, forwardRef, signal } from '@angular/core';
+import { Component, Input, forwardRef, signal, ChangeDetectionStrategy } from '@angular/core';
 import {
   AbstractControl, ControlValueAccessor, NG_VALIDATORS, NG_VALUE_ACCESSOR, ValidationErrors, Validator,
 } from '@angular/forms';
@@ -31,6 +31,7 @@ import { PHONE_PREFIXES } from '../../../core/data/spain';
              (input)="onNumber($any($event.target).value)" (blur)="onTouched()">
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .phone { display: flex; gap: 0.5rem; }
     /* Los estilos de campo del formulario padre no atraviesan la encapsulación de

@@ -1,4 +1,4 @@
-import { Component, Input, AfterViewInit, ViewChild, ElementRef, PLATFORM_ID, inject } from '@angular/core';
+import { Component, Input, AfterViewInit, ViewChild, ElementRef, PLATFORM_ID, inject, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
@@ -30,6 +30,7 @@ import { RouterModule } from '@angular/router';
       </div>
     </section>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;

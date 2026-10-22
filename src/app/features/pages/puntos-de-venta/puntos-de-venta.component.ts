@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -177,6 +177,7 @@ import { StoresMapComponent } from './stores-map.component';
 
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand: #7B1716;
     $accent: #E6C15A;

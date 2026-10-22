@@ -1,4 +1,4 @@
-import { Component, ElementRef, forwardRef, inject, Input, signal, ViewChild } from '@angular/core';
+import { Component, ElementRef, forwardRef, inject, Input, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -61,6 +61,7 @@ import { ToastService } from '../../../core/services/toast.service';
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .md-editor {
       border: 1px solid #d8d0bd;

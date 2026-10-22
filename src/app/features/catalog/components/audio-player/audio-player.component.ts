@@ -1,4 +1,4 @@
-import { Component, Input, OnDestroy, ViewChild, ElementRef, signal, computed, PLATFORM_ID, inject } from '@angular/core';
+import { Component, Input, OnDestroy, ViewChild, ElementRef, signal, computed, PLATFORM_ID, inject, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 
 @Component({
@@ -37,6 +37,7 @@ import { isPlatformBrowser } from '@angular/common';
       </span>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;

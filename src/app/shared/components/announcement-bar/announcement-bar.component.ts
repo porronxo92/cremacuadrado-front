@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, PLATFORM_ID, inject, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { runAfterStable } from '../../../core/utils/after-stable';
 
@@ -32,6 +32,7 @@ const MESSAGES = [
       }
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     :host { display: block; }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { NewsletterService } from '../../core/services/newsletter.service';
@@ -23,6 +23,7 @@ type Mode = 'confirm' | 'unsubscribe';
       </div>
     </section>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .nl-action { min-height: 60vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; background: #F4F1E9; }
     .nl-action__card { max-width: 520px; text-align: center; background: #fff; border-radius: 8px; padding: 2.5rem 2rem; }

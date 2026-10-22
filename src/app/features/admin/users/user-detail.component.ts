@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -286,6 +286,7 @@ type Tab = 'activity' | 'orders' | 'coupons' | 'reviews' | 'cart' | 'addresses';
       </adm-modal>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .back { font-size: 0.85rem; }
     .badges { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.6rem; }

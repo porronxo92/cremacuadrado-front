@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -106,6 +106,7 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
       }
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .items { margin: 0; padding: 0; list-style: none; font-size: 0.82rem; }
     @media (max-width: 768px) { .items { text-align: right; } }

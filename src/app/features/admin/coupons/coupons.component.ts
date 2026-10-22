@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -204,6 +204,7 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
       </adm-modal>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .code { font-family: ui-monospace, Consolas, monospace; font-weight: 600; color: var(--adm-brand); }
     tr.is-selected td { background: var(--adm-brand-soft); }

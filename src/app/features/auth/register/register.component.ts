@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -145,6 +145,7 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
 
     /* app-phone-input: mismo aspecto que el resto de campos de este formulario */

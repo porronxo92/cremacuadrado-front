@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -101,6 +101,7 @@ interface PointOfSale {
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .hint { font-size: 0.75rem; color: #6B6456; margin: -0.25rem 0 0.75rem; line-height: 1.4; }
     .coords { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }

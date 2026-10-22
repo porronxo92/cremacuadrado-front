@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
@@ -93,6 +93,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
       </div>
     </footer>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .footer {
       background: #1A1208;

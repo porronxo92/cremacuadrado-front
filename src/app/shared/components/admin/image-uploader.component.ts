@@ -1,4 +1,4 @@
-import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
+import { Component, EventEmitter, inject, Input, Output, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
@@ -45,6 +45,7 @@ import { ToastService } from '../../../core/services/toast.service';
       }
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .uploader {
       border: 2px dashed #d8d0bd;

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -147,6 +147,7 @@ type Tab = 'payments' | 'refunds' | 'webhooks';
       </adm-modal>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .err { max-width: 320px; font-size: 0.8rem; color: var(--adm-danger); overflow-wrap: anywhere; }
     .payload { margin: 0; padding: 1rem; background: #1C1A14; color: #F4F1E9; border-radius: 6px; font-size: 0.75rem;

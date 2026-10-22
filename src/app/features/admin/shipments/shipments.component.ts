@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -93,6 +93,7 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
       }
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`.err { color: var(--adm-danger); max-width: 280px; overflow-wrap: anywhere; }`]
 })
 export class AdminShipmentsComponent implements OnInit {

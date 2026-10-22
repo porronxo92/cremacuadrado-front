@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -185,6 +185,7 @@ const W_STATUS: Record<string, { label: string; tone: BadgeTone }> = {
       </adm-modal>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .path { max-width: 380px; overflow-wrap: anywhere; font-size: 0.78rem; }
   `]

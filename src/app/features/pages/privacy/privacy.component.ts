@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 import { COMPANY, PRIVACY_VERSION } from '../../../core/legal';
@@ -13,6 +13,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
 @Component({
     selector: 'app-privacy-page',
     imports: [RouterModule, LegalLayoutComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
     <app-legal-layout title="Política de privacidad" [version]="version" updated="octubre de 2026" [toc]="toc">
       <section id="responsable">

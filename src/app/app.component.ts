@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { Router, RouterOutlet, NavigationEnd } from '@angular/router';
 
 import { HeaderComponent } from './shared/components/header/header.component';
@@ -35,6 +35,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
       }
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .app {
       display: flex;

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
@@ -178,6 +178,7 @@ import { environment } from '@env/environment';
       </div>
     </section>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;

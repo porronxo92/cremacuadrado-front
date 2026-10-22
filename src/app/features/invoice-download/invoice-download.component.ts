@@ -1,4 +1,4 @@
-import { Component, OnInit, PLATFORM_ID, inject, signal } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -30,6 +30,7 @@ import { saveBlob } from '../../core/utils/save-blob';
       </div>
     </section>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .inv { min-height: 60vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; background: #F4F1E9; }
     .inv__card { max-width: 480px; text-align: center; background: #fff; border-radius: 8px; padding: 2.5rem 2rem; }

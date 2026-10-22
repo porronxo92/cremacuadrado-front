@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -97,6 +97,7 @@ interface WithdrawalReceipt {
       </section>
     </app-legal-layout>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .wd-form { background: #fff; border: 1px solid #D9D3C5; border-radius: 6px; padding: 1.25rem; }
     .wd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; @media (max-width: 600px) { grid-template-columns: 1fr; } }

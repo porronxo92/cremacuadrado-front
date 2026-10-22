@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 import { COMPANY, TERMS_VERSION } from '../../../core/legal';
@@ -12,6 +12,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
 @Component({
     selector: 'app-sales-conditions',
     imports: [RouterModule, LegalLayoutComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
     <app-legal-layout title="Condiciones generales de venta" [version]="version" updated="octubre de 2026" [toc]="toc">
       <section id="vendedor">

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { BlogService } from '../../../core/services/blog.service';
@@ -151,6 +151,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
       </section>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .blog-page {
       min-height: 100vh;

@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollapsibleBlockComponent } from '../../../shared/components/collapsible-block/collapsible-block.component';
@@ -341,6 +341,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     :host { display: block; }
 

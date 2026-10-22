@@ -1,4 +1,4 @@
-import { Component, HostListener, ViewEncapsulation, inject, signal } from '@angular/core';
+import { Component, HostListener, ViewEncapsulation, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { RouterModule } from '@angular/router';
@@ -31,6 +31,7 @@ const ICONS: Record<string, string> = {
     imports: [RouterModule, AdminConfirmHostComponent],
     encapsulation: ViewEncapsulation.None,
     styleUrls: ['./shared/admin-shell.scss', './shared/admin-shell-data.scss', './admin-layout.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
     <div class="adm-shell adm-layout">
       <header class="adm-topbar">

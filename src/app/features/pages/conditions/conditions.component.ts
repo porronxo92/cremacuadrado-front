@@ -1,4 +1,4 @@
-import { Component, signal, inject } from '@angular/core';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
@@ -135,6 +135,7 @@ import { SeoService } from '../../../core/services/seo.service';
       </main>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     $brand: #7B1716; $accent: #E6C15A; $bg: #F4F1E9; $bg-alt: #EDE9DD; $white: #FFFFFF;
     $text: #1A1208; $text-lt: #5A4F3E; $text-mt: #8C7F6A; $border: #D9D3C5;

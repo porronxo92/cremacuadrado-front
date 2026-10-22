@@ -1,6 +1,7 @@
 import {
   Component, ElementRef, HostListener, PLATFORM_ID, ViewChild, afterNextRender, computed, effect, inject, signal,
-  DOCUMENT
+  DOCUMENT,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
@@ -84,6 +85,7 @@ import { CookieConsentService } from '../../../core/services/cookie-consent.serv
       </section>
     }
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .cm-backdrop { position: fixed; inset: 0; z-index: 3000; background: rgba(28, 26, 20, 0.6); }
     .cm {

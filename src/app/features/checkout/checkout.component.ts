@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal, DOCUMENT } from '@angular/core';
+import { Component, DestroyRef, OnInit, OnDestroy, computed, inject, signal, DOCUMENT, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
@@ -406,13 +406,13 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 
               <div class="summary-row">
                 <span>Subtotal</span>
-                <span>{{ cartService.cart()?.subtotal | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                <span>{{ $safeNavigationMigration(cartService.cart()?.subtotal) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
               </div>
 
               @if ((cartService.cart()?.discount ?? 0) > 0) {
                 <div class="summary-row summary-row--discount">
                   <span>Descuento {{ cartService.cart()?.coupon?.code ? '(' + cartService.cart()!.coupon!.code + ')' : '' }}</span>
-                  <span>−{{ cartService.cart()?.discount | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
+                  <span>−{{ $safeNavigationMigration(cartService.cart()?.discount) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                 </div>
               }
 
@@ -498,6 +498,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     // Estilo de marca (variables globales de styles.scss). Contenedores con
     // radio 2px; botones con radio 20px; nunca blanco puro.

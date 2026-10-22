@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
 import { CookieConsentService } from '../../../core/services/cookie-consent.service';
@@ -83,6 +83,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
       </section>
     </app-legal-layout>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .ck-btn { min-height: 48px; padding: 0 1.4rem; border-radius: 20px; border: 1.5px solid #7B1716; background: #F4F1E9;
       color: #7B1716; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer;

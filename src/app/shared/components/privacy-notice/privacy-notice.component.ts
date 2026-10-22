@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 /**
@@ -19,6 +19,7 @@ import { RouterModule } from '@angular/router';
       Más información en la <a routerLink="/privacidad" target="_blank">política de privacidad</a>.
     </p>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .privacy-notice { font-family: 'Poppins', sans-serif; font-size: 0.72rem; line-height: 1.55; color: inherit; opacity: 0.8; margin: 0.75rem 0 0; }
     .privacy-notice a { color: inherit; text-decoration: underline; }

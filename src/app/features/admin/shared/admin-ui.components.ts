@@ -1,7 +1,8 @@
 import {
   Component, ElementRef, EventEmitter, HostListener, Injectable, Input, OnDestroy, OnInit, Output,
   computed, inject, input, output, signal,
-  DOCUMENT
+  DOCUMENT,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { BadgeTone } from './admin-labels';
@@ -12,6 +13,7 @@ import { BadgeTone } from './admin-labels';
 @Component({
   selector: 'adm-badge',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `<span class="adm-badge" [attr.data-tone]="tone()"><ng-content /></span>`,
 })
 export class AdminBadgeComponent {
@@ -24,6 +26,7 @@ export class AdminBadgeComponent {
 @Component({
     selector: 'adm-pagination',
     imports: [],
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
     @if (total() > 0) {
       <nav class="adm-pagination" aria-label="Paginación">
@@ -108,6 +111,7 @@ export class AdminPaginationComponent {
       <footer class="adm-modal__footer"><ng-content select="[modal-footer]" /></footer>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.Eager,
   host: { class: 'adm-modal-host' },
 })
 export class AdminModalComponent implements OnInit, OnDestroy {
@@ -198,6 +202,7 @@ export class AdminConfirmService {
 @Component({
     selector: 'adm-confirm-host',
     imports: [AdminModalComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: `
     @if (confirm.current(); as c) {
       <adm-modal [title]="c.title" size="sm" (closed)="confirm.answer(false)">
@@ -231,6 +236,7 @@ export class AdminConfirmHostComponent {
     }
     @if (hint) { <span class="adm-stat__hint">{{ hint }}</span> }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: { class: 'adm-stat', '[class.adm-stat--highlight]': 'highlight' }
 })
 export class AdminStatComponent {

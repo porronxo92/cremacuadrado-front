@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -119,6 +119,7 @@ interface AdminReview {
       </adm-modal>
     }
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .list { display: flex; flex-direction: column; gap: 0.75rem; }
     .review header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem;

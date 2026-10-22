@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -109,6 +109,7 @@ import { ADMIN_UI } from '../shared/admin-ui.components';
       }
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`td adm-badge + adm-badge { margin-left: 0.25rem; }`]
 })
 export class AdminUsersComponent implements OnInit {

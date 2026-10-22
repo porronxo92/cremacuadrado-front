@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, signal } from '@angular/core';
+import { Component, Input, ViewEncapsulation, signal, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 export interface LegalTocItem {
@@ -47,6 +47,7 @@ export interface LegalTocItem {
       </div>
     </div>
   `,
+    changeDetection: ChangeDetectionStrategy.Eager,
     styles: [`
     .legal { background: #F4F1E9; min-height: 100vh; padding-bottom: 4rem; }
     .legal__container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
