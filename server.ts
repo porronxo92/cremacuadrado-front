@@ -8,6 +8,20 @@ import { environment } from '@env/environment';
 import { RESPONSE_STATUS, ResponseStatus } from './src/app/core/tokens/response-status.token';
 
 const SITE_ORIGIN = environment.siteUrl;
+const SITE_URL_ORIGIN = new URL(SITE_ORIGIN).origin;
+
+// URL handed to the render (becomes document.location). Built with new URL()
+// and checked, never concatenated: a request line like `GET //evil.example/x`
+// gives originalUrl "//evil.example/x", and new URL() on that string — with
+// any base — is a *protocol-relative* URL that swaps the origin for
+// evil.example (same for "/\evil.example": WHATWG treats "\" as "/"). So the
+// leading slashes/backslashes are collapsed to one first, making it a plain
+// path, and the resulting origin is asserted as a last line of defence.
+function renderUrl(originalUrl: string): string {
+  const url = new URL('/' + originalUrl.replace(/^[/\\]+/, ''), SITE_URL_ORIGIN);
+  if (url.origin !== SITE_URL_ORIGIN) throw new Error(`render URL fuera de ${SITE_URL_ORIGIN}: ${originalUrl}`);
+  return url.href;
+}
 
 // Legacy English routes (app.routes.ts:92-105) — those are client-side
 // Angular Router redirects, which means a crawler sees a 200 and never
@@ -36,6 +50,38 @@ const LEGACY_REDIRECTS: Array<{ from: string; to: string }> = [
 let sitemapCache: { xml: string; generatedAt: number } | null = null;
 const SITEMAP_CACHE_MS = 10 * 60 * 1000;
 
+// GET /blog/posts caps page_size at 50 (backend/app/api/v1/blog.py, le=50):
+// asking for more is a 422, not a truncated list — which is how the sitemap
+// silently lost every post. Walk the pages via total_pages instead, with a
+// hard cap so a misbehaving API can't keep a crawler request open forever
+// (20 × 50 = 1000 posts, far beyond what the blog will reach).
+const BLOG_SITEMAP_PAGE_SIZE = 50;
+const BLOG_SITEMAP_MAX_PAGES = 20;
+
+async function fetchBlogSlugs(): Promise<string[]> {
+  const slugs: string[] = [];
+  for (let page = 1; page <= BLOG_SITEMAP_MAX_PAGES; page++) {
+    const res = await fetch(
+      `${environment.serverApiUrl}/blog/posts?page=${page}&page_size=${BLOG_SITEMAP_PAGE_SIZE}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (!res.ok) throw new Error(`GET /blog/posts page=${page} → HTTP ${res.status}`);
+    const data = await res.json();
+    const items: Array<{ slug: string }> = data?.items ?? [];
+    slugs.push(...items.map((p) => p.slug).filter(Boolean));
+    if (items.length === 0 || page >= (data?.total_pages ?? 0)) return slugs;
+  }
+  console.error(`[sitemap] /blog/posts tiene más de ${BLOG_SITEMAP_MAX_PAGES} páginas; el sitemap solo lleva las primeras`);
+  return slugs;
+}
+
+async function fetchProductSlugs(): Promise<string[]> {
+  const res = await fetch(`${environment.serverApiUrl}/products?page_size=100`, { signal: AbortSignal.timeout(5000) });
+  if (!res.ok) throw new Error(`GET /products → HTTP ${res.status}`);
+  const data = await res.json();
+  return (data?.items ?? []).map((p: { slug: string }) => p.slug).filter(Boolean);
+}
+
 async function generateSitemap(): Promise<string> {
   if (sitemapCache && Date.now() - sitemapCache.generatedAt < SITEMAP_CACHE_MS) {
     return sitemapCache.xml;
@@ -47,25 +93,23 @@ async function generateSitemap(): Promise<string> {
     '/privacidad', '/aviso-legal', '/cookies', '/devoluciones',
   ];
 
-  let productSlugs: string[] = [];
-  let blogSlugs: string[] = [];
-  try {
-    const [productsRes, postsRes] = await Promise.all([
-      fetch(`${environment.serverApiUrl}/products?page_size=100`, { signal: AbortSignal.timeout(5000) }),
-      fetch(`${environment.serverApiUrl}/blog/posts?page_size=500`, { signal: AbortSignal.timeout(5000) }),
-    ]);
-    if (productsRes.ok) {
-      const data = await productsRes.json();
-      productSlugs = (data?.items ?? []).map((p: { slug: string }) => p.slug);
-    }
-    if (postsRes.ok) {
-      const data = await postsRes.json();
-      blogSlugs = (data?.items ?? []).map((p: { slug: string }) => p.slug);
-    }
-  } catch {
-    // API unreachable — serve the static URLs only rather than fail the
-    // whole sitemap; better a partial sitemap than a 500 for every crawler.
-  }
+  // Each source fails on its own: API unreachable or erroring → that part is
+  // left out rather than failing the whole sitemap (better partial than a 500
+  // for every crawler), but it's logged — a sitemap quietly missing every
+  // post is exactly the bug this used to hide.
+  let partial = false;
+  const [productSlugs, blogSlugs] = await Promise.all([
+    fetchProductSlugs().catch((err) => {
+      partial = true;
+      console.error(`[sitemap] productos omitidos: ${err?.message ?? err}`);
+      return [] as string[];
+    }),
+    fetchBlogSlugs().catch((err) => {
+      partial = true;
+      console.error(`[sitemap] posts del blog omitidos: ${err?.message ?? err}`);
+      return [] as string[];
+    }),
+  ]);
 
   const urls = [
     ...STATIC_URLS,
@@ -79,7 +123,9 @@ async function generateSitemap(): Promise<string> {
     urls.map((path) => `  <url><loc>${SITE_ORIGIN}${path}</loc></url>`).join('\n') +
     `\n</urlset>\n`;
 
-  sitemapCache = { xml, generatedAt: Date.now() };
+  // A partial sitemap is served but not cached: one API timeout on a cold
+  // start would otherwise hide every product from crawlers for 10 minutes.
+  if (!partial) sitemapCache = { xml, generatedAt: Date.now() };
   return xml;
 }
 
@@ -160,8 +206,14 @@ export function app(): express.Express {
   // real backend. LOCAL_API_PROXY_TARGET overrides where it forwards to —
   // useful when testing a production build (environment.prod.ts) against a
   // local backend instead of the live one.
+  // Registered only off Vercel (VERCEL is set in every Vercel build and
+  // function). The /api/:path* edge rewrite described above no longer exists
+  // in vercel.json — everything, /api/* included, is rewritten to this
+  // function — and apiUrl is absolute in prod/staging, so nothing legitimate
+  // uses it there. Left mounted, it was a forwarder of any request and its
+  // headers (Authorization, cookies) from the SSR function to the backend.
   const apiProxyTarget = process.env['LOCAL_API_PROXY_TARGET'] ?? new URL(environment.serverApiUrl).origin;
-  server.use('/api', express.raw({ type: '*/*', limit: '10mb' }), async (req, res) => {
+  if (!process.env['VERCEL']) server.use('/api', express.raw({ type: '*/*', limit: '10mb' }), async (req, res) => {
     try {
       const upstream = await fetch(`${apiProxyTarget}${req.originalUrl}`, {
         method: req.method,
@@ -200,10 +252,19 @@ export function app(): express.Express {
   // logged-in visitor, and only fix itself after hydration (SSR-11). These
   // get the plain CSR shell instead — the Angular Router takes over
   // client-side exactly as it does today, pre-SSR.
+  // index.csr.html, not index.html: once "/" is prerendered, the builder
+  // writes the home page's rendered HTML to browser/index.html and keeps the
+  // untouched shell as index.csr.html. Sending index.html here served the
+  // full home (canonical "/", home H1, ng-server-context="ssg") at /carrito,
+  // /checkout… and hydration then fought the router over the wrong DOM.
   const CLIENT_ONLY_PREFIXES = ['/carrito', '/checkout', '/gracias', '/auth', '/account', '/admin'];
+  const csrShell = join(browserDistFolder, 'index.csr.html');
   server.get('**', (req, res, next) => {
-    if (CLIENT_ONLY_PREFIXES.some((p) => req.path === p || req.path.startsWith(p + '/'))) {
-      res.sendFile(join(browserDistFolder, 'index.html'));
+    // Same leading-slash collapse as renderUrl(): otherwise //carrito skips
+    // this check but still renders /carrito on the server.
+    const path = '/' + req.path.replace(/^[/\\]+/, '');
+    if (CLIENT_ONLY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'))) {
+      res.sendFile(csrShell);
       return;
     }
     next();
@@ -236,7 +297,7 @@ export function app(): express.Express {
         // against `allowedHosts` (or NG_ALLOWED_HOSTS): the hostname of
         // SITE_ORIGIN must be in that list or it silently returns the empty
         // shell with a 200 (angular/angular#68391).
-        url: `${SITE_ORIGIN}${originalUrl}`,
+        url: renderUrl(originalUrl),
         publicPath: browserDistFolder,
         providers: [
           { provide: APP_BASE_HREF, useValue: baseUrl },
