@@ -1,5 +1,5 @@
-import { Component, inject, effect, ElementRef, HostListener, ViewChild } from '@angular/core';
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, inject, effect, ElementRef, HostListener, ViewChild, DOCUMENT } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';

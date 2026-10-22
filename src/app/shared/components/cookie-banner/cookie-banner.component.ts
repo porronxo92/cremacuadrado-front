@@ -1,7 +1,8 @@
 import {
   Component, ElementRef, HostListener, PLATFORM_ID, ViewChild, afterNextRender, computed, effect, inject, signal,
+  DOCUMENT
 } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { isPlatformBrowser } from '@angular/common';
 import { NavigationEnd, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';

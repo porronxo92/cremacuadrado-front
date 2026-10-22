@@ -1,8 +1,9 @@
 import {
   Component, ElementRef, EventEmitter, HostListener, Injectable, Input, OnDestroy, OnInit, Output,
   computed, inject, input, output, signal,
+  DOCUMENT
 } from '@angular/core';
-import { CommonModule, DOCUMENT } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { BadgeTone } from './admin-labels';
 
 // ═════════════════════════════════════════════════════════════════════════
