@@ -535,12 +535,13 @@ export class ProductListComponent implements OnInit {
   addToCart(product: ProductListItem, variant: ProductVariant): void {
     if (!variant.is_in_stock || this.addingId() !== null) return;
     this.clearError(product.id);
+    const opener = document.activeElement;
     this.addingId.set(product.id);
     this.cartService.addItem(variant.id, this.quantity(product)).subscribe({
       next: () => {
         this.addingId.set(null);
         this.quantities.update(c => ({ ...c, [product.id]: 1 }));
-        this.miniCartService.open();
+        this.miniCartService.open(opener);
       },
       error: (err) => {
         this.addingId.set(null);

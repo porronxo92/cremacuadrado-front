@@ -518,7 +518,8 @@ export class MiniCartComponent {
       document.body.style.overflow = open ? 'hidden' : '';
 
       if (open && !this.wasOpen) {
-        this.returnFocusTo = this.document.activeElement as HTMLElement | null;
+        this.returnFocusTo = this.miniCartService.takeOpener()
+          ?? this.document.activeElement as HTMLElement | null;
         // Tras pintar el panel (deja de ser inert), el foco entra en él.
         setTimeout(() => this.closeBtn?.nativeElement.focus());
       } else if (!open && this.wasOpen) {

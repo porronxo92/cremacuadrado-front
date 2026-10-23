@@ -953,12 +953,13 @@ export class HomeComponent implements OnInit {
     }
 
     if (this.addingId() !== null) return;
+    const opener = document.activeElement;
     this.addingId.set(product.id);
     this.cartService.addItem(variant.id, this.quantity(product)).subscribe({
       next: () => {
         this.addingId.set(null);
         this.quantities.update(q => ({ ...q, [product.id]: 1 }));
-        this.miniCartService.open();
+        this.miniCartService.open(opener);
       },
       error: (err) => {
         this.addingId.set(null);
