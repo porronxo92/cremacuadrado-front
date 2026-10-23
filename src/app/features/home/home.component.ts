@@ -121,8 +121,7 @@ import { environment } from '@env/environment';
         <div class="newsletter__inner">
           <div class="newsletter__text">
             <h2 class="newsletter__title">RECETAS Y NOVEDADES</h2>
-            <p class="newsletter__offer">Suscríbete y te enviamos un código de bienvenida con un <strong>10&nbsp;% de descuento</strong> para tu primer pedido.</p>
-            <p class="newsletter__sub">Sin spam: un email cuando hay algo que contar.</p>
+            <p class="newsletter__offer">Suscríbete y te enviamos un código con un <strong>10&nbsp;% de descuento</strong> para tu primer pedido. <em>Sin spam.</em></p>
           </div>
           <form class="newsletter__form" (submit)="subscribeNewsletter($event)">
             <input
@@ -609,15 +608,17 @@ import { environment } from '@env/environment';
 
     // ── Newsletter ────────────────────────────────────────
     .newsletter {
-      padding: 5rem 0;
+      padding: 2.5rem 0;
       background: $bg;
+
+      @media (max-width: 600px) { padding: 1.75rem 0; }
     }
 
     .newsletter__inner {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 2rem;
+      gap: 1rem 2rem;
       flex-wrap: wrap;
     }
 
@@ -636,16 +637,9 @@ import { environment } from '@env/environment';
       font-size: 1rem;
       line-height: 1.5;
       color: $ink;
-      margin: 0 0 0.35rem;
-      strong { color: $brand; }
-    }
-
-    .newsletter__sub {
-      font-family: 'Lora', serif;
-      font-style: italic;
-      font-size: 0.95rem;
-      color: $muted;
       margin: 0;
+      strong { color: $brand; }
+      em { color: $muted; }
     }
 
     .newsletter__consent { flex-basis: 100%; display: flex; gap: 0.5rem; align-items: flex-start; font-family: 'Poppins', sans-serif; font-size: 0.75rem; line-height: 1.45; cursor: pointer;
@@ -659,16 +653,19 @@ import { environment } from '@env/environment';
       flex: 1;
       max-width: 480px;
 
+      // Móvil: email y botón siguen en una fila; consentimiento y aviso debajo
       @media (max-width: 600px) {
-        flex-direction: column;
         width: 100%;
         max-width: 100%;
       }
     }
 
     .newsletter__input {
-      flex: 1;
-      padding: 0.75rem 1rem;
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 48px;
+      padding: 0 1rem;
+      font-size: 1rem;  // ≥ 16px: evita el zoom de iOS
       border: 1.5px solid $border;
       border-radius: 20px;
       font-family: 'Poppins', sans-serif;
@@ -683,7 +680,9 @@ import { environment } from '@env/environment';
     }
 
     .newsletter__btn {
-      padding: 0.75rem 1.5rem;
+      flex: 0 0 auto;
+      min-height: 48px;
+      padding: 0 1.25rem;
       background: $brand;
       color: $accent;
       border: none;

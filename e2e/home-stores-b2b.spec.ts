@@ -2,7 +2,7 @@ import { test, expect, settle } from './fixtures';
 import { mockApi } from './mocks/api-mock';
 import type { Page } from '@playwright/test';
 
-// Home: «¿Dónde comprar CremaCuadrado?» (mapa solo con consentimiento) y franja «Para tu negocio».
+// Home: «¿Dónde comprar CremaCuadrado?» (filtros por ciudad + mapa solo con consentimiento) y franja «Para tu negocio».
 
 const STORES = [
   { id: 1, name: 'Delicatessen Uno', city: 'Madrid', instagram_url: 'https://instagram.com/uno', maps_url: 'https://maps.google.com/?q=uno', address: null, latitude: 40.4, longitude: -3.7 },
@@ -27,30 +27,43 @@ async function open(page: Page, stores: unknown[] | 500 = STORES) {
 const h = (page: Page, sel: string) => page.locator(sel).evaluate((e) => Math.round(e.getBoundingClientRect().height));
 
 test.describe('home: dónde comprar', () => {
-  test('lista corta en el HTML, mapa NO cargado sin consentimiento, enlaces correctos', async ({ page }, info) => {
+  test('filtros por ciudad, mapa NO cargado sin consentimiento y sin botones extra', async ({ page }, info) => {
     const tiles = await open(page);
     const section = page.locator('app-stores-block section.stores');
     await section.scrollIntoViewIfNeeded();
 
     await expect(section.getByRole('heading', { level: 2, name: '¿Dónde comprar CremaCuadrado?' })).toBeVisible();
-    await expect(section.locator('.stores__list li')).toHaveCount(4); // 3 tiendas + «y 2 más»
-    await expect(section.locator('.stores__list')).toContainText('Delicatessen Uno');
-    await expect(section.locator('.stores__more')).toContainText('y 2 más');
+    const tags = section.locator('.stores__tag');
+    await expect(tags).toHaveText(['Madrid', 'Ciudad Real', 'Valencia', 'Sevilla']);
+    await expect(section.locator('.stores__status')).toHaveText('5 puntos de venta en 4 ciudades');
+    // Solo el mapa: sin enlaces a /puntos-de-venta ni «cómpralo online»
+    await expect(section.getByRole('link')).toHaveCount(0);
 
     // Sin consentimiento: placeholder con «Ver mapa», sin Leaflet ni teselas
     await expect(section.getByRole('button', { name: 'Ver mapa' })).toBeVisible();
     await expect(page.locator('app-stores-block .leaflet-container')).toHaveCount(0);
     expect(tiles).toEqual([]);
 
-    await expect(section.getByRole('link', { name: 'Ver todos los puntos de venta' })).toHaveAttribute('href', '/puntos-de-venta');
-    await expect(section.getByRole('link', { name: 'o cómpralo online' })).toHaveAttribute('href', '/#productos');
-
-    // Altura de la sección (medida para el informe)
+    for (const box of await tags.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().height))) {
+      expect(box).toBeGreaterThanOrEqual(44);
+    }
     const storesHeight = await h(page, 'app-stores-block section.stores');
     console.log(`MEDIDA stores ${info.project.name} ${storesHeight}px`);
     expect(storesHeight).toBeLessThanOrEqual(info.project.name === 'desktop' ? 480 : 560);
-    // Sin scroll horizontal
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test('elegir una ciudad filtra y se puede volver a todas', async ({ page }) => {
+    await open(page);
+    const section = page.locator('app-stores-block section.stores');
+    await section.scrollIntoViewIfNeeded();
+    const madrid = section.getByRole('button', { name: 'Madrid' });
+    await madrid.click();
+    await expect(madrid).toHaveAttribute('aria-pressed', 'true');
+    await expect(section.locator('.stores__status')).toHaveText('2 puntos de venta en Madrid');
+    await madrid.click();
+    await expect(madrid).toHaveAttribute('aria-pressed', 'false');
+    await expect(section.locator('.stores__status')).toHaveText('5 puntos de venta en 4 ciudades');
   });
 
   test('«Ver mapa» (clic expreso) carga Leaflet en la sección', async ({ page }) => {
@@ -61,22 +74,9 @@ test.describe('home: dónde comprar', () => {
     await expect(page.locator('app-stores-block .leaflet-container')).toBeVisible({ timeout: 15_000 });
   });
 
-  test('«o cómpralo online» lleva a la sección de productos', async ({ page }) => {
-    await open(page);
-    const section = page.locator('app-stores-block section.stores');
-    await section.scrollIntoViewIfNeeded();
-    await section.getByRole('link', { name: 'o cómpralo online' }).click();
-    await expect(page).toHaveURL(/\/$/);
-    await expect(page.locator('#productos h2')).toBeFocused();
-  });
-
-  test('si la API falla no queda un hueco: enlace a /puntos-de-venta y opción online', async ({ page }) => {
+  test('si la API falla la sección no se pinta', async ({ page }) => {
     await open(page, 500);
-    const section = page.locator('app-stores-block section.stores');
-    await expect(section.locator('.stores__list')).toHaveCount(0);
-    await expect(page.locator('app-stores-block app-stores-map-gate')).toHaveCount(0);
-    await expect(section.getByRole('link', { name: 'Ver todos los puntos de venta' })).toBeVisible();
-    await expect(section.getByRole('link', { name: 'o cómpralo online' })).toBeVisible();
+    await expect(page.locator('app-stores-block section.stores')).toHaveCount(0);
   });
 
   test('ya no hay sección de reseñas en la home', async ({ page }) => {

@@ -92,7 +92,7 @@ const SWIPE_PX = 40;
       (focusout)="onFocusOut($event)">
       <div class="trilogia__container" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
         <div class="trilogia__header">
-          <p class="trilogia__eyebrow">Nuestro método · Ciudad Real</p>
+          <p class="trilogia__eyebrow">Nuestro método artesano</p>
           <h2 class="trilogia__title" id="trilogia-title">¿Por qué sabe así <span class="trilogia__title-brand">CremaCuadrado?</span></h2>
           <p class="trilogia__subtitle">Más de tres años de pruebas y ajustes hasta dar con estos tres pasos.</p>
         </div>

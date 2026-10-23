@@ -1,118 +1,113 @@
-import { ChangeDetectionStrategy, Component, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { PointOfSale } from '../../../../core/models';
 import { PointOfSaleService } from '../../../../core/services/point-of-sale.service';
 import { StoresMapGateComponent } from '../../../pages/puntos-de-venta/stores-map-gate.component';
 
-const LIST_LIMIT = 3;
-
 /**
  * «¿Dónde comprar CremaCuadrado?»: versión compacta de /puntos-de-venta (misma API y mismo
- * modelo). La lista corta va en el HTML (también en SSR, con la respuesta en la caché de
- * transferencia); el mapa pasa por la puerta de consentimiento y Leaflet se importa en
- * diferido solo cuando el mapa entra en pantalla.
+ * modelo). Filtros por ciudad, como en /puntos-de-venta, y el mapa detrás de la puerta de
+ * consentimiento (Leaflet se importa en diferido solo cuando el mapa entra en pantalla).
+ * Sin puntos de venta (o si la API falla) la sección no se pinta.
  */
 @Component({
   selector: 'app-stores-block',
   standalone: true,
-  imports: [RouterLink, StoresMapGateComponent],
+  imports: [StoresMapGateComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
-    <section class="stores" aria-labelledby="stores-title">
-      <div class="container">
-        <header class="stores__header">
-          <h2 class="stores__title" id="stores-title">¿Dónde comprar CremaCuadrado?</h2>
-          <p class="stores__sub">En tu tienda gourmet o aquí, online.</p>
-        </header>
+    @if (stores().length > 0) {
+      <section class="stores" aria-labelledby="stores-title">
+        <div class="container stores__layout">
+          <div class="stores__intro">
+            <header class="stores__header">
+              <h2 class="stores__title" id="stores-title">¿Dónde comprar CremaCuadrado?</h2>
+              <p class="stores__sub">Elige tu ciudad y encuentra tu tienda más cercana.</p>
+            </header>
 
-        <div class="stores__body" [class.stores__body--solo]="stores().length === 0">
-          @if (stores().length > 0) {
-            <div class="stores__map">
-              <app-stores-map-gate [stores]="stores()" [compact]="true" />
+            <div class="stores__filters" role="group" aria-label="Filtrar puntos de venta por ciudad">
+              @for (city of cities(); track city) {
+                <button
+                  type="button"
+                  class="stores__tag"
+                  [class.stores__tag--active]="activeCity() === city"
+                  [attr.aria-pressed]="activeCity() === city"
+                  (click)="toggleCity(city)">{{ city }}</button>
+              }
             </div>
-          }
+            <p class="stores__status" aria-live="polite">{{ status() }}</p>
+          </div>
 
-          <div class="stores__side">
-            @if (stores().length > 0) {
-              <ul class="stores__list" aria-label="Algunos puntos de venta">
-                @for (store of shown(); track store.id) {
-                  <li><strong>{{ store.name }}</strong><span>{{ store.city }}</span></li>
-                }
-                @if (extra() > 0) {
-                  <li class="stores__more">y {{ extra() }} más</li>
-                }
-              </ul>
-            }
-            <div class="stores__actions">
-              <a routerLink="/puntos-de-venta" class="stores__btn">Ver todos los puntos de venta</a>
-              <a href="/#productos" class="stores__online" (click)="goToProducts($event)">o cómpralo online</a>
-            </div>
+          <div class="stores__map">
+            <app-stores-map-gate [stores]="filtered()" [compact]="true" />
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    }
   `,
   styles: [`
     :host { display: block; }
     .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
     .stores { padding: 2rem 0; background: var(--color-bg, #F4F1E9); }
-    .stores__header { text-align: center; margin-bottom: 1rem; }
+    .stores__header { text-align: center; margin-bottom: 0.9rem; }
     .stores__title {
       font-family: 'Teko', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em;
       font-size: clamp(2rem, 4vw, 2.8rem); line-height: 1.1; color: var(--color-brand, #7B1716); margin: 0 0 0.4rem;
     }
     .stores__sub { font-family: 'Lora', serif; font-style: italic; font-size: 1rem; color: var(--color-text-light, #5A4F3E); margin: 0; }
 
-    .stores__body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
-    .stores__body--solo { max-width: 460px; margin: 0 auto; text-align: center; }
-    .stores__map {
-      border: 1px solid var(--color-border, #D9D3C5); border-radius: 12px; overflow: hidden;
-    }
+    .stores__filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+    // Mismo aspecto que .pdv-tag de /puntos-de-venta, con zona táctil de 44 px
+    .stores__tag {
+      display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem;
+      border-radius: 50px; background: #fff; border: 1.5px solid var(--color-border, #D9D3C5);
+      font-family: 'Poppins', sans-serif; font-size: 0.8rem; font-weight: 500; color: var(--color-text-light, #5A4F3E);
+      cursor: pointer; touch-action: manipulation; transition: background 150ms, border-color 150ms, color 150ms;
 
-    .stores__list {
-      list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.15rem 0.5rem;
-      font-family: 'Poppins', sans-serif; font-size: 0.85rem; color: var(--color-ink, #1C1A14);
-      li:not(:last-child)::after { content: '·'; margin-left: 0.5rem; color: var(--color-text-light, #5A4F3E); }
-      strong { font-weight: 600; }
-      span { font-size: 0.78rem; color: var(--color-text-light, #5A4F3E); margin-left: 0.3rem; }
-      .stores__more { font-family: 'Lora', serif; font-size: 0.9rem; color: var(--color-text-light, #5A4F3E); }
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(.stores__tag--active) { border-color: var(--color-brand, #7B1716); color: var(--color-brand, #7B1716); }
+      }
+      &--active { background: var(--color-brand, #7B1716); border-color: var(--color-brand, #7B1716); color: #fff; }
     }
-    .stores__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0 0.75rem; margin-top: 0.25rem; }
-    .stores__body--solo .stores__actions { justify-content: center; margin-top: 0; }
-    .stores__btn {
-      display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 1.5rem;
-      background: var(--color-bg, #F4F1E9); color: var(--color-brand, #7B1716); border: 1.5px solid var(--color-brand, #7B1716);
-      border-radius: 20px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.85rem; text-decoration: none;
-      text-align: center; transition: background 150ms, color 150ms;
-      &:hover { background: var(--color-brand, #7B1716); color: var(--color-bg, #F4F1E9); }
+    .stores__status {
+      margin: 0.5rem 0 0.75rem; text-align: center;
+      font-family: 'Poppins', sans-serif; font-size: 0.78rem; color: var(--color-text-light, #5A4F3E);
     }
-    .stores__online {
-      display: inline-flex; align-items: center; min-height: 48px; padding: 0 0.5rem;
-      font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.85rem; color: var(--color-brand, #7B1716);
-      text-decoration: underline; text-underline-offset: 3px;
-    }
+    .stores__map { border: 1px solid var(--color-border, #D9D3C5); border-radius: 12px; overflow: hidden; }
 
+    // Escritorio: texto y filtros a la izquierda, mapa a la derecha
     @media (min-width: 900px) {
       .stores { padding: 2.25rem 0; }
-      .stores__body:not(.stores__body--solo) { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 2rem; align-items: center; }
+      .stores__layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 2.5rem; align-items: center; }
+      .stores__header { text-align: left; }
+      .stores__filters { justify-content: flex-start; }
+      .stores__status { text-align: left; margin-bottom: 0; }
     }
     @media (max-width: 480px) {
       .stores { padding: 1.5rem 0; }
       .container { padding: 0 1rem; }
       .stores__title { font-size: 1.45rem; margin-bottom: 0.25rem; }
-      .stores__btn { padding: 0 1rem; flex: 1 1 auto; }
+      .stores__sub { font-size: 0.92rem; }
     }
   `],
 })
 export class StoresBlockComponent implements OnInit {
   private readonly pointOfSaleService = inject(PointOfSaleService);
-  private readonly platformId = inject(PLATFORM_ID);
 
   readonly stores = signal<PointOfSale[]>([]);
-  readonly shown = computed(() => this.stores().slice(0, LIST_LIMIT));
-  readonly extra = computed(() => Math.max(0, this.stores().length - LIST_LIMIT));
-  readonly cityCount = computed(() => new Set(this.stores().map(s => s.city)).size);
+  readonly activeCity = signal<string | null>(null);
+  readonly cities = computed(() => Array.from(new Set(this.stores().map(s => s.city))));
+  readonly filtered = computed(() => {
+    const city = this.activeCity();
+    return city ? this.stores().filter(s => s.city === city) : this.stores();
+  });
+  readonly status = computed(() => {
+    const n = this.filtered().length;
+    const city = this.activeCity();
+    const pdv = `${n} punto${n !== 1 ? 's' : ''} de venta`;
+    if (city) return `${pdv} en ${city}`;
+    const c = this.cities().length;
+    return `${pdv} en ${c} ciudad${c !== 1 ? 'es' : ''}`;
+  });
 
   ngOnInit(): void {
     this.pointOfSaleService.getAll().subscribe({
@@ -121,13 +116,7 @@ export class StoresBlockComponent implements OnInit {
     });
   }
 
-  goToProducts(event: Event): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    const target = document.getElementById('productos');
-    if (!target) return;  // sin la sección: deja que el enlace navegue
-    event.preventDefault();
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
-    (target.querySelector('h2') as HTMLElement | null)?.focus({ preventScroll: true });
+  toggleCity(city: string): void {
+    this.activeCity.set(this.activeCity() === city ? null : city);
   }
 }

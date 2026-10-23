@@ -18,7 +18,7 @@ import { StoresMapComponent } from './stores-map.component';
     @if (!mapAllowed()) {
       <div class="gate gate--consent" [class.gate--compact]="compact">
         @if (compact) {
-          <p>El mapa lo sirven CARTO / OpenStreetMap, que reciben tu IP. La lista funciona sin él.</p>
+          <p>El mapa lo sirven CARTO / OpenStreetMap, que reciben tu IP.</p>
         } @else {
           <p>El mapa se carga desde los servidores de CARTO / OpenStreetMap (no instala cookies,
             pero recibe tu dirección IP). La lista de tiendas funciona sin él.</p>

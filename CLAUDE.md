@@ -201,7 +201,7 @@ Zona inferior (tras los CTAs):
 **`HomePage`** — 5 bloques en orden exacto (Hero+método / productos / dónde comprar / B2B / newsletter):
 1. Hero (vídeo loop + H1 + reseña + CTAs) + «¿Por qué sabe así CremaCuadrado?» (`TrilogiaBlock`) debajo
 2. Los dos productos (Pura y Crunchy)
-3. «¿Dónde comprar CremaCuadrado?» (`StoresBlock`): lista corta de puntos de venta (misma API que `/puntos-de-venta`), mapa compacto (200 px móvil / 260 px escritorio; sección ≤ 560 px en móvil y ≤ 480 px en escritorio) solo con consentimiento o con «Ver mapa» (`StoresMapGate`, compartido con `/puntos-de-venta`), enlace «Ver todos los puntos de venta» y «o cómpralo online» (scroll a `#productos`). Las reseñas viven solo en las fichas
+3. «¿Dónde comprar CremaCuadrado?» (`StoresBlock`): filtros por ciudad (como en `/puntos-de-venta`, misma API) + mapa compacto (200 px móvil / 260 px escritorio; sección ≤ 560 px en móvil y ≤ 480 px en escritorio) solo con consentimiento o con «Ver mapa» (`StoresMapGate`, compartido con `/puntos-de-venta`). Sin enlaces ni botones extra; sin puntos de venta la sección no se pinta. Las reseñas viven solo en las fichas
 4. Franja «Para tu negocio» (una sola tarjeta compacta sobre fondo oscuro, un único CTA a `/para-tiendas`; sin argumentos B2B)
 5. Captura de email
 
