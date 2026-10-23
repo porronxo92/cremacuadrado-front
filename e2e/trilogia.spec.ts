@@ -1,7 +1,7 @@
 import { test, expect, settle } from './fixtures';
 import type { Page } from '@playwright/test';
 
-// Trilogía del Sabor (home): ciclo automático de 3 pasos de 5 s, sin botón de pausa.
+// «¿Por qué sabe así CremaCuadrado?» (home): ciclo automático de 3 pasos de 5 s, sin botón de pausa.
 // Pensada para los proyectos `desktop` (1440×900) y `mobile-390`.
 
 const SECTION = 'section.trilogia';
@@ -86,14 +86,15 @@ test('tocar un paso salta a él', async ({ page }) => {
   await expect(section.locator('.trilogia__now-step')).toHaveText('Paso 3 de 3');
 });
 
-test('título en una línea y, en móvil, solo el paso activo visible junto a la foto', async ({ page }, info) => {
+test('título en dos líneas y, en móvil, solo el paso activo visible junto a la foto', async ({ page }, info) => {
   const section = await openSection(page);
+  await expect(section.getByRole('heading', { level: 2 })).toHaveText('¿Por qué sabe así CremaCuadrado?');
   const lines = await section.locator('.trilogia__title').evaluate((el) => {
     const lh = parseFloat(getComputedStyle(el).lineHeight);
     return Math.round(el.getBoundingClientRect().height / lh);
   });
+  expect(lines).toBe(2);   // «¿Por qué sabe así» / «CremaCuadrado?», sin partir ninguna
   if (info.project.name.startsWith('mobile')) {
-    expect(lines).toBe(1);
 
     const opacities = await section.locator('.trilogia__step-text').evaluateAll((els) =>
       els.map((el) => getComputedStyle(el).opacity),

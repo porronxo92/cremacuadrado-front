@@ -18,7 +18,7 @@ import { environment } from '@env/environment';
     selector: 'app-home',
     imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, PrivacyNoticeComponent],
     template: `
-    <!-- Bloque 1: Hero + Trilogía -->
+    <!-- Bloque 1: Hero + método («¿Por qué sabe así CremaCuadrado?») -->
     <app-hero-block videoSrc="assets/videos/crema-pistacho-artesanal-hero.mp4" />
     <app-trilogia-block />
 

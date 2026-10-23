@@ -199,7 +199,7 @@ Zona inferior (tras los CTAs):
 ### Homepage
 
 **`HomePage`** — 5 bloques en orden exacto:
-1. Hero (vídeo loop + H1 + reseña + CTAs) + Trilogía del Sabor debajo
+1. Hero (vídeo loop + H1 + reseña + CTAs) + «¿Por qué sabe así CremaCuadrado?» (`TrilogiaBlock`) debajo
 2. Los dos productos (Pura y Crunchy)
 3. Reseñas (4 en grid 2×2)
 4. Bloque B2B (dos opciones sobre fondo oscuro)
@@ -212,8 +212,9 @@ Zona inferior (tras los CTAs):
 
 **`TrilogiaBlock`**
 - Inmediatamente debajo del hero, fondo crema, fuera del vídeo
-- Título: "La trilogía del sabor" + subtítulo Lora italic: "Método desarrollado a base de prueba y error"
-- 3 columnas: Tostado / Repelado / Molino de piedra — cada uno con icono + nombre + frase específica
+- Título: "¿Por qué sabe así CremaCuadrado?" (dos líneas fijas) + subtítulo Lora italic: "Más de tres años de pruebas y ajustes hasta dar con estos tres pasos."
+- 3 pasos: Tostado ligero / Repelado / Molino de piedra — cada uno con icono + nombre + qué hacemos + qué se nota (beneficio en granate). Solo beneficios documentados: nada de datos, porcentajes ni comparaciones con otras marcas
+- Carrusel automático sin botón de pausa y sin enlaces (el hero ya enlaza a /nuestro-metodo y los productos van justo debajo)
 
 ### Landings B2B
 
