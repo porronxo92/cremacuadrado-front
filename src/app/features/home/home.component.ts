@@ -9,14 +9,15 @@ import { SeoService } from '../../core/services/seo.service';
 import { NewsletterService } from '../../core/services/newsletter.service';
 import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
 import { FormsModule } from '@angular/forms';
-import { FeaturedReview, ProductListItem, ProductVariant } from '../../core/models';
+import { ProductListItem, ProductVariant } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
 import { TrilogiaBlockComponent } from './components/trilogia-block/trilogia-block.component';
+import { StoresBlockComponent } from './components/stores-block/stores-block.component';
 import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-home',
-    imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, PrivacyNoticeComponent],
+    imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, StoresBlockComponent, PrivacyNoticeComponent],
     template: `
     <!-- Bloque 1: Hero + método («¿Por qué sabe así CremaCuadrado?») -->
     <app-hero-block videoSrc="assets/videos/crema-pistacho-artesanal-hero.mp4" />
@@ -100,52 +101,17 @@ import { environment } from '@env/environment';
       </div>
     </section>
 
-    <!-- Bloque 3: Reseñas (reales, aprobadas) -->
-    @if (reviews().length > 0) {
-      <section class="reviews">
-        <div class="container">
-          <h2 class="reviews__title">LO QUE DICEN</h2>
-          <p class="reviews__sub">Reseñas de clientes con 4 y 5 estrellas. Las encuentras todas en cada producto.</p>
-          <div class="reviews__grid">
-            @for (review of reviews(); track review.id) {
-              <blockquote class="review-card">
-                <div class="review-card__stars" [attr.aria-label]="review.rating + ' de 5 estrellas'">{{ '★'.repeat(review.rating) }}</div>
-                <p class="review-card__text">"{{ review.comment || review.title }}"</p>
-                <footer class="review-card__footer">
-                  <strong>{{ review.user_name }}</strong>
-                  @if (review.is_verified_purchase) { <span>Compra verificada</span> }
-                  <a class="review-card__product" [routerLink]="['/tienda', review.product_slug]">{{ review.product_name }}</a>
-                </footer>
-              </blockquote>
-            }
-          </div>
-        </div>
-      </section>
-    }
+    <!-- Bloque 3: Dónde comprar (mapa en diferido y con consentimiento) -->
+    <app-stores-block />
 
-    <!-- Bloque 4: B2B -->
-    <section class="b2b">
-      <div class="container">
-        <h2 class="b2b__title">PARA TU NEGOCIO</h2>
-        <p class="b2b__sub">Crema de pistacho manchego para tiendas, restaurantes y obradores.</p>
-        <div class="b2b__grid">
-          <div class="b2b__card">
-            <div class="b2b__card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </div>
-            <h3 class="b2b__card-title">TIENDAS GOURMET</h3>
-            <p class="b2b__card-text">Una crema de origen conocido y con margen para tu tienda.</p>
-            <a routerLink="/para-tiendas" class="b2b__card-cta">Ver condiciones →</a>
-          </div>
-          <div class="b2b__card">
-            <div class="b2b__card-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            </div>
-            <h3 class="b2b__card-title">RESTAURANTES Y OBRADORES</h3>
-            <p class="b2b__card-text">Para postres, cremas y maridajes, a precio profesional.</p>
-            <a routerLink="/para-tiendas" class="b2b__card-cta">Ver condiciones →</a>
-          </div>
+    <!-- Bloque 4: B2B (franja breve; los argumentos viven en /para-tiendas) -->
+    <section class="b2b" aria-labelledby="b2b-title">
+      <div class="container b2b__inner">
+        <div class="b2b__text">
+          <h2 class="b2b__title" id="b2b-title">Para tu negocio</h2>
+          <p class="b2b__sub">Tiendas, restaurantes y obradores también pueden trabajar con CremaCuadrado.</p>
         </div>
+        <a routerLink="/para-tiendas" class="b2b__cta">Ver condiciones</a>
       </div>
     </section>
 
@@ -582,189 +548,63 @@ import { environment } from '@env/environment';
       &:hover { background: $brand; color: $bg; }
     }
 
-    // ── Reseñas ───────────────────────────────────────────
-    .reviews {
-      padding: 5rem 0;
-      background: $bg;
+    // ── B2B (franja compacta) ─────────────────────────────
+    .b2b {
+      padding: 2rem 0;
+      background: $ink;
     }
 
-    .reviews__title {
-      font-family: 'Teko', sans-serif;
-      font-weight: 700;
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      text-transform: uppercase;
-      letter-spacing: -0.02em;
-      color: $brand;
-      text-align: center;
-      margin: 0 0 0.4rem;
-    }
-
-    .reviews__sub {
-      font-family: 'Lora', serif;
-      font-style: italic;
-      font-size: 1rem;
-      color: $muted;
-      text-align: center;
-      margin: 0 0 3rem;
-    }
-
-    .reviews__grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
+    .b2b__inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       gap: 1.25rem;
 
       @media (max-width: 640px) {
-        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: center;
       }
-    }
-
-    .review-card {
-      background: white;
-      border: 1px solid $border;
-      border-radius: 6px;
-      padding: 1.5rem;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .review-card__stars {
-      color: $accent;
-      font-size: 0.85rem;
-      letter-spacing: 2px;
-    }
-
-    .review-card__text {
-      font-family: 'Lora', serif;
-      font-style: italic;
-      font-size: 0.95rem;
-      color: $ink;
-      line-height: 1.65;
-      margin: 0;
-      flex: 1;
-    }
-
-    .review-card__footer {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      font-family: 'Poppins', sans-serif;
-
-      strong {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: $ink;
-      }
-
-      span {
-        font-size: 0.75rem;
-        color: $muted;
-
-        &::before { content: '·'; margin-right: 0.4rem; }
-      }
-
-      .review-card__product {
-        font-size: 0.68rem;
-        font-weight: 600;
-        color: $brand;
-        background: rgba($brand, 0.07);
-        padding: 0.15rem 0.5rem;
-        border-radius: 10px;
-
-        &::before { display: none; }
-      }
-    }
-
-    // ── B2B ───────────────────────────────────────────────
-    .b2b {
-      padding: 5rem 0;
-      background: $ink;
     }
 
     .b2b__title {
       font-family: 'Teko', sans-serif;
       font-weight: 700;
-      font-size: clamp(2rem, 4vw, 2.8rem);
+      font-size: clamp(1.8rem, 3.5vw, 2.4rem);
+      line-height: 1.1;
       text-transform: uppercase;
       letter-spacing: -0.02em;
       color: $accent;
-      text-align: center;
-      margin: 0 0 0.4rem;
+      margin: 0 0 0.3rem;
     }
 
     .b2b__sub {
       font-family: 'Lora', serif;
       font-style: italic;
       font-size: 1rem;
-      color: rgba(#F4F1E9, 0.65);
-      text-align: center;
-      margin: 0 0 3rem;
+      line-height: 1.5;
+      color: rgba(#F4F1E9, 0.8);
+      max-width: 52ch;
+      margin: 0;
     }
 
-    .b2b__grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1.5rem;
-
-      @media (max-width: 640px) {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    .b2b__card {
-      background: rgba(#F4F1E9, 0.04);
-      border: 1px solid rgba(#F4F1E9, 0.1);
-      border-radius: 6px;
-      padding: 2rem 1.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      transition: background 200ms;
-
-      &:hover { background: rgba(#F4F1E9, 0.07); }
-    }
-
-    .b2b__card-icon {
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: rgba($accent, 0.1);
-      display: flex;
+    .b2b__cta {
+      flex-shrink: 0;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      color: $accent;
-    }
-
-    .b2b__card-title {
-      font-family: 'Teko', sans-serif;
-      font-weight: 700;
-      font-size: 1.5rem;
-      text-transform: uppercase;
-      letter-spacing: -0.01em;
-      color: #F4F1E9;
-      margin: 0;
-    }
-
-    .b2b__card-text {
-      font-family: 'Lora', serif;
-      font-size: 0.92rem;
-      color: rgba(#F4F1E9, 0.65);
-      line-height: 1.65;
-      margin: 0;
-      flex: 1;
-    }
-
-    .b2b__card-cta {
+      min-height: 48px;
+      padding: 0 1.75rem;
+      background: $accent;
+      color: $ink;
+      border-radius: 20px;
       font-family: 'Poppins', sans-serif;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      color: $accent;
       text-decoration: none;
       transition: opacity 150ms;
 
-      &:hover { opacity: 0.8; }
+      &:hover { opacity: 0.9; }
     }
 
     // ── Newsletter ────────────────────────────────────────
@@ -869,7 +709,6 @@ export class HomeComponent implements OnInit {
 
   readonly featuredProducts = signal<ProductListItem[]>([]);
   readonly loadingProducts = signal(true);
-  readonly reviews = signal<FeaturedReview[]>([]);
   readonly newsletterSending = signal(false);
   newsletterEmail = '';
   newsletterConsent = false;
@@ -879,10 +718,6 @@ export class HomeComponent implements OnInit {
   readonly addingId = signal<number | null>(null);
 
   ngOnInit(): void {
-    this.productService.getFeaturedReviews(4, 4).subscribe({
-      next: reviews => this.reviews.set(reviews),
-      error: () => this.reviews.set([]),
-    });
     this.seo.set({
       title: 'Crema de Pistacho Manchego Artesanal',
       description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Pura, con 100% pistacho, y Crunchy. Envíos a península y Baleares.',
