@@ -15,13 +15,14 @@ import {
   PROVINCES, SHIPPING_PROVINCES, canonicalProvince, postcodeMatchesProvince, provinceCode, provinceFromPostcode,
 } from '../../core/data/spain';
 import { PhoneInputComponent } from '../../shared/components/phone-input/phone-input.component';
+import { CouponBoxComponent } from '../../shared/components/coupon-box/coupon-box.component';
 import { environment } from '@env/environment';
 import { Subject, firstValueFrom, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
     selector: 'app-checkout',
-    imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneInputComponent],
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, PhoneInputComponent, CouponBoxComponent],
     template: `
     <div class="checkout-page">
       <div class="container">
@@ -431,14 +432,9 @@ import { catchError, map, switchMap } from 'rxjs/operators';
                 </span>
               </div>
 
-              @if (cartService.cart()?.coupon; as cpn) {
-                @if (cpn.applies === false && cpn.message) {
-                  <p class="coupon-info" role="status">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    <span><strong>{{ cpn.code }}:</strong> {{ cpn.message }}</span>
-                  </p>
-                }
-              }
+              <!-- Cupón (solo clientes con cuenta): queda en la cesta y pre-confirm lo
+                   copia al pedido y recalcula el importe antes de cobrar -->
+              <app-coupon-box returnUrl="/checkout" />
 
               <hr>
 
@@ -620,21 +616,6 @@ import { catchError, map, switchMap } from 'rxjs/operators';
     .ship-old { color: var(--color-text-light); font-size: 0.85rem; }
     .ship-free { color: var(--color-text); font-weight: 600; }
     .ship-note { font-size: 0.75rem; color: var(--color-text-light); }
-
-    .coupon-info {
-      display: flex;
-      gap: 0.5rem;
-      align-items: flex-start;
-      margin: 0.5rem 0;
-      padding: 0.6rem 0.75rem;
-      border-radius: 2px;
-      font-size: 0.85rem;
-      line-height: 1.4;
-      background: rgba(230, 193, 90, 0.18);
-      border: 1px solid rgba(200, 138, 26, 0.45);
-      color: #5C4300;
-      svg { flex-shrink: 0; margin-top: 2px; }
-    }
 
     .zone-info {
       display: flex;
