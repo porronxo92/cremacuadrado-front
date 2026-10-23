@@ -8,6 +8,14 @@ import {
   PaymentIntent, ApiMessage, PaginatedResponse, InvoiceSummary, BillingDetails
 } from '../models';
 
+export interface ResumePaymentResponse {
+  order_number: string;
+  items_added: number;
+  /** Líneas que no se pudieron añadir (sin stock, retiradas…). */
+  skipped: string[];
+  message: string;
+}
+
 const CART_SESSION_KEY = 'cc_cart_session';
 
 @Injectable({
@@ -98,6 +106,16 @@ export class OrderService {
     return this.http.post<ApiMessage>(`${this.ordersUrl}/${orderNumber}/cancel`, {});
   }
   
+  /**
+   * Retoma el pago de un pedido pendiente: el backend vacía el carrito, mete las
+   * líneas del pedido (y su cupón) y cancela el pedido viejo. El checkout crea
+   * uno nuevo con los precios actuales.
+   */
+  resumePayment(orderNumber: string): Observable<ResumePaymentResponse> {
+    return this.http.post<ResumePaymentResponse>(
+      `${this.ordersUrl}/${encodeURIComponent(orderNumber)}/resume-payment`, {});
+  }
+
   /**
    * Get order by number (authenticated users)
    */

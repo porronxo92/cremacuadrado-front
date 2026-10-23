@@ -247,7 +247,7 @@ export interface OrderListItem {
   primary_image_url: string | null;
 }
 
-export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type OrderStatus = 'pending' | 'pending_payment' | 'payment_processing' | 'payment_failed' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded' | 'partially_refunded';
 
 // Checkout interfaces
 export interface CheckoutData {
