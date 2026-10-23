@@ -234,39 +234,29 @@ export class CartService {
     );
   }
 
+  // Aplicar o quitar un cupón no activa la carga global: /carrito sustituiría la página
+  // por el spinner y destruiría el formulario del cupón (y su mensaje de error).
   applyCoupon(code: string): Observable<Cart> {
-    this.isLoadingSignal.set(true);
     return this.http.post<Cart>(`${this.apiUrl}/apply-coupon`, { code }, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
       tap(response => {
         this.saveCartSession(response.headers);
         const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
-        this.isLoadingSignal.set(false);
       }),
       map(response => this.normalizeCart(response.body!)),
-      catchError(error => {
-        this.isLoadingSignal.set(false);
-        throw error;
-      })
     );
   }
 
   removeCoupon(): Observable<Cart> {
-    this.isLoadingSignal.set(true);
     return this.http.delete<Cart>(`${this.apiUrl}/remove-coupon`, { headers: this.getCartSessionHeader(), observe: 'response' }).pipe(
       tap(response => {
         this.saveCartSession(response.headers);
         const cart = this.normalizeCart(response.body!);
         this.cartSignal.set(cart);
         this.saveCartToStorage(cart);
-        this.isLoadingSignal.set(false);
       }),
       map(response => this.normalizeCart(response.body!)),
-      catchError(error => {
-        this.isLoadingSignal.set(false);
-        throw error;
-      })
     );
   }
 

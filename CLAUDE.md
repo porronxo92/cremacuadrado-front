@@ -176,7 +176,7 @@ Zona inferior (tras los CTAs):
 - Dos columnas desktop: líneas del pedido (izq) + resumen y acción (der)
 - En móvil: una columna + barra fija inferior con total y botón "Ir al pago" (sustituye al botón del resumen)
 - Por línea: formato visible, selector cantidad (+/−, 44px, `aria-label` con el nombre del producto) + botón eliminar (48px, `aria-label`)
-- Código de descuento: plegado por defecto ("¿Tienes un código de descuento?"), **solo para clientes con cuenta**; a los invitados se les invita a iniciar sesión o registrarse
+- Código de descuento: plegado por defecto ("¿Tienes un código de descuento?"), **solo para clientes con cuenta**; a los invitados se les invita a iniciar sesión o registrarse. Componente compartido `shared/components/coupon-box` (también en el resumen de `/checkout`, con `returnUrl` a la página de origen)
 - Envío: lo calcula el backend (4,95 € península; gratis desde 48 € tras descuentos). La barra de progreso usa subtotal − descuento
 - Botón "Ir al pago" → `/checkout`
 

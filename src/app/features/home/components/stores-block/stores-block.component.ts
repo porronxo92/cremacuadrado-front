@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { PointOfSale } from '../../../../core/models';
 import { PointOfSaleService } from '../../../../core/services/point-of-sale.service';
 import { StoresMapGateComponent } from '../../../pages/puntos-de-venta/stores-map-gate.component';
@@ -7,12 +8,13 @@ import { StoresMapGateComponent } from '../../../pages/puntos-de-venta/stores-ma
  * «¿Dónde comprar CremaCuadrado?»: versión compacta de /puntos-de-venta (misma API y mismo
  * modelo). Filtros por ciudad, como en /puntos-de-venta, y el mapa detrás de la puerta de
  * consentimiento (Leaflet se importa en diferido solo cuando el mapa entra en pantalla).
- * Sin puntos de venta (o si la API falla) la sección no se pinta.
+ * Un enlace discreto lleva a la lista completa. Sin puntos de venta (o si la API falla)
+ * la sección no se pinta.
  */
 @Component({
   selector: 'app-stores-block',
   standalone: true,
-  imports: [StoresMapGateComponent],
+  imports: [RouterLink, StoresMapGateComponent],
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (stores().length > 0) {
@@ -34,7 +36,10 @@ import { StoresMapGateComponent } from '../../../pages/puntos-de-venta/stores-ma
                   (click)="toggleCity(city)">{{ city }}</button>
               }
             </div>
-            <p class="stores__status" aria-live="polite">{{ status() }}</p>
+            <p class="stores__meta">
+              <span class="stores__count" aria-live="polite">{{ status() }}</span>
+              <a routerLink="/puntos-de-venta" class="stores__all">Ver la lista completa&nbsp;<span aria-hidden="true">→</span></a>
+            </p>
           </div>
 
           <div class="stores__map">
@@ -68,9 +73,15 @@ import { StoresMapGateComponent } from '../../../pages/puntos-de-venta/stores-ma
       }
       &--active { background: var(--color-brand, #7B1716); border-color: var(--color-brand, #7B1716); color: #fff; }
     }
-    .stores__status {
-      margin: 0.5rem 0 0.75rem; text-align: center;
+    // Recuento + enlace discreto a la lista completa (indexable) en una sola línea
+    .stores__meta {
+      display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 0 0.6rem;
+      margin: 0.25rem 0 0.5rem;
       font-family: 'Poppins', sans-serif; font-size: 0.78rem; color: var(--color-text-light, #5A4F3E);
+    }
+    .stores__all {
+      display: inline-flex; align-items: center; min-height: 44px;
+      font-weight: 600; color: var(--color-brand, #7B1716); text-decoration: underline; text-underline-offset: 3px;
     }
     .stores__map { border: 1px solid var(--color-border, #D9D3C5); border-radius: 12px; overflow: hidden; }
 
@@ -80,7 +91,7 @@ import { StoresMapGateComponent } from '../../../pages/puntos-de-venta/stores-ma
       .stores__layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 2.5rem; align-items: center; }
       .stores__header { text-align: left; }
       .stores__filters { justify-content: flex-start; }
-      .stores__status { text-align: left; margin-bottom: 0; }
+      .stores__meta { justify-content: flex-start; margin-bottom: 0; }
     }
     @media (max-width: 480px) {
       .stores { padding: 1.5rem 0; }

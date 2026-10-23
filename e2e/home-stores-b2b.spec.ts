@@ -35,9 +35,10 @@ test.describe('home: dónde comprar', () => {
     await expect(section.getByRole('heading', { level: 2, name: '¿Dónde comprar CremaCuadrado?' })).toBeVisible();
     const tags = section.locator('.stores__tag');
     await expect(tags).toHaveText(['Madrid', 'Ciudad Real', 'Valencia', 'Sevilla']);
-    await expect(section.locator('.stores__status')).toHaveText('5 puntos de venta en 4 ciudades');
-    // Solo el mapa: sin enlaces a /puntos-de-venta ni «cómpralo online»
-    await expect(section.getByRole('link')).toHaveCount(0);
+    await expect(section.locator('.stores__count')).toHaveText('5 puntos de venta en 4 ciudades');
+    // Un único enlace discreto a la lista completa
+    await expect(section.getByRole('link')).toHaveCount(1);
+    await expect(section.getByRole('link', { name: 'Ver la lista completa' })).toHaveAttribute('href', '/puntos-de-venta');
 
     // Sin consentimiento: placeholder con «Ver mapa», sin Leaflet ni teselas
     await expect(section.getByRole('button', { name: 'Ver mapa' })).toBeVisible();
@@ -60,10 +61,10 @@ test.describe('home: dónde comprar', () => {
     const madrid = section.getByRole('button', { name: 'Madrid' });
     await madrid.click();
     await expect(madrid).toHaveAttribute('aria-pressed', 'true');
-    await expect(section.locator('.stores__status')).toHaveText('2 puntos de venta en Madrid');
+    await expect(section.locator('.stores__count')).toHaveText('2 puntos de venta en Madrid');
     await madrid.click();
     await expect(madrid).toHaveAttribute('aria-pressed', 'false');
-    await expect(section.locator('.stores__status')).toHaveText('5 puntos de venta en 4 ciudades');
+    await expect(section.locator('.stores__count')).toHaveText('5 puntos de venta en 4 ciudades');
   });
 
   test('«Ver mapa» (clic expreso) carga Leaflet en la sección', async ({ page }) => {
