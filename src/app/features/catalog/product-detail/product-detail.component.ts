@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, OnDestroy, AfterViewInit,
+  Component, OnInit, OnDestroy,
   ViewChild, ElementRef, inject, signal, computed, PLATFORM_ID,
   ChangeDetectionStrategy
 } from '@angular/core';
@@ -995,8 +995,12 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
     }
   `]
 })
-export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('purchaseBlock') purchaseBlock?: ElementRef<HTMLElement>;
+export class ProductDetailComponent implements OnInit, OnDestroy {
+  // Setter: el bloque está dentro de @if (product()), así que en una navegación
+  // del cliente aparece después del primer render; se (re)engancha al aparecer.
+  @ViewChild('purchaseBlock') set purchaseBlock(ref: ElementRef<HTMLElement> | undefined) {
+    this.observePurchaseBlock(ref?.nativeElement);
+  }
   @ViewChild('slidesEl') slidesEl?: ElementRef<HTMLDivElement>;
 
   private route = inject(ActivatedRoute);
@@ -1074,6 +1078,7 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   );
 
   private observer?: IntersectionObserver;
+  private observedBlock?: HTMLElement;
 
   ngOnInit(): void {
     this.route.params.subscribe(params => {
@@ -1081,13 +1086,19 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     });
   }
 
-  ngAfterViewInit(): void {
-    if (!isPlatformBrowser(this.platformId) || !this.purchaseBlock) return;
-    this.observer = new IntersectionObserver(
+  private observePurchaseBlock(el: HTMLElement | undefined): void {
+    if (!isPlatformBrowser(this.platformId) || el === this.observedBlock) return;
+    this.observer?.disconnect();
+    this.observedBlock = el;
+    if (!el) {
+      this.showStickyBar.set(false);
+      return;
+    }
+    this.observer ??= new IntersectionObserver(
       ([entry]) => this.showStickyBar.set(!entry.isIntersecting),
       { threshold: 0 }
     );
-    this.observer.observe(this.purchaseBlock.nativeElement);
+    this.observer.observe(el);
   }
 
   ngOnDestroy(): void {
@@ -1268,13 +1279,14 @@ export class ProductDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const p = this.product();
     const variant = this.selectedVariant();
     if (!p || !variant || !variant.is_in_stock) return;
+    const opener = document.activeElement;
     this.addingToCart.set(true);
     this.cartService.addItem(variant.id, this.quantity()).subscribe({
       next: () => {
         this.addingToCart.set(false);
         this.quantity.set(1);
         this.productService.invalidateCache(p.slug);
-        this.miniCartService.open();
+        this.miniCartService.open(opener);
       },
       error: () => {
         this.addingToCart.set(false);
