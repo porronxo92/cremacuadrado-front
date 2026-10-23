@@ -89,7 +89,7 @@ async function generateSitemap(): Promise<string> {
   const STATIC_URLS = [
     '/', '/nuestro-metodo', '/tienda', '/para-tiendas', '/contacto',
     '/puntos-de-venta', '/el-archivo',
-    '/privacidad', '/aviso-legal', '/cookies', '/devoluciones',
+    '/privacidad', '/aviso-legal', '/condiciones-venta', '/cookies', '/devoluciones',
   ];
 
   // Each source fails on its own: API unreachable or erroring → that part is
