@@ -25,7 +25,7 @@ const CARTO_TILES = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{
   selector: 'app-stores-map',
   standalone: true,
   encapsulation: ViewEncapsulation.None,
-  template: `<div #map class="stores-map" role="region" aria-label="Mapa de puntos de venta"></div>`,
+  template: `<div #map class="stores-map" role="region" aria-label="Mapa de puntos de venta" [style.min-height.px]="minHeight"></div>`,
   changeDetection: ChangeDetectionStrategy.Eager,
   styles: [`
     .stores-map { width: 100%; height: 100%; min-height: 380px; z-index: 0; }
@@ -42,6 +42,8 @@ export class StoresMapComponent implements OnChanges, OnDestroy {
   @Input() stores: PointOfSale[] = [];
   /** Tienda a enfocar (al pulsar en la lista). */
   @Input() focusId: number | null = null;
+  /** Alto mínimo del mapa en px (380 en /puntos-de-venta; 0 en la home, donde manda el contenedor). */
+  @Input() minHeight = 380;
   @ViewChild('map', { static: true }) mapEl!: ElementRef<HTMLDivElement>;
 
   private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));

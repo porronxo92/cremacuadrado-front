@@ -134,7 +134,7 @@ test.describe('3b. hero → productos y trilogía compacta', () => {
     const h = (await page.locator('app-trilogia-block').boundingBox())!.height;
     const max = info.project.name === 'desktop' ? 220 : 290;
     expect(h, `[${info.project.name}] altura de la trilogía=${Math.round(h)}px (máx. ${max})`).toBeLessThanOrEqual(max);
-    await expect(page.getByRole('heading', { name: 'La trilogía del sabor' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '¿Por qué sabe así CremaCuadrado?' })).toBeVisible();
     for (const n of ['Tostado', 'Repelado', 'Molino de piedra']) {
       await expect(page.locator('app-trilogia-block').getByRole('heading', { name: n })).toBeVisible();
     }

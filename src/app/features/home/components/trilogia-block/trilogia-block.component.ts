@@ -15,7 +15,10 @@ import { isPlatformBrowser } from '@angular/common';
 interface TrilogiaStep {
   id: string;
   name: string;
+  /** Qué hacemos */
   phrase: string;
+  /** Qué se nota en la crema (solo beneficios documentados) */
+  benefit: string;
   icon: string;
   photo: string;
   alt: string;
@@ -27,7 +30,8 @@ const STEPS: TrilogiaStep[] = [
   {
     id: 'tostado',
     name: 'Tostado ligero',
-    phrase: 'Calor justo: activa los aceites sin tapar el sabor del pistacho.',
+    phrase: 'Un tostado corto, solo el calor justo.',
+    benefit: 'Despierta el aroma sin tapar el sabor del pistacho.',
     icon: 'assets/images/tostado.svg',
     photo: 'assets/images/trilogia/tostado.webp',
     alt: 'Pistachos recién tostados en una bandeja de acero',
@@ -36,7 +40,8 @@ const STEPS: TrilogiaStep[] = [
   {
     id: 'repelado',
     name: 'Repelado',
-    phrase: 'Sin piel: más cremosidad y sin amargor.',
+    phrase: 'Le quitamos la piel al pistacho.',
+    benefit: 'Más cremosa y sin amargor.',
     icon: 'assets/images/repelado.svg',
     photo: 'assets/images/trilogia/repelado.webp',
     alt: 'Pistachos soltando la piel violeta',
@@ -45,7 +50,8 @@ const STEPS: TrilogiaStep[] = [
   {
     id: 'molino',
     name: 'Molino de piedra',
-    phrase: 'Muele despacio, sin calentar el aceite.',
+    phrase: 'Lo molemos despacio, en piedra.',
+    benefit: 'Hasta dejarlo en una crema fina.',
     icon: 'assets/images/molido.svg',
     photo: 'assets/images/trilogia/molino.webp',
     alt: 'Molino de piedra convirtiendo el pistacho en crema',
@@ -59,7 +65,8 @@ const IN_VIEW_RATIO = 0.35;
 const SWIPE_PX = 40;
 
 /**
- * La Trilogía del Sabor: recorrido automático por los tres pasos del método.
+ * «¿Por qué sabe así CremaCuadrado?»: recorrido automático por los tres pasos
+ * del método, cada uno con qué hacemos y qué se nota en la crema.
  * Los tres pasos están siempre en el HTML (también en SSR). En escritorio se
  * ven los tres y la animación decide cuál protagoniza la foto; por debajo de
  * 880 px solo se ve el activo, junto a la foto, con tres segmentos de progreso.
@@ -85,9 +92,9 @@ const SWIPE_PX = 40;
       (focusout)="onFocusOut($event)">
       <div class="trilogia__container" (touchstart)="onTouchStart($event)" (touchend)="onTouchEnd($event)">
         <div class="trilogia__header">
-          <p class="trilogia__eyebrow">Nuestro método · 3 pasos</p>
-          <h2 class="trilogia__title" id="trilogia-title">LA TRILOGÍA DEL SABOR</h2>
-          <p class="trilogia__subtitle">Método desarrollado a base de prueba y error</p>
+          <p class="trilogia__eyebrow">Nuestro método artesano</p>
+          <h2 class="trilogia__title" id="trilogia-title">¿Por qué sabe así <span class="trilogia__title-brand">CremaCuadrado?</span></h2>
+          <p class="trilogia__subtitle">Más de tres años de pruebas y ajustes hasta dar con estos tres pasos.</p>
         </div>
 
         <div class="trilogia__stage">
@@ -141,6 +148,7 @@ const SWIPE_PX = 40;
                     (click)="go(i)">{{ step.name }}</button>
                 </h3>
                 <p class="trilogia__step-phrase">{{ step.phrase }}</p>
+                <p class="trilogia__step-benefit">{{ step.benefit }}</p>
               </div>
               <span class="trilogia__bar" aria-hidden="true">
                 <span class="trilogia__bar-fill" (animationend)="next()"></span>
@@ -192,17 +200,20 @@ const SWIPE_PX = 40;
       color: var(--color-brand);
     }
 
-    // En una línea: el tamaño sigue al ancho de la sección (cqi) hasta 56 px
+    // Dos líneas fijas («¿Por qué sabe así» / «CremaCuadrado?»): el tamaño sigue
+    // al ancho de la sección (cqi) hasta 56 px para que ninguna parta
     .trilogia__title {
       margin: 0;
       font-family: var(--font-title);
       font-weight: 700;
-      font-size: clamp(28px, 10.5cqi, 56px);
+      font-size: clamp(28px, 9.5cqi, 56px);
       line-height: 0.9;
       text-transform: uppercase;
       white-space: nowrap;
       color: var(--color-brand);
     }
+
+    .trilogia__title-brand { display: block; }
 
     .trilogia__subtitle {
       margin: 0;
@@ -399,6 +410,15 @@ const SWIPE_PX = 40;
       color: var(--color-text);
     }
 
+    // Granate sobre crema (9,4:1): el beneficio se distingue por color y por cursiva
+    .trilogia__step-benefit {
+      margin: 0;
+      font-style: italic;
+      font-size: clamp(14px, 4cqi, 16px);
+      line-height: 1.45;
+      color: var(--color-brand);
+    }
+
     // Barra de progreso: su animación CSS marca el ritmo del ciclo.
     // En móvil, cada paso pinta su barra como uno de tres segmentos.
     .trilogia__bar {
@@ -449,7 +469,7 @@ const SWIPE_PX = 40;
 
       .trilogia__eyebrow { font-size: 13px; }
 
-      .trilogia__title { font-size: min(56px, 5.4cqi); }   // en una línea también a 880 px
+      .trilogia__title { font-size: min(56px, 5.4cqi); }   // sin partir líneas también a 880 px
 
       .trilogia__subtitle { font-size: 17px; }
 
@@ -549,7 +569,8 @@ const SWIPE_PX = 40;
       }
 
       .trilogia__step-text { gap: 2px; }
-      .trilogia__step-phrase { font-size: 15px; }
+      .trilogia__step-phrase,
+      .trilogia__step-benefit { font-size: 15px; }
 
       .trilogia__bar {
         bottom: 0;

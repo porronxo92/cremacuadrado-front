@@ -6,12 +6,11 @@ import { ToastService } from '../../../core/services/toast.service';
 import { PointOfSaleService } from '../../../core/services/point-of-sale.service';
 import { SeoService } from '../../../core/services/seo.service';
 import { PointOfSale } from '../../../core/models';
-import { CookieConsentService } from '../../../core/services/cookie-consent.service';
-import { StoresMapComponent } from './stores-map.component';
+import { StoresMapGateComponent } from './stores-map-gate.component';
 
 @Component({
     selector: 'app-puntos-de-venta',
-    imports: [RouterModule, FormsModule, StoresMapComponent],
+    imports: [RouterModule, FormsModule, StoresMapGateComponent],
     template: `
     <div class="pdv-page">
 
@@ -66,20 +65,7 @@ import { StoresMapComponent } from './stores-map.component';
           <!-- Mapa (Leaflet + OpenStreetMap/CARTO). La lista de texto de abajo es
                la fuente indexable; el mapa se difiere hasta entrar en pantalla. -->
           <div class="pdv-map-wrapper">
-            @if (!mapAllowed()) {
-              <div class="pdv-map pdv-map--consent">
-                <p>El mapa se carga desde los servidores de CARTO / OpenStreetMap (no instala cookies,
-                  pero recibe tu dirección IP). La lista de tiendas de abajo funciona sin él.</p>
-                <button type="button" class="pdv-map__load" (click)="loadMap()">Mostrar el mapa</button>
-                <button type="button" class="pdv-map__settings" (click)="cookieConsent.openSettings()">Configurar cookies</button>
-              </div>
-            } @else {
-              @defer (on viewport) {
-                <app-stores-map class="pdv-map" [stores]="filteredStores()" />
-              } @placeholder {
-                <div class="pdv-map pdv-map--skeleton"></div>
-              }
-            }
+            <app-stores-map-gate [stores]="filteredStores()" />
           </div>
 
           <!-- Resultados -->
@@ -379,31 +365,6 @@ import { StoresMapComponent } from './stores-map.component';
       border: 1px solid $border;
       box-shadow: 0 8px 32px -8px rgba($text, 0.12);
       margin-bottom: 2.5rem;
-    }
-
-    .pdv-map {
-      display: block;
-      width: 100%;
-      height: 420px;
-      border: none;
-
-      @media (max-width: 768px) { height: 280px; }
-    }
-
-    .pdv-map--consent {
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.75rem;
-      padding: 1.5rem; text-align: center; background: #EDE9DF;
-      p { max-width: 420px; margin: 0; font-family: 'Lora', serif; font-size: 0.9rem; color: #1C1A14; }
-    }
-    .pdv-map__load, .pdv-map__settings {
-      min-height: 48px; padding: 0 1.25rem; border-radius: 20px; cursor: pointer;
-      font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 0.85rem;
-    }
-    .pdv-map__load { background: #7B1716; color: #F4F1E9; border: 1.5px solid #7B1716; }
-    .pdv-map__settings { background: transparent; color: #7B1716; border: 1.5px solid #7B1716; }
-
-    .pdv-map--skeleton {
-      background: var(--color-card-bg, #EDE9DF);
     }
 
     .pdv-map__overlay-tip {
@@ -709,10 +670,6 @@ import { StoresMapComponent } from './stores-map.component';
   `]
 })
 export class PuntosDeVentaComponent implements OnInit {
-  cookieConsent = inject(CookieConsentService);
-  /** El usuario pulsó «Mostrar el mapa» (petición expresa) o aceptó los servicios externos. */
-  private mapRequested = signal(false);
-  readonly mapAllowed = computed(() => this.mapRequested() || this.cookieConsent.external());
   private toastService = inject(ToastService);
   private pointOfSaleService = inject(PointOfSaleService);
   private seo = inject(SeoService);
@@ -722,10 +679,6 @@ export class PuntosDeVentaComponent implements OnInit {
 
   searchQuery = '';
   activeCity = signal<string | null>(null);
-
-  loadMap(): void {
-    this.mapRequested.set(true);
-  }
 
   ngOnInit(): void {
     this.seo.set({

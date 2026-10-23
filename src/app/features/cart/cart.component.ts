@@ -249,11 +249,11 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
 
     .cart-layout {
       display: grid;
-      grid-template-columns: 1fr 360px;
+      grid-template-columns: minmax(0, 1fr) 360px;
       gap: 2rem;
       align-items: start;
 
-      @media (max-width: 900px) { grid-template-columns: 1fr; }
+      @media (max-width: 900px) { grid-template-columns: minmax(0, 1fr); }
     }
 
     // ── Líneas ──────────────────────────────────────────
@@ -501,10 +501,13 @@ import { FREE_SHIPPING_THRESHOLD } from '../../core/legal';
       display: flex;
       gap: 0.5rem;
 
+      .cc-btn { flex: 0 0 auto; padding-inline: 1.1rem; }
+
       input {
-        flex: 1;
+        flex: 1 1 0;
         min-width: 0;
-        min-height: 44px;
+        width: 100%;
+        min-height: 48px;
         padding: 0.5rem 0.75rem;
         border: 1px solid var(--color-border);
         border-radius: 2px;

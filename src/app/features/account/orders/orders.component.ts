@@ -1,6 +1,7 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild, inject, signal, DOCUMENT, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { CartService } from '../../../core/services/cart.service';
 import { OrderService } from '../../../core/services/order.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { InvoiceSummary, Order, OrderListItem } from '../../../core/models';
@@ -56,7 +57,20 @@ import { saveBlob } from '../../../core/utils/save-blob';
                 </div>
               </div>
 
+              @if (order.status === 'pending_payment') {
+                <p class="order-card__pending">Pendiente de pago: tu pedido se cancelará si no lo completas.</p>
+              }
+
               <div class="order-card__footer">
+                @if (order.status === 'pending_payment') {
+                  <button type="button" class="btn btn--primary btn--lg"
+                    [disabled]="resumingOrder() !== null"
+                    [attr.aria-busy]="resumingOrder() === order.order_number"
+                    [attr.aria-label]="'Continuar con el pago del pedido ' + order.order_number"
+                    (click)="resumePayment(order.order_number)">
+                    {{ resumingOrder() === order.order_number ? 'Preparando…' : 'Continuar con el pago' }}
+                  </button>
+                }
                 @if (order.status === 'pending') {
                   <button class="btn btn--ghost btn--danger" (click)="cancelOrder(order.order_number)">
                     Cancelar
@@ -247,6 +261,14 @@ import { saveBlob } from '../../../core/utils/save-blob';
 
             <!-- Acciones -->
             <footer class="modal__footer">
+              @if (o.status === 'pending_payment') {
+                <button type="button" class="btn btn--primary"
+                  [disabled]="resumingOrder() !== null"
+                  [attr.aria-busy]="resumingOrder() === o.order_number"
+                  (click)="resumePayment(o.order_number)">
+                  {{ resumingOrder() === o.order_number ? 'Preparando…' : 'Continuar con el pago' }}
+                </button>
+              }
               @if (o.status === 'pending') {
                 <button type="button" class="btn btn--ghost btn--danger" (click)="cancelOrder(o.order_number)">Cancelar pedido</button>
               }
@@ -256,6 +278,8 @@ import { saveBlob } from '../../../core/utils/save-blob';
                   (click)="downloadInvoice(o.order_number)">
                   {{ downloadingInvoice() ? 'Descargando…' : 'Descargar factura' }}
                 </button>
+              } @else if (o.status === 'pending_payment') {
+                <button type="button" class="btn btn--outline" (click)="closeModal()">Cerrar</button>
               } @else {
                 <button type="button" class="btn btn--primary" (click)="closeModal()">Cerrar</button>
               }
@@ -363,7 +387,17 @@ import { saveBlob } from '../../../core/utils/save-blob';
       color: var(--color-ink, #1C1A14);
     }
 
+    .order-card__pending {
+      margin: 0;
+      padding: 0.75rem 1.25rem 0;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--color-ink, #1C1A14);
+    }
+
     .order-card__footer {
+      flex-wrap: wrap;
       display: flex;
       justify-content: flex-end;
       align-items: center;
@@ -424,6 +458,15 @@ import { saveBlob } from '../../../core/utils/save-blob';
     }
 
     /* ── Botones ── */
+    .btn--lg { min-height: 48px; }
+
+    .btn[aria-busy='true'] { cursor: progress; }
+    .btn:disabled:not(.btn--outline) { opacity: 0.6; cursor: not-allowed; }
+
+    @media (max-width: 639px) {
+      .order-card__footer .btn { flex: 1 1 auto; justify-content: center; min-height: 48px; }
+    }
+
     .btn {
       display: inline-flex;
       align-items: center;
@@ -1030,6 +1073,9 @@ export class AccountOrdersComponent implements OnInit, OnDestroy {
   private orderService = inject(OrderService);
   private toastService = inject(ToastService);
   private document = inject(DOCUMENT);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private cartService = inject(CartService);
 
   @ViewChild('dialog') private dialogRef?: ElementRef<HTMLElement>;
   @ViewChild('closeBtn') private set closeBtn(el: ElementRef<HTMLButtonElement> | undefined) {
@@ -1058,9 +1104,60 @@ export class AccountOrdersComponent implements OnInit, OnDestroy {
   requestingInvoice = signal(false);
   orderInvoices = signal<InvoiceSummary[]>([]);
   downloadingInvoice = signal<string | null>(null);
+  resumingOrder = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadOrders();
+    // Enlace del email de recordatorio: /account/orders?pedido=<número>
+    const pedido = this.route.snapshot.queryParamMap.get('pedido');
+    if (pedido) this.openFromLink(pedido);
+  }
+
+  /** Abre el detalle del pedido del enlace (si no es del usuario, el API responde 404). */
+  private openFromLink(orderNumber: string): void {
+    this.orderService.getOrder(orderNumber).subscribe({
+      next: (fullOrder) => {
+        this.focusedOnOpen = false;
+        this.document.body.style.overflow = 'hidden';
+        this.selectedOrder.set(fullOrder);
+        this.loadInvoices(fullOrder);
+      },
+      error: () => {
+        this.toastService.error('No hemos encontrado ese pedido en tu cuenta.');
+        this.clearOrderParam();
+      },
+    });
+  }
+
+  private clearOrderParam(): void {
+    if (!this.route.snapshot.queryParamMap.has('pedido')) return;
+    void this.router.navigate([], {
+      relativeTo: this.route, queryParams: { pedido: null }, queryParamsHandling: 'merge', replaceUrl: true,
+    });
+  }
+
+  /** Retoma el pago: el backend rellena el carrito con el pedido y el checkout crea uno nuevo. */
+  resumePayment(orderNumber: string): void {
+    if (this.resumingOrder() !== null) return;
+    this.resumingOrder.set(orderNumber);
+    this.orderService.resumePayment(orderNumber).subscribe({
+      next: (res) => {
+        this.resumingOrder.set(null);
+        this.cartService.loadCart();
+        if (res.skipped?.length) {
+          this.toastService.warning(
+            'No hemos podido añadir al carrito: ' + res.skipped.join(', ') + '. Revisa el resto antes de pagar.', 8000);
+        }
+        this.closeModal();
+        void this.router.navigate(['/checkout']);
+      },
+      error: (err: Error) => {
+        this.resumingOrder.set(null);
+        this.toastService.error(err.message || 'No hemos podido retomar el pago de este pedido.', 6000);
+        this.closeModal();
+        this.loadOrders(this.currentPage());
+      },
+    });
   }
 
   loadOrders(page: number = 1): void {
@@ -1105,6 +1202,7 @@ export class AccountOrdersComponent implements OnInit, OnDestroy {
     this.requestingInvoice.set(false);
     this.orderInvoices.set([]);
     this.document.body.style.overflow = '';
+    this.clearOrderParam();
     const target = this.returnFocusTo;
     this.returnFocusTo = null;
     if (target?.isConnected) setTimeout(() => target.focus());
@@ -1160,7 +1258,7 @@ export class AccountOrdersComponent implements OnInit, OnDestroy {
       shipped: 'Tu pedido va de camino.',
       delivered: 'Pedido entregado. ¡Que lo disfrutes!',
       pending: 'Pendiente de pago.',
-      pending_payment: 'Pendiente de pago.',
+      pending_payment: 'Pendiente de pago: tu pedido se cancelará si no lo completas.',
       payment_processing: 'Estamos confirmando el pago.',
       payment_failed: 'El pago no se completó.',
       cancelled: 'Este pedido está cancelado.',
