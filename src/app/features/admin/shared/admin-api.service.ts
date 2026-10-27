@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { ApiMessage } from '../../../core/models';
 import {
-  AdminCart, AdminCoupon, AdminDashboard, AdminInvoice, AdminInvoiceTotals, AdminOrder, AdminPayment, AdminRefund, AdminShipment,
+  AdminCart, AdminCoupon, LegacyProgram, AdminDashboard, AdminInvoice, AdminInvoiceTotals, AdminOrder, AdminPayment, AdminRefund, AdminShipment,
   AdminUserDetail, AdminUserRow, AdminUserUpdate, AdminWebhookEvent, CouponRedemption,
   LowStockVariant, OrderPayments, OrderShipment, Page, QueryParams,
 } from './admin.models';
@@ -157,6 +157,12 @@ export class AdminApiService {
   }
   couponRedemptions(id: number, query: QueryParams): Observable<Page<CouponRedemption>> {
     return this.page(`/coupons/${id}/redemptions`, query);
+  }
+  legacyProgram(): Observable<LegacyProgram> {
+    return this.get('/legacy-program');
+  }
+  updateLegacyProgram(starts_on: string, ends_on: string): Observable<LegacyProgram> {
+    return this.put('/legacy-program', { starts_on, ends_on });
   }
 
   // ── Activity ───────────────────────────────────────────────────────────

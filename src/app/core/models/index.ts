@@ -114,6 +114,15 @@ export interface FeaturedReview {
 
 
 // User interfaces
+/** Cupón personal de cliente histórico (web antigua), en «Mi cuenta → Mis datos». */
+export interface PersonalCoupon {
+  code: string;
+  discount_value: number;
+  valid_from: string | null;   // 'AAAA-MM-DD', hora peninsular
+  valid_until: string | null;  // último día incluido
+  is_valid: boolean;
+}
+
 export interface User {
   id: number;
   email: string;

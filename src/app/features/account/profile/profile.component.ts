@@ -1,20 +1,40 @@
 import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { saveBlob } from '../../../core/utils/save-blob';
+import { PersonalCoupon } from '../../../core/models';
 import { Router } from '@angular/router';
 
 import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
 
 @Component({
     selector: 'app-account-profile',
-    imports: [ReactiveFormsModule, PhoneInputComponent],
+    imports: [ReactiveFormsModule, PhoneInputComponent, DecimalPipe],
     template: `
     <div class="profile-page">
       <h1>Mi perfil</h1>
+
+      <!-- Cliente histórico (web antigua): su código personal del 20 % -->
+      @if (legacyCoupon(); as c) {
+        <section class="profile-section legacy-coupon" aria-labelledby="legacy-coupon-title">
+          <h2 id="legacy-coupon-title">Tu {{ c.discount_value | number:'1.0-0' }}% de cliente de siempre</h2>
+          <p>Ya nos compraste en nuestra web anterior. Con este código tienes un {{ c.discount_value | number:'1.0-0' }}% de descuento
+            en todos tus pedidos.
+            @if (c.valid_from && c.valid_until) {
+              Válido del {{ esDate(c.valid_from) }} al {{ esDate(c.valid_until) }}.
+            }
+          </p>
+          <div class="legacy-coupon__code">
+            <code>{{ c.code }}</code>
+            <button type="button" class="btn btn--secondary" (click)="copyCoupon(c.code)">Copiar código</button>
+          </div>
+          <small>Aplícalo en el carrito con la sesión iniciada. Solo funciona en tu cuenta y no se acumula con otros códigos.</small>
+        </section>
+      }
 
       <!-- Profile form -->
       <div class="profile-section">
@@ -164,6 +184,14 @@ import { PhoneInputComponent } from '../../../shared/components/phone-input/phon
       --field-bg: #fff;
       --field-focus-color: #4a7c4e;
     }
+    .legacy-coupon { border: 1.5px dashed var(--color-granate, #7B1716);
+      h2 { color: var(--color-granate, #7B1716); }
+      p { margin: 0 0 1rem; line-height: 1.6; }
+      small { display: block; margin-top: 0.75rem; color: var(--color-muted, #6B6456); font-size: 0.85rem; } }
+    .legacy-coupon__code { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+      code { font-family: ui-monospace, Consolas, monospace; font-size: 1.25rem; font-weight: 700; letter-spacing: 2px;
+        color: var(--color-granate, #7B1716); background: var(--color-bg, #F4F1E9); padding: 0.6rem 1rem; border-radius: 4px; }
+      .btn { min-height: 48px; } }
     .privacy-toggle { display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 1.25rem; cursor: pointer; line-height: 1.5;
       input { margin-top: 0.25rem; width: 18px; height: 18px; flex-shrink: 0; } }
     .privacy-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
@@ -318,9 +346,25 @@ export class AccountProfileComponent implements OnInit {
   passwordSuccess = signal(false);
   passwordError = signal<string | null>(null);
 
+  legacyCoupon = signal<PersonalCoupon | null>(null);
+
   ngOnInit(): void {
     this.initForms();
     this.loadProfile();
+    this.userService.getLegacyCoupon().subscribe({ next: c => this.legacyCoupon.set(c), error: () => {} });
+  }
+
+  /** 'AAAA-MM-DD' (día peninsular que envía el backend) → 'DD/MM/AAAA', sin pasar por la zona horaria del navegador. */
+  esDate(day: string): string {
+    const [y, m, d] = day.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  copyCoupon(code: string): void {
+    navigator.clipboard?.writeText(code).then(
+      () => this.toastService.success('Código copiado'),
+      () => this.toastService.error('No se pudo copiar el código'),
+    );
   }
 
   initForms(): void {

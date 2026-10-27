@@ -6,7 +6,7 @@ import { Subject, debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ToastService } from '../../../core/services/toast.service';
 import { AdminApiService } from '../shared/admin-api.service';
-import { AdminCoupon, CouponRedemption } from '../shared/admin.models';
+import { AdminCoupon, CouponRedemption, LegacyProgram } from '../shared/admin.models';
 import { ORDER_STATUS, statusInfo } from '../shared/admin-labels';
 import { adminListState } from '../shared/admin-list-state';
 import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
@@ -25,6 +25,27 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
           <button type="button" class="adm-btn adm-btn--primary" (click)="newCoupon()">+ Nuevo cupón</button>
         </div>
       </header>
+
+      <!-- Clientes históricos (web antigua): periodo de su 20 % -->
+      @if (legacy(); as lp) {
+        <section class="adm-card legacy" aria-labelledby="legacy-title">
+          <div class="legacy__head">
+            <div>
+              <h2 id="legacy-title">Clientes históricos · 20 %</h2>
+              <p class="adm-muted">{{ lp.customers }} emails de la web antigua · {{ lp.granted }} ya tienen su código personal (CLIENTE20-…).
+                Cada código solo vale en la cuenta de su dueño, sirve para todos sus pedidos y no se acumula con otros cupones.</p>
+            </div>
+          </div>
+          <div class="legacy__form">
+            <label class="adm-field"><span>Válido desde</span><input type="date" [(ngModel)]="legacyFrom"></label>
+            <label class="adm-field"><span>Válido hasta (incluido)</span><input type="date" [(ngModel)]="legacyUntil"></label>
+            <button type="button" class="adm-btn adm-btn--primary" (click)="saveLegacy()" [disabled]="legacySaving()">
+              {{ legacySaving() ? 'Guardando…' : 'Guardar periodo' }}
+            </button>
+          </div>
+          <p class="adm-muted">El cambio se aplica a los códigos ya enviados y a los que se creen a partir de ahora.</p>
+        </section>
+      }
 
       <div class="adm-split">
         <div class="adm-page">
@@ -211,6 +232,9 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
     .one-col { grid-template-columns: minmax(0, 1fr); }
     .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
     .actions { display: flex; gap: 0.35rem; align-items: center; justify-content: flex-end; }
+    .legacy { margin-bottom: 1rem; h2 { margin: 0 0 0.25rem; } p { margin: 0.25rem 0 0; } }
+    .legacy__form { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-top: 0.75rem;
+      .adm-field { flex: 0 1 200px; } }
     .usage-tools { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; .adm-field { flex: 1 1 240px; } }
   `]
 })
@@ -242,8 +266,53 @@ export class AdminCouponsComponent implements OnInit {
     this.usageTyped.pipe(debounceTime(350), takeUntilDestroyed()).subscribe(() => this.loadUsage(1));
   }
 
+  legacy = signal<LegacyProgram | null>(null);
+  legacySaving = signal(false);
+  legacyFrom = '';
+  legacyUntil = '';
+
   ngOnInit(): void {
     this.load();
+    this.api.legacyProgram().subscribe({ next: lp => this.setLegacy(lp), error: () => {} });
+  }
+
+  private setLegacy(lp: LegacyProgram): void {
+    this.legacy.set(lp);
+    this.legacyFrom = lp.starts_on;
+    this.legacyUntil = lp.ends_on;
+  }
+
+  async saveLegacy(): Promise<void> {
+    if (!this.legacyFrom || !this.legacyUntil) {
+      this.toast.error('Indica las dos fechas');
+      return;
+    }
+    if (this.legacyUntil < this.legacyFrom) {
+      this.toast.error('La fecha de fin es anterior a la de inicio');
+      return;
+    }
+    const lp = this.legacy();
+    if (lp?.granted) {
+      const ok = await this.confirm.ask({
+        title: '¿Cambiar el periodo?',
+        message: `Se actualizarán también los ${lp.granted} códigos ya enviados. El email que recibieron mostraba las fechas anteriores.`,
+        confirmText: 'Cambiar periodo',
+      });
+      if (!ok) return;
+    }
+    this.legacySaving.set(true);
+    this.api.updateLegacyProgram(this.legacyFrom, this.legacyUntil).subscribe({
+      next: res => {
+        this.setLegacy(res);
+        this.legacySaving.set(false);
+        this.toast.success('Periodo actualizado');
+        this.load();
+      },
+      error: err => {
+        this.legacySaving.set(false);
+        this.toast.error(err.message || 'No se pudo guardar el periodo');
+      },
+    });
   }
 
   load(): void {

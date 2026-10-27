@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { User, Address, ApiMessage } from '../models';
+import { User, Address, ApiMessage, PersonalCoupon } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -19,6 +19,11 @@ export class UserService {
     return this.http.get<User>(`${this.apiUrl}/profile`);
   }
   
+  /** Cupón del 20 % de cliente histórico; null si la cuenta no tiene. */
+  getLegacyCoupon(): Observable<PersonalCoupon | null> {
+    return this.http.get<PersonalCoupon | null>(`${this.apiUrl}/me/legacy-coupon`);
+  }
+
   /** Consentimiento de comunicaciones comerciales (queda registrado en el backend). */
   setMarketing(optIn: boolean): Observable<ApiMessage> {
     return this.http.put<ApiMessage>(`${this.apiUrl}/preferences`, null, { params: { marketing_opt_in: String(optIn) } });

@@ -156,6 +156,14 @@ export interface AdminUserUpdate {
 }
 
 // ── Coupons ──────────────────────────────────────────────────────────────
+/** Periodo del 20 % de clientes históricos (días en hora peninsular, ambos incluidos). */
+export interface LegacyProgram {
+  starts_on: string;
+  ends_on: string;
+  customers: number;
+  granted: number;
+}
+
 export interface AdminCoupon {
   id: number;
   code: string;
