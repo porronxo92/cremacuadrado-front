@@ -32,7 +32,7 @@ import { ADMIN_UI, AdminConfirmService } from '../shared/admin-ui.components';
           <div class="legacy__head">
             <div>
               <h2 id="legacy-title">Clientes históricos · 20 %</h2>
-              <p class="adm-muted">{{ lp.customers }} emails de la web antigua · {{ lp.granted }} ya tienen su código personal (CLIENTE20-…).
+              <p class="adm-muted">{{ lp.customers }} emails de la web antigua · {{ lp.granted }} ya tienen su código personal (FUNDADOR20-…).
                 Cada código solo vale en la cuenta de su dueño, sirve para todos sus pedidos y no se acumula con otros cupones.</p>
             </div>
           </div>
