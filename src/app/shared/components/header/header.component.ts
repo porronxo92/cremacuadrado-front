@@ -40,7 +40,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                   </div>
                   <div class="dropdown-item__text">
                     <strong>Crema Pura 100%</strong>
-                    <span>Consciente · Fitness · Ético</span>
+                    <span>Intensa · Sin refinar · Puro sabor pistacho</span>
                   </div>
                 </a>
                 <a routerLink="/tienda/crema-pistacho-crunchy" class="dropdown-item" (click)="closeAll()">
@@ -49,7 +49,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                   </div>
                   <div class="dropdown-item__text">
                     <strong>Crema Crunchy</strong>
-                    <span>Sibarita · Familias</span>
+                    <span>Crujiente · Viciosa · Lista para untar</span>
                   </div>
                 </a>
                 <div class="dropdown-divider"></div>
@@ -181,11 +181,11 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                 <div class="mobile-menu__sub">
                   <a routerLink="/tienda/crema-pistacho-pura" (click)="closeAll()">
                     <span>Crema Pura 100%</span>
-                    <small>Consciente · Fitness · Ético</small>
+                    <small>Intensa · Sin refinar · Puro sabor pistacho</small>
                   </a>
                   <a routerLink="/tienda/crema-pistacho-crunchy" (click)="closeAll()">
                     <span>Crema Crunchy</span>
-                    <small>Sibarita · Familias</small>
+                    <small>Crujiente · Viciosa · Lista para untar</small>
                   </a>
                   <a routerLink="/tienda" (click)="closeAll()">Ver toda la tienda →</a>
                 </div>
