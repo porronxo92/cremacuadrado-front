@@ -187,6 +187,11 @@ export class AuthService {
   /**
    * Reset password with token
    */
+  /** Confirma el email con el token del enlace (el token va como query param). */
+  verifyEmail(token: string): Observable<ApiMessage> {
+    return this.http.post<ApiMessage>(`${this.apiUrl}/verify-email`, null, { params: { token } });
+  }
+
   resetPassword(token: string, newPassword: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${this.apiUrl}/reset-password`, {
       token,
