@@ -251,7 +251,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
                   @if (zone() === 'baleares') {
                     <p class="zone-info">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                      <span>Envío a Islas Baleares: 7,95 €. El envío gratis desde 48 € es solo para la península.</span>
+                      <span>Envío a Islas Baleares: 7,95 €. El envío gratis desde 48 € es solo para la península.@if (shippingDiscount > 0) { El cupón {{ cartService.cart()?.coupon?.code }} también es solo para la península.}</span>
                     </p>
                   }
                 </div>
@@ -422,8 +422,8 @@ import { catchError, map, switchMap } from 'rxjs/operators';
                 <span class="ship-value">
                   @if (zone() === 'quote') {
                     A presupuestar
-                  } @else if (shippingDiscount > 0) {
-                    <s class="ship-old"><span class="sr-only">antes </span>{{ (zone() === 'baleares' ? balearesCost : shippingDiscount) | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
+                  } @else if (shippingDiscount > 0 && zone() === 'peninsula') {
+                    <s class="ship-old"><span class="sr-only">antes </span>{{ shippingDiscount | currency:'EUR':'symbol':'1.2-2':'es' }}</s>
                     <strong class="ship-free">Gratis</strong>
                     <small class="ship-note">Cupón {{ cartService.cart()?.coupon?.code }}</small>
                   } @else if (zone() === 'baleares') {
@@ -1237,7 +1237,8 @@ export class CheckoutComponent implements OnInit, OnDestroy {
     if (zone === 'peninsula') return total;
     const withoutShipping = total - (Number(cart?.shipping_cost ?? 0) || 0);
     if (zone === 'quote') return Math.round(withoutShipping * 100) / 100;
-    if (this.shippingDiscount > 0 || this.balearesShipping() === null) return total;
+    // Baleares: el cupón de envío gratis no aplica (solo península), se suma siempre la tarifa
+    if (this.balearesShipping() === null) return total;
     return Math.round((withoutShipping + this.balearesShipping()!) * 100) / 100;
   }
 

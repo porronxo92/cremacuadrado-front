@@ -3,8 +3,9 @@ import { mockApi } from './mocks/api-mock';
 import type { Page } from '@playwright/test';
 
 /** Checkout de invitado con un producto (Pura 100g, 6,95 €) y las zonas de envío. */
-async function openCheckout(page: Page) {
+async function openCheckout(page: Page, cart?: unknown) {
   await mockApi(page, { cartWithItem: true });
+  if (cart) await page.route(/\/api\/v1\/cart$/, (r) => r.fulfill({ json: cart }));
   const calls = { paymentIntent: 0, shippingCost: [] as string[] };
   await page.route('**/api/v1/checkout/shipping-cost**', (r) => {
     const cp = new URL(r.request().url()).searchParams.get('postal_code') ?? '';
@@ -55,6 +56,30 @@ test.describe('checkout: zonas de envío', () => {
     await expect(page.getByLabel('País')).not.toContainText('península');
     // Baleares es un destino válido: no hay panel de presupuesto
     await expect(page.locator('#quote-panel')).toHaveCount(0);
+  });
+
+  test('Baleares con ENVIOGRATIS: el cupón es solo para la península y se cobran 7,95 €', async ({ page }) => {
+    // El carrito (sin CP) calcula como península: ahí el cupón sí anula los 4,95 €.
+    await openCheckout(page, {
+      id: 1, item_count: 1, subtotal: '6.95', discount: '0.00', shipping_discount: '4.95',
+      shipping_cost: '0.00', shipping_message: 'Envío gratis con el cupón ENVIOGRATIS', total: '6.95',
+      coupon: { code: 'ENVIOGRATIS', discount_type: 'free_shipping', discount_value: '0.00', discount_amount: '4.95', applies: true, message: null },
+      updated_at: '2026-10-28T09:00:00Z',
+      items: [{
+        id: 1, product_id: 1, product_variant_id: 1, product_name: 'Crema de Pistacho Pura', variant_format: '100g',
+        product_slug: 'crema-pistacho-pura', product_image: null, product_price: '6.95', unit_price: '6.95',
+        quantity: 1, price_at_add: '6.95', total: '6.95', is_available: true, stock_available: 10,
+      }],
+    });
+    await fillAddress(page, '07001');
+
+    const notice = page.getByRole('status').filter({ hasText: 'Envío a Islas Baleares: 7,95 €' });
+    await expect(notice).toContainText('El cupón ENVIOGRATIS también es solo para la península.');
+    const summary = page.locator('.order-summary');
+    const shipping = summary.locator('.summary-row', { hasText: 'Envío' });
+    await expect(shipping).toContainText('7,95');
+    await expect(shipping.locator('.ship-free')).toHaveCount(0);
+    await expect(summary.locator('.summary-row--total')).toContainText('14,90');
   });
 
   test('Canarias: panel de WhatsApp y el pago queda bloqueado con el error en el resumen', async ({ page }) => {
