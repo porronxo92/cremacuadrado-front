@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy, ElementRef, ViewChildren, QueryList, AfterViewInit, inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChildren, QueryList, AfterViewInit, inject, PLATFORM_ID, ChangeDetectionStrategy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../core/services/seo.service';
 
@@ -11,30 +11,24 @@ interface TimelineEvent {
 }
 
 @Component({
-  selector: 'app-about',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-about',
+    imports: [RouterModule],
+    template: `
     <div class="about-page">
       <!-- Hero Banner -->
       <section class="about-hero">
         <img
           src="assets/images/nosotros/principal-quienes.somos2_.jpg"
-          alt="Stefano y Lucas — Fundadores de CremaCuadrado"
+          alt="Stefano y Lucas, fundadores de CremaCuadrado"
           class="about-hero__img"
         >
         <div class="about-hero__overlay"></div>
         <div class="about-hero__content">
           <span class="about-hero__tag">Nuestra historia</span>
           <h1>La Génesis de<br>CremaCuadrado</h1>
-          <p class="about-hero__sub">Pasión, pistacho y tradición manchega</p>
+          <p class="about-hero__sub">De Terni a Ciudad Real: cómo empezó CremaCuadrado</p>
         </div>
       </section>
-
-      <!-- Timeline progress bar -->
-      <div class="timeline-progress" [style.--progress]="scrollProgress + '%'">
-        <div class="timeline-progress__bar"></div>
-      </div>
 
       <!-- Timeline -->
       <section class="timeline-section">
@@ -77,15 +71,16 @@ interface TimelineEvent {
       <!-- CTA -->
       <section class="about-cta">
         <div class="container">
-          <h2>Descubre el sabor del pistacho manchego</h2>
+          <h2>Prueba el pistacho manchego</h2>
           <div class="about-cta__divider"></div>
-          <p>Nuestra crema de pistacho 100% natural te espera</p>
+          <p>Crema de pistacho 100% natural, elaborada en Ciudad Real.</p>
           <a routerLink="/tienda" class="btn btn--cta">Ver productos</a>
         </div>
       </section>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     // ── Variables locales ───────────────────────────────
     $brand:   #7B1716;
     $accent:  #E6C15A;
@@ -184,22 +179,6 @@ interface TimelineEvent {
       font-size: 1.1rem;
       color: rgba(244, 241, 233, 0.85);
       margin: 0;
-    }
-
-    // ── Timeline Progress Bar (fija arriba) ─────────────
-    .timeline-progress {
-      position: sticky;
-      top: 72px; // altura del header
-      z-index: 50;
-      height: 3px;
-      background: $bg-alt;
-    }
-
-    .timeline-progress__bar {
-      height: 100%;
-      width: var(--progress);
-      background: linear-gradient(90deg, $brand, $accent);
-      transition: width 50ms linear;
     }
 
     // ── Timeline Section ────────────────────────────────
@@ -457,7 +436,6 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('timelineItem') timelineItems!: QueryList<ElementRef>;
 
   visibleItems: boolean[] = [];
-  scrollProgress = 0;
   lineProgress = 0;
 
   private observer!: IntersectionObserver;
@@ -467,43 +445,43 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
     {
       year: '2014',
       title: 'El encuentro',
-      content: 'En Ciudad Real, España, cuando dos destinos convergieron para dar inicio a una historia épica. Stefano Armadoro, nativo de la encantadora Terni, Italia, y Lucas Anguita, un aventurero ciudadrealeño, se cruzaron en el camino de la vida. Unos meses después, sus vidas tomaron rutas paralelas, con Stefano encontrando hogar en la residencia de Lucas y viceversa.',
+      content: 'Stefano Armadoro, de Terni (Italia), y Lucas Anguita, de Ciudad Real, se conocieron en Ciudad Real en 2014. Unos meses después, cada uno vivía en casa del otro.',
       image: 'assets/images/nosotros/1.jpg'
     },
     {
       year: '2014',
       title: 'El experto en pistacho',
-      content: 'Stefano, un explorador nato, llegó a Ciudad Real con un objetivo claro: estudiar la planta del pistacho. A lo largo de los años, se sumergió en los secretos de la planta, convirtiéndose en un especialista y asesor reconocido gracias al centro de investigación agroambiental CIAG "El Chaparrillo", lugar donde adquirió conocimientos técnicos especializados en el pistacho.',
+      content: 'Stefano llegó a Ciudad Real para estudiar la planta del pistacho. Con los años se convirtió en especialista y asesor. Adquirió los conocimientos técnicos en el centro de investigación agroambiental CIAG "El Chaparrillo".',
       image: 'assets/images/nosotros/2.jpg'
     },
     {
       year: '2015',
       title: 'El diseñador en Italia',
-      content: 'Mientras tanto, Lucas emprendió su viaje hacia Italia, donde perfeccionó sus habilidades como diseñador gráfico y se sumergió en el vasto océano del marketing. En Italia, Lucas también se empapó de la rica historia culinaria del pistacho, descubriendo usos y sabores que más tarde serían cruciales para el devenir del proyecto.',
+      content: 'Lucas se fue a Italia, donde perfeccionó su oficio de diseñador gráfico y aprendió marketing. Allí también descubrió la tradición culinaria del pistacho, con usos y sabores que más tarde fueron clave para el proyecto.',
       image: 'assets/images/nosotros/3.jpg'
     },
     {
       year: '2022',
       title: 'El reencuentro',
-      content: 'Lucas regresó a su ciudad natal, marcando un reencuentro que cambiaría el rumbo de sus vidas. Unidos por la pasión por el pistacho y el deseo de crear algo extraordinario, decidieron combinar su formación y experiencia para dar vida a CremaCuadrado.',
+      content: 'Lucas volvió a Ciudad Real y se reencontró con Stefano. Los dos compartían interés por el pistacho, así que juntaron su formación y su experiencia para crear CremaCuadrado.',
       image: 'assets/images/nosotros/4.jpg'
     },
     {
       year: '2022',
       title: 'Nace CremaCuadrado',
-      content: 'No nació simplemente como una empresa, sino como la respuesta a un desafío. En un país donde el pistacho está en auge, especialmente en Castilla La Mancha, que produce alrededor del 80% del pistacho nacional, Stefano y Lucas quisieron agregar valor a este fruto. Su misión era clara: especializarse en generar valor añadido a través de nuevas formas de consumo.',
+      content: 'El pistacho está en auge en España, y Castilla-La Mancha produce alrededor del 80% del pistacho nacional. Stefano y Lucas quisieron darle más valor a ese fruto con nuevas formas de consumirlo.',
       image: 'assets/images/nosotros/5.jpg'
     },
     {
       year: '2023',
       title: 'El mayor desafío',
-      content: 'Estaba en educar a la sociedad sobre los posibles usos en cocina del pistacho. Con la cultura culinaria siendo tan identitaria y arraigada, penetrar en ella es como abrir una caja de Pandora, complicado. Pero a través de la investigación, divulgación y educación, aspiran a convertirse en un elemento fundamental en la despensa de todos nosotros.',
+      content: 'Explicar para qué sirve el pistacho en la cocina. La cultura culinaria está muy arraigada y cuesta que entre algo nuevo. Con investigación y divulgación, quieren que el pistacho tenga un sitio en la despensa de cualquier casa.',
       image: 'assets/images/nosotros/6.jpg'
     },
     {
       year: 'Hoy',
-      title: 'Esto continúa...',
-      content: 'La historia de CremaCuadrado se va armando con un combo de pasión, desarrollo e investigación todo sazonado con una pizca de pura dedicación. El cuento sigue, sumando capítulos emocionantes para aportar a la tradición pistachera de aquí, de nuestra tierra.',
+      title: 'Seguimos',
+      content: 'Seguimos investigando y desarrollando la crema, con la mirada puesta en la tradición pistachera de nuestra tierra.',
       image: 'assets/images/nosotros/7.jpg'
     }
   ];
@@ -554,9 +532,6 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private onScroll(): void {
     const scrollTop = window.scrollY;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    this.scrollProgress = Math.min((scrollTop / docHeight) * 100, 100);
-
     // Progreso de la línea del timeline
     const timelineSection = document.querySelector('.timeline-section') as HTMLElement;
     if (timelineSection) {

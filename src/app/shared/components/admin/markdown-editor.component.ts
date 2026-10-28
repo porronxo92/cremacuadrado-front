@@ -1,5 +1,5 @@
-import { Component, ElementRef, forwardRef, inject, Input, signal, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, forwardRef, inject, Input, signal, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -14,17 +14,16 @@ import { ToastService } from '../../../core/services/toast.service';
  * Implements ControlValueAccessor so it can be used as `formControlName="content"`.
  */
 @Component({
-  selector: 'app-markdown-editor',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
-  providers: [
-    {
-      provide: NG_VALUE_ACCESSOR,
-      useExisting: forwardRef(() => MarkdownEditorComponent),
-      multi: true,
-    },
-  ],
-  template: `
+    selector: 'app-markdown-editor',
+    imports: [FormsModule],
+    providers: [
+        {
+            provide: NG_VALUE_ACCESSOR,
+            useExisting: forwardRef(() => MarkdownEditorComponent),
+            multi: true,
+        },
+    ],
+    template: `
     <div class="md-editor">
       <div class="md-toolbar">
         <button type="button" title="Negrita" (click)="wrapSelection('**', '**')"><strong>N</strong></button>
@@ -62,7 +61,8 @@ import { ToastService } from '../../../core/services/toast.service';
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .md-editor {
       border: 1px solid #d8d0bd;
       border-radius: 4px;
@@ -97,7 +97,7 @@ import { ToastService } from '../../../core/services/toast.service';
     .md-preview :is(h1,h2,h3) { font-family: 'Teko', sans-serif; color: #7B1716; }
     .md-preview img { max-width: 100%; border-radius: 2px; }
     .md-preview a { color: #7B1716; }
-  `],
+  `]
 })
 export class MarkdownEditorComponent implements ControlValueAccessor {
   private http = inject(HttpClient);

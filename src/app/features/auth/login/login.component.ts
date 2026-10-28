@@ -1,15 +1,17 @@
-import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { environment } from '@env/environment';
 
+import { GoogleIdentityService } from '../../../core/services/google-identity.service';
+import { CookieConsentService } from '../../../core/services/cookie-consent.service';
+
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-login',
+    imports: [RouterModule, ReactiveFormsModule],
+    template: `
     <div class="auth-page">
       <div class="auth-card">
         <h1>Iniciar sesión</h1>
@@ -41,14 +43,16 @@ import { environment } from '@env/environment';
                 formControlName="password"
                 placeholder="••••••••"
                 [class.error]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-              <button type="button" class="toggle-password" (click)="showPassword.set(!showPassword())">
+              <button type="button" class="toggle-password" (click)="showPassword.set(!showPassword())"
+                [attr.aria-label]="showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+                [attr.aria-pressed]="showPassword()">
                 @if (showPassword()) {
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                     <line x1="1" y1="1" x2="23" y2="23"></line>
                   </svg>
                 } @else {
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                     <circle cx="12" cy="12" r="3"></circle>
                   </svg>
@@ -84,7 +88,13 @@ import { environment } from '@env/environment';
         </form>
         
         @if (googleEnabled) {
-          <div class="divider"><span>o</span></div>
+          <div class="auth-divider" role="separator"><span class="auth-divider__line" aria-hidden="true"></span><span class="auth-divider__text">o</span><span class="auth-divider__line" aria-hidden="true"></span></div>
+          @if (!googleLoaded()) {
+            <button type="button" class="google-placeholder" (click)="loadGoogle()" [disabled]="googleLoading()">
+              {{ googleLoading() ? 'Cargando Google…' : 'Continuar con Google' }}
+            </button>
+            <p class="google-note">Al pulsar se cargará el servicio de Google, que instala sus propias cookies.</p>
+          }
           <div id="google-signin-btn" class="google-btn-wrapper"></div>
         }
 
@@ -94,7 +104,8 @@ import { environment } from '@env/environment';
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .auth-page {
       min-height: calc(100vh - 140px);
       display: flex;
@@ -254,19 +265,33 @@ import { environment } from '@env/environment';
       }
     }
     
-    .divider {
+    // Nombre propio: .divider existe en styles.scss (barra decorativa 3rem × 2px amarilla) y se colaba aquí
+    .auth-divider {
       display: flex;
       align-items: center;
-      margin: 1.5rem 0 1rem;
       gap: 0.75rem;
-      &::before, &::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: #ddd;
-      }
-      span { color: #999; font-size: 0.85rem; white-space: nowrap; }
+      width: 100%;
+      margin: 1.5rem 0 1rem;
     }
+    .auth-divider__line {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 1px;
+      background: #d4d0c6;
+    }
+    .auth-divider__text {
+      flex: 0 0 auto;
+      color: #6B6456;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .google-placeholder {
+      display: block; width: 100%; max-width: 340px; margin: 0 auto; min-height: 48px;
+      border: 1px solid #dadce0; border-radius: 4px; background: #fff; color: #3c4043;
+      font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer;
+    }
+    .google-note { text-align: center; font-size: 0.72rem; color: #6B6456; margin: 0.5rem 0 0; }
 
     .google-btn-wrapper {
       display: flex;
@@ -300,6 +325,8 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  // window/Google SDK only exist in the browser, not during SSR
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   loginForm: FormGroup;
   loading = signal(false);
@@ -307,6 +334,10 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
   showPassword = signal(false);
 
   readonly googleEnabled = !!environment.googleClientId;
+  readonly googleLoaded = signal(false);
+  readonly googleLoading = signal(false);
+  private googleIdentity = inject(GoogleIdentityService);
+  private cookieConsent = inject(CookieConsentService);
 
   constructor() {
     this.loginForm = this.fb.group({
@@ -314,24 +345,39 @@ export class LoginComponent implements AfterViewInit, OnDestroy {
       password: ['', Validators.required],
       rememberMe: [false]
     });
+    // Desde el checkout («Ya tienes una cuenta con este email») llega el email
+    // en el estado de navegación (no en la URL, para no dejarlo en el historial).
+    const email = this.router.getCurrentNavigation()?.extras.state?.['email'];
+    if (typeof email === 'string') this.loginForm.patchValue({ email });
   }
 
   ngAfterViewInit(): void {
-    if (!this.googleEnabled) return;
-    const google = (window as any).google;
-    if (!google?.accounts?.id) return;
+    if (!this.isBrowser || !this.googleEnabled) return;
+    // Solo se carga sin clic si el usuario ya aceptó los servicios externos
+    if (this.cookieConsent.external()) this.loadGoogle();
+  }
 
-    google.accounts.id.initialize({
-      client_id: environment.googleClientId,
-      callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+  loadGoogle(): void {
+    this.googleLoading.set(true);
+    this.googleIdentity.load().then(google => {
+      google.accounts.id.initialize({
+        client_id: environment.googleClientId,
+        callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+      });
+      this.googleLoaded.set(true);
+      this.googleLoading.set(false);
+      setTimeout(() => google.accounts.id.renderButton(
+        document.getElementById('google-signin-btn'),
+        { theme: 'outline', size: 'large', width: 340, text: 'signin_with' }
+      ));
+    }).catch(() => {
+      this.googleLoading.set(false);
+      this.error.set('No se pudo cargar el inicio de sesión con Google');
     });
-    google.accounts.id.renderButton(
-      document.getElementById('google-signin-btn'),
-      { theme: 'outline', size: 'large', width: 340, text: 'signin_with' }
-    );
   }
 
   ngOnDestroy(): void {
+    if (!this.isBrowser) return;
     const google = (window as any).google;
     google?.accounts?.id?.cancel();
   }

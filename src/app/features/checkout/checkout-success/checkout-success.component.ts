@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { OrderService } from '../../../core/services/order.service';
@@ -6,10 +6,9 @@ import { CartService } from '../../../core/services/cart.service';
 import { Order } from '../../../core/models';
 
 @Component({
-  selector: 'app-checkout-success',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-checkout-success',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="success-page">
       <div class="container">
         <div class="success-card">
@@ -20,7 +19,7 @@ import { Order } from '../../../core/models';
             </svg>
           </div>
           
-          <h1>{{ isPaymentFailed ? 'Pago no completado' : '¡Pedido confirmado!' }}</h1>
+          <h1>{{ isPaymentFailed ? 'Pago no completado' : 'Pedido confirmado' }}</h1>
           <p class="success-message">{{ statusMessage }}</p>
 
           @if (isPaymentFailed) {
@@ -91,7 +90,8 @@ import { Order } from '../../../core/models';
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .success-page {
       padding: 3rem 0;
       background: #f9f9f9;
@@ -306,10 +306,10 @@ export class CheckoutSuccessComponent implements OnInit {
 
   get statusMessage(): string {
     switch (this.redirectStatus()) {
-      case 'succeeded': return '¡Pago confirmado! Gracias por tu pedido.';
-      case 'processing': return 'Tu pago está siendo procesado. Te confirmaremos por email.';
-      case 'requires_payment_method': return 'El pago no se ha completado. Por favor inténtalo de nuevo.';
-      default: return 'Gracias por tu compra. Hemos enviado un email de confirmación.';
+      case 'succeeded': return 'Pago confirmado. Gracias por tu pedido.';
+      case 'processing': return 'Estamos procesando tu pago. Te confirmaremos por email.';
+      case 'requires_payment_method': return 'El pago no se ha completado. Inténtalo de nuevo.';
+      default: return 'Gracias por tu compra. Te hemos enviado un email de confirmación.';
     }
   }
 

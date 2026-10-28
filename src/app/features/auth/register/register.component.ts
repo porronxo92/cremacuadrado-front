@@ -1,40 +1,45 @@
-import { Component, AfterViewInit, OnDestroy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, AfterViewInit, OnDestroy, PLATFORM_ID, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../../core/services/auth.service';
 import { environment } from '@env/environment';
 
+import { GoogleIdentityService } from '../../../core/services/google-identity.service';
+import { CookieConsentService } from '../../../core/services/cookie-consent.service';
+import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notice/privacy-notice.component';
+
+import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
+
 @Component({
-  selector: 'app-register',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-register',
+    imports: [RouterModule, ReactiveFormsModule, PrivacyNoticeComponent, PhoneInputComponent],
+    template: `
     <div class="auth-page">
       <div class="auth-card">
         <h1>Crear cuenta</h1>
         <p class="auth-subtitle">Únete a la familia CremaCuadrado</p>
-        
+
         <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
           <div class="form-row">
             <div class="form-group">
               <label for="firstName">Nombre</label>
-              <input 
-                type="text" 
-                id="firstName" 
+              <input
+                type="text"
+                id="firstName"
                 formControlName="firstName"
                 placeholder="Tu nombre">
             </div>
             <div class="form-group">
               <label for="lastName">Apellidos</label>
-              <input 
-                type="text" 
-                id="lastName" 
+              <input
+                type="text"
+                id="lastName"
                 formControlName="lastName"
                 placeholder="Tus apellidos">
             </div>
           </div>
-          
+
           <div class="form-group">
             <label for="email">Email</label>
             <input
@@ -53,18 +58,18 @@ import { environment } from '@env/environment';
 
           <div class="form-group">
             <label for="phone">Teléfono <span class="optional">(opcional)</span></label>
-            <input
-              type="tel"
-              id="phone"
-              formControlName="phone"
-              placeholder="+34 600 000 000">
+            <app-phone-input formControlName="phone" inputId="phone"
+              [invalid]="!!registerForm.get('phone')?.invalid && !!registerForm.get('phone')?.touched" />
+            @if (registerForm.get('phone')?.hasError('phone') && registerForm.get('phone')?.touched) {
+              <span class="error-text">Teléfono no válido: 9 dígitos para España</span>
+            }
           </div>
-          
+
           <div class="form-group">
             <label for="password">Contraseña</label>
-            <input 
-              type="password" 
-              id="password" 
+            <input
+              type="password"
+              id="password"
               formControlName="password"
               placeholder="Mínimo 8 caracteres"
               [class.error]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
@@ -75,12 +80,12 @@ import { environment } from '@env/environment';
               <span class="error-text">Mínimo 8 caracteres</span>
             }
           </div>
-          
+
           <div class="form-group">
             <label for="confirmPassword">Confirmar contraseña</label>
-            <input 
-              type="password" 
-              id="confirmPassword" 
+            <input
+              type="password"
+              id="confirmPassword"
               formControlName="confirmPassword"
               placeholder="Repite tu contraseña"
               [class.error]="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">
@@ -88,31 +93,50 @@ import { environment } from '@env/environment';
               <span class="error-text">Las contraseñas no coinciden</span>
             }
           </div>
-          
+
           <div class="form-group">
             <label class="checkbox">
               <input type="checkbox" formControlName="acceptTerms">
-              <span>Acepto los <a routerLink="/aviso-legal" target="_blank">términos y condiciones</a> y la <a routerLink="/privacidad" target="_blank">política de privacidad</a></span>
+              <span>He leído y acepto las <a routerLink="/aviso-legal" target="_blank">condiciones de uso</a> y la <a routerLink="/privacidad" target="_blank">política de privacidad</a> *</span>
             </label>
             @if (registerForm.get('acceptTerms')?.hasError('requiredTrue') && registerForm.get('acceptTerms')?.touched) {
-              <span class="error-text">Debes aceptar los términos y condiciones</span>
+              <span class="error-text">Debes aceptar las condiciones de uso y la política de privacidad</span>
             }
           </div>
-          
+
+          <div class="form-group">
+            <label class="checkbox">
+              <input type="checkbox" formControlName="marketingOptIn">
+              <span>Quiero recibir recetas, novedades y ofertas por email (opcional). Puedo darme de baja cuando quiera.</span>
+            </label>
+          </div>
+
+          <app-privacy-notice
+            purpose="gestionar tu cuenta y tus pedidos y, solo si lo marcas, enviarte comunicaciones comerciales"
+            legalBasis="ejecución del contrato y, para las comunicaciones comerciales, tu consentimiento" />
+
           @if (error()) {
             <div class="error-message">
               {{ error() }}
             </div>
           }
-          
+
           <button type="submit" class="btn btn--primary btn--block" [disabled]="loading()">
             @if (loading()) { Creando cuenta... } @else { Crear cuenta }
           </button>
         </form>
 
         @if (googleEnabled) {
-          <div class="divider"><span>o regístrate con</span></div>
+          <div class="auth-divider" role="separator"><span class="auth-divider__line" aria-hidden="true"></span><span class="auth-divider__text">o regístrate con</span><span class="auth-divider__line" aria-hidden="true"></span></div>
+          @if (!googleLoaded()) {
+            <button type="button" class="google-placeholder" (click)="loadGoogle()" [disabled]="googleLoading()">
+              {{ googleLoading() ? 'Cargando Google…' : 'Continuar con Google' }}
+            </button>
+            <p class="google-note">Al pulsar se cargará el servicio de Google, que instala sus propias cookies.</p>
+          }
           <div id="google-register-btn" class="google-btn-wrapper"></div>
+          <p class="google-note">Al registrarte con Google aceptas las <a routerLink="/aviso-legal" target="_blank">condiciones de uso</a>
+            y la <a routerLink="/privacidad" target="_blank">política de privacidad</a>.</p>
         }
 
         <div class="auth-footer">
@@ -121,7 +145,17 @@ import { environment } from '@env/environment';
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
+
+    /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
+    app-phone-input {
+      --field-height: 0;
+      --field-border: 1px solid #ddd;
+      --field-radius: 4px;
+      --field-bg: #fff;
+      --field-focus-color: #4a7c4e;
+    }
     .auth-page {
       min-height: calc(100vh - 140px);
       display: flex;
@@ -130,7 +164,7 @@ import { environment } from '@env/environment';
       padding: 2rem;
       background: #f9f9f9;
     }
-    
+
     .auth-card {
       width: 100%;
       max-width: 450px;
@@ -138,33 +172,33 @@ import { environment } from '@env/environment';
       border-radius: 12px;
       padding: 2rem;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      
+
       h1 {
         margin: 0 0 0.5rem;
         text-align: center;
         color: #333;
       }
     }
-    
+
     .auth-subtitle {
       text-align: center;
       color: #666;
       margin-bottom: 2rem;
     }
-    
+
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1rem;
-      
+
       @media (max-width: 480px) {
         grid-template-columns: 1fr;
       }
     }
-    
+
     .form-group {
       margin-bottom: 1.25rem;
-      
+
       label {
         display: block;
         margin-bottom: 0.5rem;
@@ -172,25 +206,25 @@ import { environment } from '@env/environment';
         font-weight: 500;
         color: #333;
       }
-      
+
       input:not([type="checkbox"]) {
         width: 100%;
         padding: 0.75rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-size: 1rem;
-        
+
         &:focus {
           outline: none;
           border-color: #4a7c4e;
         }
-        
+
         &.error {
           border-color: #e74c3c;
         }
       }
     }
-    
+
     .checkbox {
       display: flex;
       align-items: flex-start;
@@ -199,25 +233,25 @@ import { environment } from '@env/environment';
       font-size: 0.85rem;
       color: #666;
       line-height: 1.4;
-      
+
       input {
         margin-top: 3px;
         width: 16px;
         height: 16px;
       }
-      
+
       a {
         color: #4a7c4e;
       }
     }
-    
+
     .error-text {
       color: #e74c3c;
       font-size: 0.8rem;
       margin-top: 0.25rem;
       display: block;
     }
-    
+
     .error-message {
       background: #fee;
       color: #c00;
@@ -227,7 +261,7 @@ import { environment } from '@env/environment';
       margin-bottom: 1rem;
       text-align: center;
     }
-    
+
     .btn {
       padding: 0.75rem 1.5rem;
       border: none;
@@ -235,34 +269,56 @@ import { environment } from '@env/environment';
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s;
-      
+
       &--primary {
         background: #4a7c4e;
         color: #fff;
-        
+
         &:hover:not(:disabled) {
           background: #3d6640;
         }
-        
+
         &:disabled {
           background: #ccc;
           cursor: not-allowed;
         }
       }
-      
+
       &--block {
         display: block;
         width: 100%;
       }
     }
-    
+
     .optional { font-weight: 400; color: #999; font-size: 0.8rem; }
 
-    .divider {
-      display: flex; align-items: center; margin: 1.5rem 0 1rem; gap: 0.75rem;
-      &::before, &::after { content: ''; flex: 1; height: 1px; background: #ddd; }
-      span { color: #999; font-size: 0.85rem; white-space: nowrap; }
+    // Nombre propio: .divider existe en styles.scss (barra decorativa 3rem × 2px amarilla) y se colaba aquí
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      width: 100%;
+      margin: 1.5rem 0 1rem;
     }
+    .auth-divider__line {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 1px;
+      background: #d4d0c6;
+    }
+    .auth-divider__text {
+      flex: 0 0 auto;
+      color: #6B6456;
+      font-size: 0.85rem;
+      text-align: center;
+    }
+
+    .google-placeholder {
+      display: block; width: 100%; max-width: 340px; margin: 0 auto; min-height: 48px;
+      border: 1px solid #dadce0; border-radius: 4px; background: #fff; color: #3c4043;
+      font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 0.9rem; cursor: pointer;
+    }
+    .google-note { text-align: center; font-size: 0.72rem; color: #6B6456; margin: 0.5rem 0 0; }
 
     .google-btn-wrapper { display: flex; justify-content: center; margin-bottom: 0.5rem; }
 
@@ -289,12 +345,18 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  // window/Google SDK only exist in the browser, not during SSR
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   registerForm: FormGroup;
   loading = signal(false);
   error = signal<string | null>(null);
 
   readonly googleEnabled = !!environment.googleClientId;
+  readonly googleLoaded = signal(false);
+  readonly googleLoading = signal(false);
+  private googleIdentity = inject(GoogleIdentityService);
+  private cookieConsent = inject(CookieConsentService);
 
   constructor() {
     this.registerForm = this.fb.group({
@@ -304,26 +366,42 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
       phone: [''],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
-      acceptTerms: [false, Validators.requiredTrue]
+      acceptTerms: [false, Validators.requiredTrue],
+      marketingOptIn: [false]
     }, { validators: this.passwordMatchValidator });
+
+    // El email de confirmación a invitados enlaza a /auth/register?email=<email>
+    const prefill = this.route.snapshot.queryParamMap.get('email');
+    if (prefill) this.registerForm.patchValue({ email: prefill });
   }
 
   ngAfterViewInit(): void {
-    if (!this.googleEnabled) return;
-    const google = (window as any).google;
-    if (!google?.accounts?.id) return;
+    if (!this.isBrowser || !this.googleEnabled) return;
+    // Solo se carga sin clic si el usuario ya aceptó los servicios externos
+    if (this.cookieConsent.external()) this.loadGoogle();
+  }
 
-    google.accounts.id.initialize({
-      client_id: environment.googleClientId,
-      callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+  loadGoogle(): void {
+    this.googleLoading.set(true);
+    this.googleIdentity.load().then(google => {
+      google.accounts.id.initialize({
+        client_id: environment.googleClientId,
+        callback: (response: { credential: string }) => this.handleGoogleCredential(response),
+      });
+      this.googleLoaded.set(true);
+      this.googleLoading.set(false);
+      setTimeout(() => google.accounts.id.renderButton(
+        document.getElementById('google-register-btn'),
+        { theme: 'outline', size: 'large', width: 340, text: 'signup_with' }
+      ));
+    }).catch(() => {
+      this.googleLoading.set(false);
+      this.error.set('No se pudo cargar el inicio de sesión con Google');
     });
-    google.accounts.id.renderButton(
-      document.getElementById('google-register-btn'),
-      { theme: 'outline', size: 'large', width: 340, text: 'signup_with' }
-    );
   }
 
   ngOnDestroy(): void {
+    if (!this.isBrowser) return;
     const google = (window as any).google;
     google?.accounts?.id?.cancel();
   }
@@ -359,13 +437,15 @@ export class RegisterComponent implements AfterViewInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
 
-    const { firstName, lastName, email, phone, password } = this.registerForm.value;
+    const { firstName, lastName, email, phone, password, acceptTerms, marketingOptIn } = this.registerForm.value;
 
     this.authService.register({
       email, password,
       first_name: firstName,
       last_name: lastName,
       phone: phone || undefined,
+      accept_terms: !!acceptTerms,
+      marketing_opt_in: !!marketingOptIn,
     }).subscribe({
       next: () => {
         this.loading.set(false);

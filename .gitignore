@@ -53,3 +53,17 @@ Desktop.ini
 *.bak
 *.tmp
 .vercel
+
+# Agent skills (npx skills)
+.agents/
+.claude/skills/
+skills-lock.json
+
+# Playwright
+e2e/.artifacts/
+playwright-report/
+test-results/
+e2e/screenshots/
+
+# Línea base y resultados de la migración Angular 22
+migration-baseline/

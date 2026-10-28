@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -36,10 +36,9 @@ function slugify(text: string): string {
 }
 
 @Component({
-  selector: 'app-admin-blog-editor',
-  standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, MarkdownEditorComponent, ImageUploaderComponent],
-  template: `
+    selector: 'app-admin-blog-editor',
+    imports: [RouterModule, ReactiveFormsModule, MarkdownEditorComponent, ImageUploaderComponent],
+    template: `
     <div class="blog-editor">
       <div class="page-header">
         <h1>{{ isNew() ? 'Nueva entrada' : 'Editar entrada' }}</h1>
@@ -122,7 +121,8 @@ function slugify(text: string): string {
       }
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .blog-editor { padding: 2rem; font-family: 'Poppins', sans-serif; max-width: 1200px; }
     .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; }
@@ -147,7 +147,17 @@ function slugify(text: string): string {
     .status-badge.published { background: #E9F3DC; color: #4a7c2c; }
     .error { color: #b00020; font-size: 0.85rem; }
     .loading { padding: 3rem; text-align: center; color: #8C7F6A; }
-  `],
+
+    @media (max-width: 1024px) {
+      .content-grid, .editor-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    }
+    .list-panel { min-width: 0; overflow-x: auto; }
+    @media (max-width: 768px) {
+      .admin-blog, .admin-categories, .admin-pos, .admin-coupons, .blog-editor { padding: 0 !important; }
+      table th, table td { padding: 0.6rem 0.5rem !important; }
+      button, .btn, select, input { min-height: 40px; }
+    }
+  `]
 })
 export class AdminBlogEditorComponent implements OnInit {
   private http = inject(HttpClient);
@@ -288,7 +298,7 @@ export class AdminBlogEditorComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.formError.set(err.error?.detail || 'Error al guardar el artículo');
+        this.formError.set(err.message || 'Error al guardar el artículo');
       },
     });
   }

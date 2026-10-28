@@ -1,9 +1,10 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
+import { AdminConfirmService } from '../shared/admin-ui.components';
 import { ImageUploaderComponent } from '../../../shared/components/admin/image-uploader.component';
 
 interface CategoryItem {
@@ -19,10 +20,9 @@ interface CategoryItem {
 type Tab = 'products' | 'blog';
 
 @Component({
-  selector: 'app-admin-categories',
-  standalone: true,
-  imports: [CommonModule, FormsModule, ImageUploaderComponent],
-  template: `
+    selector: 'app-admin-categories',
+    imports: [FormsModule, ImageUploaderComponent],
+    template: `
     <div class="admin-categories">
       <div class="page-header">
         <h1>Categorías</h1>
@@ -51,8 +51,8 @@ type Tab = 'products' | 'blog';
                     <td>{{ cat.name }}</td>
                     <td><code>{{ cat.slug }}</code></td>
                     <td class="actions">
-                      <button class="btn btn--icon" (click)="edit(cat)">✏️</button>
-                      <button class="btn btn--icon btn--danger" (click)="remove(cat)">🗑</button>
+                      <button class="btn btn--icon" (click)="edit(cat)" [attr.aria-label]="'Editar ' + cat.name" title="Editar"><span aria-hidden="true">✏️</span></button>
+                      <button class="btn btn--icon btn--danger" (click)="remove(cat)" [attr.aria-label]="'Eliminar ' + cat.name" title="Eliminar"><span aria-hidden="true">🗑</span></button>
                     </td>
                   </tr>
                 }
@@ -99,7 +99,8 @@ type Tab = 'products' | 'blog';
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .admin-categories { padding: 2rem; font-family: 'Poppins', sans-serif; }
     .page-header h1 { font-family: 'Teko', sans-serif; font-size: 2rem; color: #7B1716; text-transform: uppercase; margin-bottom: 1rem; }
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -123,11 +124,22 @@ type Tab = 'products' | 'blog';
     .error { color: #b00020; font-size: 0.8rem; }
     .loading { color: #8C7F6A; padding: 2rem; text-align: center; }
     code { background: #F4F1E9; padding: 0.1rem 0.4rem; border-radius: 3px; font-size: 0.75rem; }
-  `],
+
+    @media (max-width: 1024px) {
+      .content-grid, .editor-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    }
+    .list-panel { min-width: 0; overflow-x: auto; }
+    @media (max-width: 768px) {
+      .admin-blog, .admin-categories, .admin-pos, .admin-coupons, .blog-editor { padding: 0 !important; }
+      table th, table td { padding: 0.6rem 0.5rem !important; }
+      button, .btn, select, input { min-height: 40px; }
+    }
+  `]
 })
 export class AdminCategoriesComponent implements OnInit {
   private http = inject(HttpClient);
   private toast = inject(ToastService);
+  private confirm = inject(AdminConfirmService);
 
   tab = signal<Tab>('products');
   categories = signal<CategoryItem[]>([]);
@@ -226,16 +238,21 @@ export class AdminCategoriesComponent implements OnInit {
       },
       error: (err) => {
         this.saving.set(false);
-        this.formError.set(err.error?.detail || 'Error al guardar la categoría');
+        this.formError.set(err.message || 'Error al guardar la categoría');
       },
     });
   }
 
-  remove(cat: CategoryItem): void {
-    if (!confirm(`¿Eliminar la categoría "${cat.name}"?`)) return;
+  async remove(cat: CategoryItem): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: `¿Eliminar la categoría "${cat.name}"?`,
+      message: 'Los productos o artículos de esta categoría se quedarán sin categoría.',
+      confirmText: 'Eliminar', danger: true,
+    });
+    if (!ok) return;
     this.http.delete(`${environment.apiUrl}${this.endpoint()}/${cat.id}`).subscribe({
       next: () => { this.toast.success('Categoría eliminada'); this.load(); },
-      error: (err) => this.toast.error(err.error?.detail || 'Error al eliminar'),
+      error: (err) => this.toast.error(err.message || 'Error al eliminar'),
     });
   }
 }

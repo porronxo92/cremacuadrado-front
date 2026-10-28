@@ -1,5 +1,5 @@
-import { Injectable, inject } from '@angular/core';
-import { DOCUMENT } from '@angular/common';
+import { Injectable, inject, DOCUMENT } from '@angular/core';
+
 import { Title, Meta } from '@angular/platform-browser';
 import { environment } from '@env/environment';
 
@@ -53,7 +53,11 @@ export class SeoService {
     const script = this.document.createElement('script');
     script.type = 'application/ld+json';
     script.id = id;
-    script.text = JSON.stringify(data);
+    // "<" escaped as < (same value once parsed as JSON): the data comes
+    // from the API (post titles, product names), and a literal "</script>"
+    // in any string would close this tag in the serialized SSR HTML and let
+    // the rest run as markup/script before hydration.
+    script.text = JSON.stringify(data).replace(/</g, '\\u003c');
     this.document.head.appendChild(script);
   }
 

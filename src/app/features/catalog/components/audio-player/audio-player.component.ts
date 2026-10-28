@@ -1,11 +1,10 @@
-import { Component, Input, OnDestroy, ViewChild, ElementRef, signal, computed, PLATFORM_ID, inject } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, Input, OnDestroy, ViewChild, ElementRef, signal, computed, PLATFORM_ID, inject, ChangeDetectionStrategy } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
-  selector: 'app-audio-player',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-audio-player',
+    imports: [],
+    template: `
     <div class="audio-player" [class.is-playing]="isPlaying()">
       <audio #audioEl [src]="src" (timeupdate)="onTimeUpdate()" (loadedmetadata)="onMetadata()" (ended)="onEnded()"></audio>
 
@@ -38,7 +37,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
       </span>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg-alt: #EDE9DF;

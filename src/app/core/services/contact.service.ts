@@ -8,6 +8,7 @@ export interface ContactFormPayload {
   email: string;
   message: string;
   accepts_marketing: boolean;
+  accept_privacy: boolean;
 }
 
 @Injectable({

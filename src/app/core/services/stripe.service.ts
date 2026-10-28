@@ -30,6 +30,11 @@ export class StripeService {
     this.paymentElement.mount(containerId);
   }
 
+  /** Recarga el importe del PaymentIntent tras cambiarlo en el backend (p. ej. envío a Baleares). */
+  async refreshAmount(): Promise<void> {
+    await this.elements?.fetchUpdates();
+  }
+
   async confirmPayment(returnUrl: string): Promise<{ error?: { message: string } }> {
     const stripe = await this.getStripe();
     if (!this.elements) return { error: { message: 'El formulario de pago no está inicializado' } };
@@ -40,7 +45,7 @@ export class StripeService {
     });
 
     if (result.error) {
-      return { error: { message: result.error.message ?? 'Error al procesar el pago' } };
+      return { error: { message: result.error.message ?? 'No hemos podido procesar el pago. Inténtalo de nuevo.' } };
     }
     return {};
   }

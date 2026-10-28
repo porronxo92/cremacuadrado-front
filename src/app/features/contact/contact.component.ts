@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ContactService } from '../../core/services/contact.service';
@@ -11,11 +11,12 @@ interface FaqItem {
   open: boolean;
 }
 
+import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
+
 @Component({
-  selector: 'app-contact',
-  standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
-  template: `
+    selector: 'app-contact',
+    imports: [RouterModule, FormsModule, PrivacyNoticeComponent],
+    template: `
     <div class="contact-page">
 
       <!-- Hero -->
@@ -23,7 +24,7 @@ interface FaqItem {
         <div class="container">
           <span class="contact-hero__tag">Hablemos</span>
           <h1>Contacto</h1>
-          <p class="contact-hero__sub">Como el amigo que siempre llega con algo bueno para compartir.<br>Estamos aquí para lo que necesites.</p>
+          <p class="contact-hero__sub">Escríbenos si tienes dudas sobre la crema o sobre tu pedido.</p>
         </div>
       </section>
 
@@ -60,7 +61,7 @@ interface FaqItem {
                 </div>
                 <div>
                   <span class="contact-info__label">Reclamaciones</span>
-                  <a href="mailto:ayuda@cremacuadrado.com" class="contact-info__value">ayuda&#64;cremacuadrado.com</a>
+                  <a href="mailto:info@cremacuadrado.com" class="contact-info__value">info&#64;cremacuadrado.com</a>
                 </div>
               </div>
 
@@ -110,8 +111,8 @@ interface FaqItem {
                     <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                     <polyline points="22 4 12 14.01 9 11.01"></polyline>
                   </svg>
-                  <h3>¡Mensaje enviado!</h3>
-                  <p>Te responderemos lo antes posible en <strong>info&#64;cremacuadrado.com</strong></p>
+                  <h3>Mensaje enviado</h3>
+                  <p>Te responderemos desde <strong>info&#64;cremacuadrado.com</strong></p>
                   <button class="btn-back" (click)="resetForm()">Enviar otro mensaje</button>
                 </div>
               } @else {
@@ -179,16 +180,20 @@ interface FaqItem {
                   <div class="form-check">
                     <label class="checkbox-label">
                       <input type="checkbox" name="marketing" [(ngModel)]="formData.marketing">
-                      <span class="checkbox-text">Acepto el envío de comunicaciones comerciales, promociones y ofertas</span>
+                      <span class="checkbox-text">Acepto el envío de comunicaciones comerciales, promociones y ofertas (opcional)</span>
                     </label>
                   </div>
+
+                  <app-privacy-notice
+                    purpose="responder a tu consulta y, solo si marcas la casilla, enviarte comunicaciones comerciales"
+                    legalBasis="tu consentimiento" />
 
                   <button
                     type="submit"
                     class="btn-submit"
                     [disabled]="contactForm.invalid || sending()"
                   >
-                    @if (sending()) { Enviando... } @else { Enviar mensaje }
+                    @if (sending()) { Enviando… } @else { Enviar mensaje }
                   </button>
                 </form>
               }
@@ -226,7 +231,8 @@ interface FaqItem {
 
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     $brand:   #7B1716;
     $accent:  #E6C15A;
     $bg:      #F4F1E9;
@@ -681,7 +687,7 @@ export class ContactComponent {
   constructor() {
     this.seo.set({
       title: 'Contacto',
-      description: '¿Dudas sobre nuestra crema de pistacho manchego? Escríbenos o consulta las preguntas frecuentes sobre el producto.',
+      description: 'Escríbenos si tienes dudas sobre la crema de pistacho manchego o tu pedido, o consulta las preguntas frecuentes.',
       path: '/contacto',
     });
     this.seo.setJsonLd('ld-faq', {
@@ -698,42 +704,42 @@ export class ContactComponent {
   faqItems: FaqItem[] = [
     {
       question: '¿Qué tiene de especial nuestra crema?',
-      answer: 'La fabricación es artesanal, única y exclusiva de cremas de pistacho. El comportamiento de este fruto seco está en el centro de nuestro proyecto. Hemos desarrollado sistemas y maquinarias especiales para tratarlo y perseguimos darle valor. Sin quitarle nada a los demás frutos secos, nos centramos en el pistacho para destacar y producir algo único.',
+      answer: 'Trabajamos solo con pistacho. Hemos desarrollado sistemas y maquinaria específicos para tostarlo, repelarlo y molerlo en piedra, porque un fruto seco con tanto aceite se comporta distinto a los demás.',
       open: false
     },
     {
       question: 'Mi crema tiene una capa de aceite. ¿Está mala?',
-      answer: '¡De mala nada! Es perfectamente normal, pasa en la CRUNCHY y pasa en la PURA. El pistacho tiene aceite en su composición, y este puede acumularse naturalmente en la superficie cuando el tarro está en la misma posición por unas semanas. Esto pasa por no utilizar emulsionantes. Dale un meneo con una cucharita llegando también a las partes más profundas del tarro y verás que en pocos segundos estará como nueva.',
+      answer: 'No, es normal. Pasa en la CRUNCHY y en la PURA. El pistacho tiene aceite, y si el tarro pasa unas semanas en la misma posición, el aceite sube a la superficie. Ocurre porque no usamos emulsionantes. Remueve con una cucharita hasta el fondo del tarro y en pocos segundos la crema vuelve a estar uniforme.',
       open: false
     },
     {
       question: '¿Dónde conservo mis tarros?',
-      answer: '¡El frigorífico déjalo para otras cosas! Nuestros tarros se tienen que conservar como el aceite de oliva: en un lugar fresco y apartado de la luz solar. Meterlo en la nevera puede provocar que el aceite se congele y se separe aún más. Además, si no cierras bien la tapa, el pistacho puede acumular olores de otros alimentos.',
+      answer: 'Como el aceite de oliva: en un lugar fresco y apartado de la luz solar. En la nevera el aceite puede endurecerse y separarse más. Cierra bien la tapa, porque el pistacho puede coger olores de otros alimentos.',
       open: false
     },
     {
       question: '¿Qué tiene mejor el pistacho español del que viene de fuera?',
-      answer: 'El pistacho nacional ofrece mayor seguridad (controles europeos más estrictos), es más sostenible (se produce localmente, con hasta un 60% en secano) y apoya a familias y empresas de nuestra tierra. Nuestro objetivo no es hacer dinero de la manera más sencilla, queremos ofrecer un producto de calidad con impacto positivo en nuestra región.',
+      answer: 'El pistacho nacional pasa controles europeos más estrictos, es más sostenible (se produce cerca, con hasta un 60% en secano) y apoya a familias y empresas de nuestra tierra. Queremos hacer un buen producto que deje algo en nuestra región.',
       open: false
     },
     {
       question: 'Soy repostero/restaurante/comerciante. ¿Podemos colaborar?',
-      answer: '¡Por supuesto! Queremos conocer quién usará nuestro producto y cómo podemos hacer sinergias. Disponemos de contenedores a granel para creaciones de platos o repostería, y puedes ser nuestro distribuidor si quieres vender nuestros tarritos. Escríbenos a info@cremacuadrado.com y te contestaremos lo antes posible.',
+      answer: 'Sí. Tenemos contenedores a granel para platos y repostería, y puedes vender nuestros tarros en tu negocio. Escríbenos a info@cremacuadrado.com y te contestamos.',
       open: false
     },
     {
       question: '¿Cuánto tardaría en llegar mi pedido?',
-      answer: 'Nosotros lo enviamos en 1 día (2 en casos extremos). La empresa de transportes tiene un compromiso de 48 horas. Así que en 48-72 horas deberías recibir tu pedido.',
+      answer: 'Lo enviamos en 1 día (2 como máximo). La empresa de transporte se compromete a entregarlo en 48 horas, así que deberías recibirlo en 48-72 horas.',
       open: false
     },
     {
       question: 'Mi pedido no llega. ¿Qué hago?',
-      answer: 'Tu pedido debería actualizarse constantemente de forma automática, pero puede pasar que tarde más de lo normal o en los peores escenarios se pierda. Si no recibes ninguna actualización escríbenos a ayuda@cremacuadrado.com.',
+      answer: 'El seguimiento se actualiza solo, pero un envío puede tardar más de lo normal o, en el peor caso, perderse. Si pasan los días y no ves ninguna actualización, escríbenos a info@cremacuadrado.com.',
       open: false
     },
     {
       question: 'En mi pedido hay un tarro roto. ¿Qué hago?',
-      answer: 'No hay algo que nos entristezca más, no obstante lo embalamos lo mejor posible. Obviamente no podemos dejar un cliente sin dinero y sin tarro, así que podemos realizar una devolución del valor de la mercancía o en caso de pérdida total enviarte el pedido de nuevo gratuitamente. Reclámalo lo antes posible enviando una foto a ayuda@cremacuadrado.com.',
+      answer: 'Lo sentimos, aunque embalamos con cuidado, a veces pasa. Te devolvemos el importe de lo dañado o, si se pierde todo el pedido, te lo enviamos de nuevo sin coste. Escríbenos cuanto antes con una foto a info@cremacuadrado.com.',
       open: false
     }
   ];
@@ -749,6 +755,7 @@ export class ContactComponent {
       email: this.formData.email,
       message: this.formData.message,
       accepts_marketing: this.formData.marketing,
+      accept_privacy: this.formData.privacy,
     }).subscribe({
       next: () => {
         this.sending.set(false);

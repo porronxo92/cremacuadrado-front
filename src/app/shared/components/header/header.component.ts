@@ -1,5 +1,5 @@
-﻿import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+﻿import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -8,10 +8,9 @@ import { CartService } from '../../../core/services/cart.service';
 import { MiniCartService } from '../../../core/services/mini-cart.service';
 
 @Component({
-  selector: 'app-header',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-header',
+    imports: [RouterModule],
+    template: `
     <header class="header">
       <div class="container">
         <div class="header__content">
@@ -41,7 +40,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                   </div>
                   <div class="dropdown-item__text">
                     <strong>Crema Pura 100%</strong>
-                    <span>Consciente · Fitness · Ético</span>
+                    <span>Intensa · Sin refinar · Puro sabor pistacho</span>
                   </div>
                 </a>
                 <a routerLink="/tienda/crema-pistacho-crunchy" class="dropdown-item" (click)="closeAll()">
@@ -50,7 +49,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                   </div>
                   <div class="dropdown-item__text">
                     <strong>Crema Crunchy</strong>
-                    <span>Sibarita · Familias</span>
+                    <span>Crujiente · Viciosa · Lista para untar</span>
                   </div>
                 </a>
                 <div class="dropdown-divider"></div>
@@ -155,11 +154,13 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
             }
 
             <!-- Mobile toggle -->
-            <button class="header__mobile-toggle" (click)="toggleMobileMenu()" [class.is-open]="showMobileMenu">
+            <button type="button" class="header__mobile-toggle" (click)="toggleMobileMenu()" [class.is-open]="showMobileMenu"
+              [attr.aria-label]="showMobileMenu ? 'Cerrar menú' : 'Abrir menú'"
+              [attr.aria-expanded]="showMobileMenu" aria-controls="mobile-menu">
               @if (showMobileMenu) {
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               } @else {
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                <svg aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
               }
             </button>
 
@@ -168,7 +169,7 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
 
         <!-- Mobile Menu -->
         @if (showMobileMenu) {
-          <nav class="mobile-menu">
+          <nav class="mobile-menu" id="mobile-menu" aria-label="Menú principal móvil">
 
             <!-- La Tienda accordion -->
             <div class="mobile-menu__accordion">
@@ -180,11 +181,11 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
                 <div class="mobile-menu__sub">
                   <a routerLink="/tienda/crema-pistacho-pura" (click)="closeAll()">
                     <span>Crema Pura 100%</span>
-                    <small>Consciente · Fitness · Ético</small>
+                    <small>Intensa · Sin refinar · Puro sabor pistacho</small>
                   </a>
                   <a routerLink="/tienda/crema-pistacho-crunchy" (click)="closeAll()">
                     <span>Crema Crunchy</span>
-                    <small>Sibarita · Familias</small>
+                    <small>Crujiente · Viciosa · Lista para untar</small>
                   </a>
                   <a routerLink="/tienda" (click)="closeAll()">Ver toda la tienda →</a>
                 </div>
@@ -239,7 +240,8 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       </div>
     </header>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     $brand: #7B1716;
     $accent: #E6C15A;
     $bg: #F4F1E9;
@@ -261,6 +263,10 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       max-width: 1280px;
       margin: 0 auto;
       padding: 0 1.5rem;
+
+      @media (max-width: 600px) {
+        padding: 0 1rem;
+      }
     }
 
     .header__content {
@@ -269,6 +275,12 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       justify-content: space-between;
       height: 72px;
       gap: 1rem;
+
+      // Móvil: logo y acciones eran flex-shrink:0 y sumaban ~401px de ancho mínimo
+      // (padding 48 + logo con tagline + 3 botones), más que un viewport de 360-390px.
+      @media (max-width: 600px) {
+        gap: 0.5rem;
+      }
     }
 
     // â”€â”€ Logo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -286,12 +298,15 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       height: 44px;
       object-fit: contain;
       flex-shrink: 0;
+
+      @media (max-width: 380px) { width: 36px; height: 36px; }
     }
 
     .header__logo-texts {
       display: flex;
       flex-direction: column;
       gap: 1px;
+      min-width: 0;
     }
 
     .header__logo-text {
@@ -302,6 +317,9 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       letter-spacing: -0.02em;
       line-height: 1;
       color: $brand;
+      white-space: nowrap;
+
+      @media (max-width: 600px) { font-size: clamp(1.05rem, 5.6vw, 1.5rem); }
     }
 
     .header__logo-tagline {
@@ -310,6 +328,9 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       font-style: italic;
       color: $text-mt;
       letter-spacing: 0.04em;
+
+      // La tagline desaparece en móvil (ver CLAUDE.md)
+      @media (max-width: 600px) { display: none; }
     }
 
     // â”€â”€ Desktop Nav â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -497,6 +518,8 @@ import { MiniCartService } from '../../../core/services/mini-cart.service';
       align-items: center;
       gap: 0.25rem;
       flex-shrink: 0;
+
+      @media (max-width: 380px) { gap: 0; }
     }
 
     .header__icon-btn {

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { BlogService } from '../../../core/services/blog.service';
@@ -44,10 +44,9 @@ const STATIC_BLOGS: BlogPostListItem[] = [
 ];
 
 @Component({
-  selector: 'app-blog-list',
-  standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterModule],
-  template: `
+    selector: 'app-blog-list',
+    imports: [CommonModule, NgOptimizedImage, RouterModule],
+    template: `
     <div class="blog-page">
       <!-- Hero -->
       <section class="blog-hero">
@@ -105,7 +104,7 @@ const STATIC_BLOGS: BlogPostListItem[] = [
           } @else if (posts().length === 0) {
             <div class="empty">
               <h2>No hay artículos disponibles</h2>
-              <p>Próximamente publicaremos nuevo contenido</p>
+              <p>Pronto publicaremos contenido nuevo</p>
             </div>
           } @else {
             <div class="blog-grid">
@@ -152,7 +151,8 @@ const STATIC_BLOGS: BlogPostListItem[] = [
       </section>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .blog-page {
       min-height: 100vh;
     }
@@ -477,7 +477,7 @@ export class BlogListComponent implements OnInit {
       this.categorySlug.set(categorySlug);
       this.seo.set({
         title: this.pageTitle(),
-        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho manchego — El Archivo de CremaCuadrado.',
+        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho manchego en El Archivo de CremaCuadrado.',
         path: categorySlug ? `/el-archivo/categoria/${categorySlug}` : '/el-archivo',
       });
       this.loadPosts();

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, computed, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, PLATFORM_ID, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -149,10 +149,9 @@ function normalizeHeading(text: string): string {
 }
 
 @Component({
-  selector: 'app-blog-detail',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-blog-detail',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="blog-detail">
       <div class="container">
         @if (loading()) {
@@ -228,7 +227,8 @@ function normalizeHeading(text: string): string {
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .blog-detail {
       min-height: 100vh;
       padding: 2rem 0 4rem;
@@ -563,7 +563,9 @@ export class BlogDetailComponent implements OnInit {
 
   post = signal<BlogPost | null>(null);
   loading = signal(true);
-  renderedContent = signal<SafeHtml>('');
+  // SafeHtml (DOMPurify) in the browser; a plain string on the server, so
+  // Angular's own [innerHTML] sanitizer cleans it (see updateRenderedContent).
+  renderedContent = signal<SafeHtml | string>('');
 
   readonly isRecipe = computed(() => !!this.post()?.categories.some(cat => cat.slug === 'recetas'));
 
@@ -649,12 +651,22 @@ export class BlogDetailComponent implements OnInit {
     if (this.isRecipe()) {
       rawHtml = this.enhanceRecipeHeadings(rawHtml);
     }
-    // DOMPurify needs a real DOM; it doesn't run on the server (SSR-05). The
-    // markdown source comes from our own admin panel, not anonymous input,
-    // so skipping sanitization during SSR doesn't open an XSS hole — the
-    // browser pass still sanitizes on hydration.
-    const clean = isPlatformBrowser(this.platformId) ? DOMPurify.sanitize(rawHtml) : rawHtml;
-    this.renderedContent.set(this.sanitizer.bypassSecurityTrustHtml(clean));
+    // The server-rendered HTML is what a visitor gets *before* hydration, so it
+    // must be sanitized too: bypassing there meant any script/handler in a
+    // post (admin account compromised, legacy HTML) ran on first paint, and
+    // the browser-side DOMPurify pass came too late (SSR-05).
+    // DOMPurify can't do it in Node without jsdom (not a dependency): bound to
+    // the render's domino window it reports isSupported but returns "" —
+    // domino has no DOMParser and DOMPurify's fallback finds no <body>. So on
+    // the server nothing is bypassed and the plain string goes to [innerHTML],
+    // where Angular's built-in sanitizer (allowlist, runs fine on domino)
+    // strips scripts, handlers and javascript: URLs. In the browser DOMPurify
+    // still runs as before and replaces this content on hydration.
+    if (isPlatformBrowser(this.platformId)) {
+      this.renderedContent.set(this.sanitizer.bypassSecurityTrustHtml(DOMPurify.sanitize(rawHtml)));
+    } else {
+      this.renderedContent.set(rawHtml);
+    }
   }
 
   /** Añade icono + clase a las cabeceras Ingredientes/Elaboración/Preparación/Resultado (ver plantilla de recetas). */

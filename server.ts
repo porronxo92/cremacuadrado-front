@@ -1,5 +1,5 @@
 import { APP_BASE_HREF } from '@angular/common';
-import { CommonEngine } from '@angular/ssr';
+import { CommonEngine } from '@angular/ssr/node';
 import express from 'express';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -8,6 +8,20 @@ import { environment } from '@env/environment';
 import { RESPONSE_STATUS, ResponseStatus } from './src/app/core/tokens/response-status.token';
 
 const SITE_ORIGIN = environment.siteUrl;
+const SITE_URL_ORIGIN = new URL(SITE_ORIGIN).origin;
+
+// URL handed to the render (becomes document.location). Built with new URL()
+// and checked, never concatenated: a request line like `GET //evil.example/x`
+// gives originalUrl "//evil.example/x", and new URL() on that string — with
+// any base — is a *protocol-relative* URL that swaps the origin for
+// evil.example (same for "/\evil.example": WHATWG treats "\" as "/"). So the
+// leading slashes/backslashes are collapsed to one first, making it a plain
+// path, and the resulting origin is asserted as a last line of defence.
+function renderUrl(originalUrl: string): string {
+  const url = new URL('/' + originalUrl.replace(/^[/\\]+/, ''), SITE_URL_ORIGIN);
+  if (url.origin !== SITE_URL_ORIGIN) throw new Error(`render URL fuera de ${SITE_URL_ORIGIN}: ${originalUrl}`);
+  return url.href;
+}
 
 // Legacy English routes (app.routes.ts:92-105) — those are client-side
 // Angular Router redirects, which means a crawler sees a 200 and never
@@ -20,7 +34,6 @@ const LEGACY_REDIRECTS: Array<{ from: string; to: string }> = [
   { from: '/blog', to: '/el-archivo' },
   { from: '/blog/:slug', to: '/el-archivo/:slug' },
   { from: '/checkout/success', to: '/gracias' },
-  { from: '/condiciones-venta', to: '/aviso-legal' },
   { from: '/pages/sobre-nosotros', to: '/nuestro-metodo' },
   { from: '/nosotros', to: '/nuestro-metodo' },
   { from: '/pages/contacto', to: '/contacto' },
@@ -36,6 +49,38 @@ const LEGACY_REDIRECTS: Array<{ from: string; to: string }> = [
 let sitemapCache: { xml: string; generatedAt: number } | null = null;
 const SITEMAP_CACHE_MS = 10 * 60 * 1000;
 
+// GET /blog/posts caps page_size at 50 (backend/app/api/v1/blog.py, le=50):
+// asking for more is a 422, not a truncated list — which is how the sitemap
+// silently lost every post. Walk the pages via total_pages instead, with a
+// hard cap so a misbehaving API can't keep a crawler request open forever
+// (20 × 50 = 1000 posts, far beyond what the blog will reach).
+const BLOG_SITEMAP_PAGE_SIZE = 50;
+const BLOG_SITEMAP_MAX_PAGES = 20;
+
+async function fetchBlogSlugs(): Promise<string[]> {
+  const slugs: string[] = [];
+  for (let page = 1; page <= BLOG_SITEMAP_MAX_PAGES; page++) {
+    const res = await fetch(
+      `${environment.serverApiUrl}/blog/posts?page=${page}&page_size=${BLOG_SITEMAP_PAGE_SIZE}`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (!res.ok) throw new Error(`GET /blog/posts page=${page} → HTTP ${res.status}`);
+    const data = await res.json();
+    const items: Array<{ slug: string }> = data?.items ?? [];
+    slugs.push(...items.map((p) => p.slug).filter(Boolean));
+    if (items.length === 0 || page >= (data?.total_pages ?? 0)) return slugs;
+  }
+  console.error(`[sitemap] /blog/posts tiene más de ${BLOG_SITEMAP_MAX_PAGES} páginas; el sitemap solo lleva las primeras`);
+  return slugs;
+}
+
+async function fetchProductSlugs(): Promise<string[]> {
+  const res = await fetch(`${environment.serverApiUrl}/products?page_size=100`, { signal: AbortSignal.timeout(5000) });
+  if (!res.ok) throw new Error(`GET /products → HTTP ${res.status}`);
+  const data = await res.json();
+  return (data?.items ?? []).map((p: { slug: string }) => p.slug).filter(Boolean);
+}
+
 async function generateSitemap(): Promise<string> {
   if (sitemapCache && Date.now() - sitemapCache.generatedAt < SITEMAP_CACHE_MS) {
     return sitemapCache.xml;
@@ -44,28 +89,26 @@ async function generateSitemap(): Promise<string> {
   const STATIC_URLS = [
     '/', '/nuestro-metodo', '/tienda', '/para-tiendas', '/contacto',
     '/puntos-de-venta', '/el-archivo',
-    '/privacidad', '/aviso-legal', '/cookies', '/devoluciones',
+    '/privacidad', '/aviso-legal', '/condiciones-venta', '/cookies', '/devoluciones',
   ];
 
-  let productSlugs: string[] = [];
-  let blogSlugs: string[] = [];
-  try {
-    const [productsRes, postsRes] = await Promise.all([
-      fetch(`${environment.serverApiUrl}/products?page_size=100`, { signal: AbortSignal.timeout(5000) }),
-      fetch(`${environment.serverApiUrl}/blog/posts?page_size=500`, { signal: AbortSignal.timeout(5000) }),
-    ]);
-    if (productsRes.ok) {
-      const data = await productsRes.json();
-      productSlugs = (data?.items ?? []).map((p: { slug: string }) => p.slug);
-    }
-    if (postsRes.ok) {
-      const data = await postsRes.json();
-      blogSlugs = (data?.items ?? []).map((p: { slug: string }) => p.slug);
-    }
-  } catch {
-    // API unreachable — serve the static URLs only rather than fail the
-    // whole sitemap; better a partial sitemap than a 500 for every crawler.
-  }
+  // Each source fails on its own: API unreachable or erroring → that part is
+  // left out rather than failing the whole sitemap (better partial than a 500
+  // for every crawler), but it's logged — a sitemap quietly missing every
+  // post is exactly the bug this used to hide.
+  let partial = false;
+  const [productSlugs, blogSlugs] = await Promise.all([
+    fetchProductSlugs().catch((err) => {
+      partial = true;
+      console.error(`[sitemap] productos omitidos: ${err?.message ?? err}`);
+      return [] as string[];
+    }),
+    fetchBlogSlugs().catch((err) => {
+      partial = true;
+      console.error(`[sitemap] posts del blog omitidos: ${err?.message ?? err}`);
+      return [] as string[];
+    }),
+  ]);
 
   const urls = [
     ...STATIC_URLS,
@@ -79,7 +122,9 @@ async function generateSitemap(): Promise<string> {
     urls.map((path) => `  <url><loc>${SITE_ORIGIN}${path}</loc></url>`).join('\n') +
     `\n</urlset>\n`;
 
-  sitemapCache = { xml, generatedAt: Date.now() };
+  // A partial sitemap is served but not cached: one API timeout on a cold
+  // start would otherwise hide every product from crawlers for 10 minutes.
+  if (!partial) sitemapCache = { xml, generatedAt: Date.now() };
   return xml;
 }
 
@@ -90,7 +135,33 @@ export function app(): express.Express {
   const browserDistFolder = resolve(serverDistFolder, '../browser');
   const indexHtml = join(serverDistFolder, 'index.server.html');
 
-  const commonEngine = new CommonEngine();
+  // allowedHosts (GHSA-x288-3778-4hhx / CVE-2026-27739): render() checks the
+  // hostname of the render URL against this list and, from @angular/ssr 22
+  // on, THROWS for any hostname not in it, empty list included (→ 500 via
+  // next(err), "URL with hostname … is not allowed" in the function logs;
+  // prerendered pages too, since the SSG lookup runs after the check). On
+  // 19.2.21+ an empty list instead returned the bare index.server.html with
+  // a 200 (angular/angular#68391), i.e. SSR silently off.
+  // The render URL is always SITE_ORIGIN (renderUrl()), never the request's
+  // Host — and CommonEngine doesn't look at Host / X-Forwarded-* at all —
+  // so this only needs the siteUrl hostname of each environment
+  // (environment*.ts) — previews on *.vercel.app render with the staging
+  // origin and need no entry. cremacuadrado.com / www. are here ahead of the
+  // domain cutover (CUTOVER note in environment.prod.ts). Adding a new
+  // environment = add its siteUrl hostname here, or every SSR route 500s.
+  // NG_ALLOWED_HOSTS, if set, REPLACES this list (it doesn't extend it);
+  // AngularNodeAppEngine (phase 6) has the opposite precedence.
+  // CommonEngine is @deprecated since v22 (no removal version announced):
+  // moving to AngularNodeAppEngine is phase 6 of the migration.
+  const commonEngine = new CommonEngine({
+    allowedHosts: [
+      'prd.cremacuadrado.com',
+      'staging.cremacuadrado.com',
+      'cremacuadrado.com',
+      'www.cremacuadrado.com',
+      'localhost',
+    ],
+  });
 
   server.set('view engine', 'html');
   server.set('views', browserDistFolder);
@@ -160,8 +231,14 @@ export function app(): express.Express {
   // real backend. LOCAL_API_PROXY_TARGET overrides where it forwards to —
   // useful when testing a production build (environment.prod.ts) against a
   // local backend instead of the live one.
+  // Registered only off Vercel (VERCEL is set in every Vercel build and
+  // function). The /api/:path* edge rewrite described above no longer exists
+  // in vercel.json — everything, /api/* included, is rewritten to this
+  // function — and apiUrl is absolute in prod/staging, so nothing legitimate
+  // uses it there. Left mounted, it was a forwarder of any request and its
+  // headers (Authorization, cookies) from the SSR function to the backend.
   const apiProxyTarget = process.env['LOCAL_API_PROXY_TARGET'] ?? new URL(environment.serverApiUrl).origin;
-  server.use('/api', express.raw({ type: '*/*', limit: '10mb' }), async (req, res) => {
+  if (!process.env['VERCEL']) server.use('/api', express.raw({ type: '*/*', limit: '10mb' }), async (req, res) => {
     try {
       const upstream = await fetch(`${apiProxyTarget}${req.originalUrl}`, {
         method: req.method,
@@ -170,7 +247,9 @@ export function app(): express.Express {
             ([key, value]) => typeof value === 'string' && !['host', 'content-length', 'connection'].includes(key)
           ) as [string, string][]
         ),
-        body: ['GET', 'HEAD'].includes(req.method) ? undefined : (req.body as Buffer),
+        // Buffer is a valid fetch body at runtime; TS 5.9's lib no longer
+        // types Buffer<ArrayBufferLike> as BodyInit (it may be shared memory).
+        body: ['GET', 'HEAD'].includes(req.method) ? undefined : (req.body as Buffer as unknown as BodyInit),
       });
       res.status(upstream.status);
       upstream.headers.forEach((value, key) => {
@@ -200,10 +279,19 @@ export function app(): express.Express {
   // logged-in visitor, and only fix itself after hydration (SSR-11). These
   // get the plain CSR shell instead — the Angular Router takes over
   // client-side exactly as it does today, pre-SSR.
+  // index.csr.html, not index.html: once "/" is prerendered, the builder
+  // writes the home page's rendered HTML to browser/index.html and keeps the
+  // untouched shell as index.csr.html. Sending index.html here served the
+  // full home (canonical "/", home H1, ng-server-context="ssg") at /carrito,
+  // /checkout… and hydration then fought the router over the wrong DOM.
   const CLIENT_ONLY_PREFIXES = ['/carrito', '/checkout', '/gracias', '/auth', '/account', '/admin'];
+  const csrShell = join(browserDistFolder, 'index.csr.html');
   server.get('**', (req, res, next) => {
-    if (CLIENT_ONLY_PREFIXES.some((p) => req.path === p || req.path.startsWith(p + '/'))) {
-      res.sendFile(join(browserDistFolder, 'index.html'));
+    // Same leading-slash collapse as renderUrl(): otherwise //carrito skips
+    // this check but still renders /carrito on the server.
+    const path = '/' + req.path.replace(/^[/\\]+/, '');
+    if (CLIENT_ONLY_PREFIXES.some((p) => path === p || path.startsWith(p + '/'))) {
+      res.sendFile(csrShell);
       return;
     }
     next();
@@ -211,9 +299,11 @@ export function app(): express.Express {
 
   // All remaining routes use the Angular engine (SSR, per-request)
   server.get('**', (req, res, next) => {
-    const { protocol, originalUrl, baseUrl, headers } = req;
+    const { originalUrl, baseUrl } = req;
 
-    // Angular 18 has no RESPONSE_INIT (that's 19+): this plain mutable object
+    // RESPONSE_INIT (19+) only works with AngularNodeAppEngine, not with
+    // CommonEngine — switching engines is phase 6 of the migration (see
+    // docs/migracion-angular-22.md). Until then this plain mutable object
     // is provided into the component tree via RESPONSE_STATUS, and any
     // component that determines the route doesn't exist (not-found page, a
     // product/post that 404s) sets .code = 404 on it. Same object reference,
@@ -224,7 +314,17 @@ export function app(): express.Express {
       .render({
         bootstrap,
         documentFilePath: indexHtml,
-        url: `${protocol}://${headers.host}${originalUrl}`,
+        // Fixed origin, never the client's Host / X-Forwarded-* headers
+        // (GHSA-x288-3778-4hhx / CVE-2026-27739): this URL becomes
+        // document.location inside the render, so any relative HttpClient
+        // request, redirect or absolute link built from it would point at
+        // whatever host the attacker sent — SSRF and cache poisoning. Previews
+        // (*.vercel.app) and prd. still render fine: the origin only feeds
+        // the render, it doesn't validate the incoming request, so there's
+        // deliberately no 400 for unknown hosts here.
+        // CommonEngine also checks this URL against `allowedHosts` (see the
+        // constructor above): SITE_ORIGIN's hostname must be in that list.
+        url: renderUrl(originalUrl),
         publicPath: browserDistFolder,
         providers: [
           { provide: APP_BASE_HREF, useValue: baseUrl },

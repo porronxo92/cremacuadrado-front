@@ -1,13 +1,13 @@
-import { Component, signal, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
 import { SeoService } from '../../../core/services/seo.service';
+import { environment } from '@env/environment';
 
 @Component({
-  selector: 'app-shipping-page',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-shipping-page',
+    imports: [RouterModule],
+    template: `
     <div class="page">
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
@@ -46,7 +46,7 @@ import { SeoService } from '../../../core/services/seo.service';
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.8 12.2 19.79 19.79 0 0 1 1.74 3.6 2 2 0 0 1 3.71 1.4h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.07a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
               </div>
               <h3>Soporte al cliente</h3>
-              <p>ayuda&#64;cremacuadrado.com</p>
+              <p>info&#64;cremacuadrado.com</p>
             </article>
             <article class="feature-card">
               <div class="feature-card__icon">
@@ -81,12 +81,12 @@ import { SeoService } from '../../../core/services/seo.service';
             <nav class="toc" [class.is-open]="tocOpen()">
               <p class="toc__title">Contenido</p>
               <ul>
-                <li><a href="#plazos" (click)="tocOpen.set(false)">Plazos de entrega</a></li>
-                <li><a href="#costes" (click)="tocOpen.set(false)">Costes de envío</a></li>
-                <li><a href="#seguimiento" (click)="tocOpen.set(false)">Seguimiento</a></li>
-                <li><a href="#incidencias" (click)="tocOpen.set(false)">Incidencias</a></li>
-                <li><a href="#devoluciones" (click)="tocOpen.set(false)">Devoluciones</a></li>
-                <li><a href="#contacto" (click)="tocOpen.set(false)">Contacto</a></li>
+                <li><a [routerLink]="[]" fragment="plazos" (click)="tocOpen.set(false)">Plazos de entrega</a></li>
+                <li><a [routerLink]="[]" fragment="costes" (click)="tocOpen.set(false)">Costes de envío</a></li>
+                <li><a [routerLink]="[]" fragment="seguimiento" (click)="tocOpen.set(false)">Seguimiento</a></li>
+                <li><a [routerLink]="[]" fragment="incidencias" (click)="tocOpen.set(false)">Incidencias</a></li>
+                <li><a [routerLink]="[]" fragment="devoluciones" (click)="tocOpen.set(false)">Devoluciones</a></li>
+                <li><a [routerLink]="[]" fragment="contacto" (click)="tocOpen.set(false)">Contacto</a></li>
               </ul>
             </nav>
 
@@ -127,15 +127,21 @@ import { SeoService } from '../../../core/services/seo.service';
                       <tr><th>Destino</th><th>Coste</th><th>Plazo</th></tr>
                     </thead>
                     <tbody>
-                      <tr><td>Península</td><td>Calculado en el carrito</td><td>48–72 h</td></tr>
-                      <tr><td>Islas Baleares</td><td>Consultar</td><td>3–5 días</td></tr>
-                      <tr><td>Canarias / Ceuta / Melilla</td><td>Consultar</td><td>5–7 días</td></tr>
+                      <tr><td>Península</td><td>4,95 € · gratis desde 48 €</td><td>48–72 h</td></tr>
+                      <tr><td>Islas Baleares</td><td>7,95 € · sin envío gratis por importe</td><td>Algo más que la península</td></tr>
+                      <tr><td>Canarias / Ceuta / Melilla</td><td>Presupuesto por WhatsApp</td><td>—</td></tr>
                     </tbody>
                   </table>
                 </div>
                 <div class="callout">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                  <p>Para envíos internacionales escríbenos a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a>.</p>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <p>El cupón de envío gratis también anula el envío a Baleares.</p>
+                </div>
+                <div class="callout">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                  <p>Canarias, Ceuta y Melilla tienen trámites de aduana, así que no cobramos esos envíos desde la web: calculamos el envío a medida.
+                    <a [href]="whatsappUrl" target="_blank" rel="noopener">Pide presupuesto por WhatsApp<span class="sr-only"> (se abre en WhatsApp)</span></a>.
+                    Para envíos internacionales escríbenos a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a>.</p>
                 </div>
               </section>
 
@@ -152,7 +158,7 @@ import { SeoService } from '../../../core/services/seo.service';
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                     <strong>Mi pedido no llega</strong>
                   </div>
-                  <p>Escríbenos a <a href="mailto:ayuda@cremacuadrado.com">ayuda&#64;cremacuadrado.com</a> con tu número de pedido. Lo localizamos y te informamos a la mayor brevedad.</p>
+                  <p>Escríbenos a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a> con tu número de pedido. Lo localizamos y te informamos a la mayor brevedad.</p>
                 </div>
                 <div class="alert-card alert-card--warning">
                   <div class="alert-card__header">
@@ -161,7 +167,7 @@ import { SeoService } from '../../../core/services/seo.service';
                   </div>
                   <p>Embalamos con cariño, pero a veces ocurren imprevistos. Si recibes un tarro dañado:</p>
                   <ul>
-                    <li>Envía una foto del daño a <a href="mailto:ayuda@cremacuadrado.com">ayuda&#64;cremacuadrado.com</a></li>
+                    <li>Envía una foto del daño a <a href="mailto:info@cremacuadrado.com">info&#64;cremacuadrado.com</a></li>
                     <li>Reclámanoslo lo antes posible tras la recepción</li>
                     <li>Gestionaremos <strong>devolución</strong> o <strong>reenvío gratuito</strong></li>
                   </ul>
@@ -171,7 +177,8 @@ import { SeoService } from '../../../core/services/seo.service';
               <section class="section" id="devoluciones">
                 <h2><span class="section__num">05</span> Política de devoluciones</h2>
                 <p>Tienes <strong>14 días naturales</strong> desde la recepción para ejercer tu derecho de desistimiento, conforme a la normativa de consumidores.</p>
-                <p>Los productos deben estar en su estado original y sin abrir. Para iniciar una devolución contacta en <a href="mailto:ayuda@cremacuadrado.com">ayuda&#64;cremacuadrado.com</a>.</p>
+                <p>No se admite la devolución de tarros abiertos o desprecintados tras la entrega, por razones de salud e higiene. Te reembolsamos el importe pagado, incluidos los gastos de envío ordinarios, en un máximo de 14 días; los gastos de devolución corren a tu cargo salvo producto defectuoso.</p>
+                <p>Puedes desistir online desde <a routerLink="/desistimiento">el formulario de desistimiento</a>, donde también encontrarás el modelo oficial. Más detalles en las <a routerLink="/condiciones-venta" fragment="desistimiento">condiciones de venta</a>.</p>
               </section>
 
               <section class="section" id="contacto">
@@ -182,10 +189,6 @@ import { SeoService } from '../../../core/services/seo.service';
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     info&#64;cremacuadrado.com
                   </a>
-                  <a href="mailto:ayuda@cremacuadrado.com" class="contact-btn contact-btn--alt">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                    ayuda&#64;cremacuadrado.com
-                  </a>
                 </div>
               </section>
 
@@ -195,7 +198,8 @@ import { SeoService } from '../../../core/services/seo.service';
       </main>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     /* ═══════════════════════════════════════════════════════════════════════
        VARIABLES
        ═══════════════════════════════════════════════════════════════════════ */
@@ -811,6 +815,7 @@ import { SeoService } from '../../../core/services/seo.service';
 export class ShippingPageComponent {
   private seo = inject(SeoService);
   tocOpen = signal(false);
+  readonly whatsappUrl = `https://wa.me/${environment.whatsappPhoneNumber}?text=${encodeURIComponent('Hola, quiero pedir presupuesto de envío a Canarias, Ceuta o Melilla.')}`;
 
   constructor() {
     this.seo.set({

@@ -1,12 +1,12 @@
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
+import { CookieConsentService } from '../../../core/services/cookie-consent.service';
 
 @Component({
-  selector: 'app-footer',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-footer',
+    imports: [RouterModule],
+    template: `
     <footer class="footer">
       <div class="container">
         <div class="footer__grid">
@@ -14,8 +14,8 @@ import { RouterModule } from '@angular/router';
           <div class="footer__section">
             <h3 class="footer__title">CremaCuadrado</h3>
             <p class="footer__text">
-              Crema de pistacho artesanal elaborada con los mejores pistachos manchegos de Ciudad Real.
-              100% natural, sin aditivos. El sabor auténtico del pistacho.
+              Crema de pistacho manchego artesanal, elaborada en Ciudad Real.
+              100% natural, sin aditivos.
             </p>
           </div>
           
@@ -26,7 +26,6 @@ import { RouterModule } from '@angular/router';
               <a routerLink="/tienda">Tienda</a>
               <a routerLink="/el-archivo">Blog</a>
               <a routerLink="/nuestro-metodo">Sobre nosotros</a>
-              <a routerLink="/devoluciones">Envíos</a>
               <a routerLink="/contacto">Contacto</a>
             </nav>
           </div>
@@ -35,9 +34,13 @@ import { RouterModule } from '@angular/router';
           <div class="footer__section">
             <h3 class="footer__title">Legal</h3>
             <nav class="footer__nav">
+              <a routerLink="/aviso-legal">Aviso legal</a>
+              <a routerLink="/condiciones-venta">Condiciones de venta</a>
+              <a routerLink="/devoluciones">Envíos y devoluciones</a>
+              <a routerLink="/desistimiento">Desistir de un pedido</a>
               <a routerLink="/privacidad">Política de privacidad</a>
-              <a routerLink="/aviso-legal">Aviso Legal</a>
               <a routerLink="/cookies">Política de cookies</a>
+              <button type="button" class="footer__cookie-btn" (click)="cookieConsent.openSettings()">Configurar cookies</button>
             </nav>
           </div>
           
@@ -85,16 +88,17 @@ import { RouterModule } from '@angular/router';
         </div>
         
         <div class="footer__bottom">
-          <p>&copy; {{ currentYear }} CremaCuadrado. Todos los derechos reservados.</p>
+          <p>&copy; {{ currentYear }} CREMACUADRADO SL · NIF B56673700 · Precios con IVA incluido.</p>
         </div>
       </div>
     </footer>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .footer {
       background: #1A1208;
       color: #F4F1E9;
-      padding: 3.5rem 0 1.25rem;
+      padding: 3.5rem 0 calc(1.25rem + var(--footer-fab-clearance, 0px));
       margin-top: auto;
     }
     
@@ -128,6 +132,12 @@ import { RouterModule } from '@angular/router';
       line-height: 1.7;
     }
     
+    .footer__cookie-btn {
+      background: none; border: 0; padding: 0; text-align: left; cursor: pointer;
+      font-family: 'Poppins', sans-serif; font-size: 0.8rem; color: rgba(244, 241, 233, 0.6);
+      &:hover { color: #E6C15A; }
+    }
+
     .footer__nav {
       display: flex;
       flex-direction: column;
@@ -197,5 +207,6 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class FooterComponent {
+  cookieConsent = inject(CookieConsentService);
   currentYear = new Date().getFullYear();
 }

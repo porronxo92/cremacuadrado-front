@@ -49,6 +49,8 @@ export interface ProductVariant {
   id: number;
   format: string;
   price: number;
+  /** Omnibus: precio más bajo de los 30 días previos a una rebaja (solo si el precio actual es menor). */
+  compare_price?: number | null;
   stock: number;
   is_in_stock: boolean;
   is_low_stock: boolean;
@@ -112,6 +114,15 @@ export interface FeaturedReview {
 
 
 // User interfaces
+/** Cupón personal de cliente histórico (web antigua), en «Mi cuenta → Mis datos». */
+export interface PersonalCoupon {
+  code: string;
+  discount_value: number;
+  valid_from: string | null;   // 'AAAA-MM-DD', hora peninsular
+  valid_until: string | null;  // último día incluido
+  is_valid: boolean;
+}
+
 export interface User {
   id: number;
   email: string;
@@ -153,19 +164,6 @@ export interface AddressInput {
   phone: string;
 }
 
-// Admin User interfaces
-export interface AdminUser extends User {
-  total_orders: number;
-  total_spent: number;
-  order_ids: number[];
-}
-
-export interface AdminUsersResponse {
-  data: AdminUser[];
-  total: number;
-  pages: number;
-}
-
 // Cart interfaces
 export interface Cart {
   id: number;
@@ -173,7 +171,10 @@ export interface Cart {
   items: CartItem[];
   subtotal: number;
   coupon: CouponInfo | null;
+  /** Descuento solo sobre productos. */
   discount: number;
+  /** Envío anulado por un cupón de envío gratis (0 si no). Puede llegar como texto. */
+  shipping_discount?: number | string;
   shipping_cost: number;
   shipping_message: string | null;
   total: number;
@@ -199,9 +200,14 @@ export interface CartItem {
 
 export interface CouponInfo {
   code: string;
-  discount_type: 'percent' | 'fixed';
+  discount_type: 'percent' | 'fixed' | 'free_shipping';
   discount_value: number;
+  /** Descuento efectivo. */
   discount_amount: number;
+  /** false si el cupón está guardado pero no aplica a este pedido. */
+  applies?: boolean;
+  /** Motivo por el que no aplica. */
+  message?: string | null;
 }
 
 // Order interfaces
@@ -250,7 +256,7 @@ export interface OrderListItem {
   primary_image_url: string | null;
 }
 
-export type OrderStatus = 'pending' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded';
+export type OrderStatus = 'pending' | 'pending_payment' | 'payment_processing' | 'payment_failed' | 'paid' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'refunded' | 'partially_refunded';
 
 // Checkout interfaces
 export interface CheckoutData {
@@ -268,6 +274,8 @@ export interface CheckoutValidation {
   errors: string[];
   subtotal: number;
   shipping_cost: number;
+  shipping_zone?: 'peninsula' | 'baleares' | 'quote';
+  shipping_discount?: number | string;
   discount: number;
   tax: number;
   total: number;
@@ -279,6 +287,26 @@ export interface PaymentIntent {
   amount: number;
   currency: string;
   order_number: string;
+}
+
+/** Tax details for a full invoice (company / self-employed). */
+export interface BillingDetails {
+  name: string;          // razón social o nombre completo
+  nif: string;
+  street: string;
+  city: string;
+  province: string;
+  postal_code: string;
+  country: string;
+}
+
+export type InvoiceType = 'simplified' | 'full' | 'corrective';
+
+export interface InvoiceSummary {
+  invoice_number: string;
+  invoice_type: InvoiceType;
+  issued_at: string;
+  total: number;
 }
 
 // Blog interfaces
@@ -326,6 +354,8 @@ export interface RegisterData {
   first_name: string;
   last_name: string;
   phone?: string;
+  accept_terms?: boolean;
+  marketing_opt_in?: boolean;
 }
 
 export interface AuthTokens {
@@ -373,4 +403,7 @@ export interface PointOfSale {
   city: string;
   instagram_url: string;
   maps_url: string;
+  address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }

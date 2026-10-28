@@ -33,6 +33,8 @@ const STATIC_ROUTES = [
   '/aviso-legal',
   '/cookies',
   '/devoluciones',
+  '/condiciones-venta',
+  '/desistimiento',
 ];
 
 async function resolveProductSlugs() {

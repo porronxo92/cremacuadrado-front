@@ -1,5 +1,5 @@
-import { Component, EventEmitter, inject, Input, Output, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, EventEmitter, inject, Input, Output, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ToastService } from '../../../core/services/toast.service';
@@ -9,10 +9,9 @@ import { ToastService } from '../../../core/services/toast.service';
  * POST /admin/upload-image (Vercel Blob) and emits the resulting public URL.
  */
 @Component({
-  selector: 'app-image-uploader',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
+    selector: 'app-image-uploader',
+    imports: [],
+    template: `
     <div
       class="uploader"
       [class.dragging]="dragging()"
@@ -46,7 +45,8 @@ import { ToastService } from '../../../core/services/toast.service';
       }
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .uploader {
       border: 2px dashed #d8d0bd;
       border-radius: 4px;
@@ -77,7 +77,7 @@ import { ToastService } from '../../../core/services/toast.service';
       border-radius: 50%; animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-  `],
+  `]
 })
 export class ImageUploaderComponent {
   private http = inject(HttpClient);

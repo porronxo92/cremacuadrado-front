@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { OrderService } from '../../../core/services/order.service';
@@ -6,10 +6,9 @@ import { UserService } from '../../../core/services/user.service';
 import { OrderListItem, User } from '../../../core/models';
 
 @Component({
-  selector: 'app-account-dashboard',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-account-dashboard',
+    imports: [CommonModule, RouterModule],
+    template: `
     <div class="account-dashboard">
       <div class="welcome-section">
         <h1>Hola, {{ user()?.first_name || '...' }}!</h1>
@@ -116,7 +115,8 @@ import { OrderListItem, User } from '../../../core/models';
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .account-dashboard {
       padding: 0;
     }

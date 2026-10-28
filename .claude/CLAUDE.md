@@ -1,14 +1,15 @@
 # CremaCuadrado - Frontend
 
-> Tienda online de crema de pistacho manchego artesanal. SPA Angular 18 + API REST (Python/FastAPI en Vercel).
+> Tienda online de crema de pistacho manchego artesanal. Angular 22 con SSR + API REST (Python/FastAPI en Vercel).
 
 ---
 
 ## 🚀 Stack Tecnológico
 
 ### Frontend (este repositorio)
-- **Angular 18** — SPA con standalone components, lazy loading, Angular Signals
-- **TypeScript 5.4** — tipado estricto en todo el proyecto
+- **Angular 22** — standalone components, lazy loading, Signals, Zone.js (`provideZoneChangeDetection`); los componentes llevan `ChangeDetectionStrategy.Eager` (en la 22 el valor por defecto es OnPush)
+- **SSR + prerender** — `server.ts` (Express 4 + `CommonEngine` de `@angular/ssr/node`, con `allowedHosts`), servido como función de Vercel desde `api/index.mjs`; builder `@angular/build:application`
+- **TypeScript 6.0** — tipado estricto en todo el proyecto
 - **SCSS** — estilos globales en `src/styles.scss`
 - **Angular Router** — con `withViewTransitions`, `withInMemoryScrolling`, `PreloadAllModules`
 - **HttpClient** — con interceptores: `credentials`, `auth` (JWT), `error`
@@ -32,12 +33,14 @@
 # Desarrollo local (API en localhost:8000)
 npm start           # ng serve → http://localhost:4200
 
-# Build
-npm run build       # development
-npm run build:prod  # production → dist/cremacuadrado/browser/
+# Build (prerender + comprobación de fichas: scripts/check-prerender.mjs)
+npm run build:prod     # production → dist/cremacuadrado/{browser,server}/
+npm run build:staging
 
 # Tests
-npm test
+npm run e2e                       # Playwright (ng serve sin SSR, puerto 4200)
+node scripts/ssr-smoke.mjs        # HTML del SSR con el servidor de dist/ en el puerto 4000
+npm run test:seo:build
 ```
 
 ### Variables de entorno
@@ -116,6 +119,10 @@ src/
 | `/admin` | `AdminLayoutComponent` + hijos | `adminGuard` |
 | `/admin/orders` | `AdminOrdersComponent` | `adminGuard` |
 | `/admin/products` | `AdminProductsComponent` | `adminGuard` |
+| `/admin/clientes` · `/admin/clientes/:id` | `AdminUsersComponent` · `AdminUserDetailComponent` (ficha 360º) | `adminGuard` |
+| `/admin/cupones` | `AdminCouponsComponent` (incluye quién usó cada cupón) | `adminGuard` |
+| `/admin/carritos` · `/admin/pagos` · `/admin/envios` | Carritos abandonados · Pagos/reembolsos/webhooks · Envíos Correos | `adminGuard` |
+| `/admin/resenas` · `/admin/leads` · `/admin/blog` · `/admin/categorias` · `/admin/puntos-de-venta` | Moderación y contenido | `adminGuard` |
 | `/**` | `NotFoundComponent` | — |
 
 Hay redirects de compatibilidad para rutas antiguas en inglés (`/catalog`, `/cart`, `/blog`…).
@@ -199,6 +206,14 @@ readonly currentImages = computed<ProductImage[]>(() => {
 - Al cambiar formato (`onFormatChange`) se resetea `selectedImage` y el scroll del carrusel vuelve al inicio
 
 ---
+
+## 🧩 Base compartida del panel admin (`features/admin/shared/`)
+
+- `admin-api.service.ts` — único punto de acceso a `/admin/*` (listados devuelven `Page<T>` = `items/total/page/page_size/total_pages`).
+- `admin-list-state.ts` — `adminListState(filtros, recarga)`: filtros, página, tamaño y orden sincronizados con la URL (query params).
+- `admin-ui.components.ts` — `adm-badge`, `adm-pagination`, `adm-modal` (bottom-sheet en móvil, Esc y foco atrapado), `adm-stat` y `AdminConfirmService` (sustituye a `window.confirm`).
+- `admin-shell.scss` + `admin-shell-data.scss` — sistema visual `adm-*`, cargado por el layout con `ViewEncapsulation.None` y acotado bajo `.adm-shell`. Tablas responsive: `<table class="adm-table is-responsive">` + `data-label` en cada `td` → tarjetas en ≤768px.
+- Errores HTTP: el `errorInterceptor` devuelve `{ status, message }` → usar `err.message` (no `err.error.detail`).
 
 ## 🛠️ Panel Admin de Productos (`/admin/products`)
 

@@ -1,15 +1,14 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
-import { User, Address, ApiMessage, AdminUsersResponse } from '../models';
+import { User, Address, ApiMessage, PersonalCoupon } from '../models';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
   private apiUrl = `${environment.apiUrl}/users`;
-  private adminApiUrl = `${environment.apiUrl}/admin/users`;
   
   constructor(private http: HttpClient) {}
   
@@ -20,6 +19,26 @@ export class UserService {
     return this.http.get<User>(`${this.apiUrl}/profile`);
   }
   
+  /** Cupón del 20 % de cliente histórico; null si la cuenta no tiene. */
+  getLegacyCoupon(): Observable<PersonalCoupon | null> {
+    return this.http.get<PersonalCoupon | null>(`${this.apiUrl}/me/legacy-coupon`);
+  }
+
+  /** Consentimiento de comunicaciones comerciales (queda registrado en el backend). */
+  setMarketing(optIn: boolean): Observable<ApiMessage> {
+    return this.http.put<ApiMessage>(`${this.apiUrl}/preferences`, null, { params: { marketing_opt_in: String(optIn) } });
+  }
+
+  /** Derecho de acceso / portabilidad: todos mis datos en JSON. */
+  exportMyData(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/me/export`, { responseType: 'blob' });
+  }
+
+  /** Derecho de supresión: anonimiza la cuenta (pedidos y facturas se conservan bloqueados). */
+  deleteMyAccount(): Observable<ApiMessage> {
+    return this.http.delete<ApiMessage>(`${this.apiUrl}/me`);
+  }
+
   /**
    * Update user profile
    */
@@ -70,44 +89,5 @@ export class UserService {
    */
   setDefaultAddress(id: number): Observable<Address> {
     return this.http.post<Address>(`${this.apiUrl}/addresses/${id}/set-default`, {});
-  }
-
-  // ========== ADMIN METHODS ==========
-
-  /**
-   * Get all users (admin only)
-   */
-  getAdminUsers(
-    page: number = 1,
-    limit: number = 20,
-    search: string = '',
-    role: string = '',
-    is_active: boolean | string = ''
-  ): Observable<AdminUsersResponse> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
-
-    if (search) params = params.set('search', search);
-    if (role) params = params.set('role', role);
-    if (is_active !== '') params = params.set('is_active', is_active.toString());
-
-    return this.http.get<AdminUsersResponse>(this.adminApiUrl, { params });
-  }
-
-  /**
-   * Update user status (activate/deactivate)
-   */
-  updateUserStatus(userId: number, isActive: boolean): Observable<ApiMessage> {
-    return this.http.patch<ApiMessage>(`${this.adminApiUrl}/${userId}/status`, {
-      is_active: isActive
-    });
-  }
-
-  /**
-   * Delete user (admin only)
-   */
-  deleteUser(userId: number): Observable<ApiMessage> {
-    return this.http.delete<ApiMessage>(`${this.adminApiUrl}/${userId}`);
   }
 }

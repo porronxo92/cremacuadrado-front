@@ -1,24 +1,24 @@
-import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterModule } from '@angular/router';
 import { Meta } from '@angular/platform-browser';
 import { RESPONSE_STATUS } from '../../../core/tokens/response-status.token';
 
 @Component({
-  selector: 'app-not-found',
-  standalone: true,
-  imports: [CommonModule, RouterModule],
-  template: `
+    selector: 'app-not-found',
+    imports: [RouterModule],
+    template: `
     <div class="not-found">
       <div class="not-found__content">
         <h1>404</h1>
         <h2>Página no encontrada</h2>
-        <p>Lo sentimos, la página que buscas no existe o ha sido movida.</p>
+        <p>Esta página no existe o ha cambiado de dirección.</p>
         <a routerLink="/" class="not-found__btn">Volver al inicio</a>
       </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     .not-found {
       min-height: 60vh;
       display: flex;

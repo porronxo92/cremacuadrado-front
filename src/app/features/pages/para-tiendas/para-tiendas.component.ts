@@ -1,17 +1,17 @@
-import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollapsibleBlockComponent } from '../../../shared/components/collapsible-block/collapsible-block.component';
 import { ParaTiendasService } from '../../../core/services/para-tiendas.service';
 import { SeoService } from '../../../core/services/seo.service';
+import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notice/privacy-notice.component';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 @Component({
-  selector: 'app-para-tiendas',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, CollapsibleBlockComponent],
-  template: `
+    selector: 'app-para-tiendas',
+    imports: [ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
+    template: `
     <div class="pt-page">
 
       <!-- ── Bloque 0: Hero ─────────────────────────────────────── -->
@@ -20,8 +20,8 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
         <span class="pt-hero__deco pt-hero__deco--2" aria-hidden="true">PV</span>
         <div class="pt-hero__content">
           <span class="pt-hero__eyebrow">Para tiendas gourmet y delicatessen</span>
-          <h1 class="pt-hero__title">Dale a tu cliente algo que no encuentra en ningún supermercado</h1>
-          <p class="pt-hero__subtitle">Crema de pistacho manchego artesanal. Con historia, con identidad y con todo el soporte que necesitas para venderla.</p>
+          <h1 class="pt-hero__title">Crema de pistacho para tu tienda</h1>
+          <p class="pt-hero__subtitle">Crema de pistacho manchego artesanal que no se vende en supermercados, con material y soporte para que la vendas.</p>
           <button type="button" class="pt-hero__cta" (click)="scrollToForm()">
             Quiero ser punto de venta →
           </button>
@@ -29,7 +29,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </section>
 
       <!-- ── Bloque 1: Por qué CremaCuadrado ────────────────────── -->
-      <app-collapsible-block title="Por qué CremaCuadrado en tu tienda" [initialOpen]="true">
+      <app-collapsible-block title="Por qué CremaCuadrado en tu tienda" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
         </svg>
@@ -43,7 +43,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">Producto exclusivo</h3>
-            <p class="pt-card__desc">No está en supermercados. Diferencia tu surtido y da a tu cliente una razón para volver.</p>
+            <p class="pt-card__desc">No se vende en supermercados. Diferencia tu surtido y dale al cliente un motivo para volver.</p>
           </div>
 
           <div class="pt-card">
@@ -56,7 +56,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">12 meses de caducidad</h3>
-            <p class="pt-card__desc">Sin riesgo de merma. Stock tranquilo sin presión de rotación rápida.</p>
+            <p class="pt-card__desc">Menos riesgo de merma y sin prisa por rotar el stock.</p>
           </div>
 
           <div class="pt-card">
@@ -67,7 +67,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">Historia que contar</h3>
-            <p class="pt-card__desc">Cuando tu cliente pregunta qué es esto, tienes una respuesta con alma. Eso fideliza.</p>
+            <p class="pt-card__desc">Cuando un cliente pregunta qué es, tienes algo que contarle: de dónde viene el pistacho y cómo se hace la crema.</p>
           </div>
 
           <div class="pt-card">
@@ -83,7 +83,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </app-collapsible-block>
 
       <!-- ── Bloque 2: Condiciones comerciales ──────────────────── -->
-      <app-collapsible-block title="Condiciones comerciales" [initialOpen]="true">
+      <app-collapsible-block title="Condiciones comerciales" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"></path>
           <line x1="8" y1="7" x2="16" y2="7"></line>
@@ -155,7 +155,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       </app-collapsible-block>
 
       <!-- ── Bloque 3: Lo que incluye ser punto de venta ────────── -->
-      <app-collapsible-block title="Lo que incluye ser punto de venta" [initialOpen]="true">
+      <app-collapsible-block title="Lo que incluye ser punto de venta" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 11l18-5v12L3 14v-3z"></path>
           <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"></path>
@@ -204,13 +204,15 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               </svg>
             </div>
             <h3 class="pt-card__title">Te mencionamos en redes</h3>
-            <p class="pt-card__desc">Publicamos sobre tu tienda cuando empezáis a vender.</p>
+            <p class="pt-card__desc">Publicamos sobre tu tienda cuando empiezas a vender.</p>
           </div>
         </div>
       </app-collapsible-block>
 
       <!-- ── Bloque 4: Testimonios ───────────────────────────────── -->
-      <app-collapsible-block title="Lo que dicen nuestros puntos de venta" [initialOpen]="true">
+      <!-- Oculto hasta tener testimonios reales: activar con showTestimonials = true -->
+      @if (showTestimonials) {
+      <app-collapsible-block title="Lo que dicen nuestros puntos de venta" [initialOpen]="false">
         <svg block-icon xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"></path>
           <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"></path>
@@ -231,6 +233,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
           </div>
         </div>
       </app-collapsible-block>
+      }
 
       <!-- ── Bloque 5: Formulario (siempre visible) ─────────────── -->
       <section class="pt-form-block" id="formulario-punto-de-venta">
@@ -250,7 +253,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 <polyline points="22 4 12 14.01 9 11.01"></polyline>
               </svg>
               <p class="pt-form-success__title">Solicitud recibida</p>
-              <p class="pt-form-success__desc">Os llamamos en 48 horas. Gracias por tu interés en CremaCuadrado.</p>
+              <p class="pt-form-success__desc">Te llamamos en 48 horas.</p>
             </div>
           } @else {
             <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -310,7 +313,15 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 </div>
               </div>
 
-              <p class="pt-form__note">Sin compromiso. Os llamamos en 48 horas. Si os interesa conocer el producto antes de decidir, os enviamos una muestra gratuita.</p>
+              <label class="pt-form__consent">
+                <input type="checkbox" formControlName="acceptPrivacy">
+                <span>He leído la información sobre privacidad y acepto que me contactéis para darme precios y condiciones *</span>
+              </label>
+              <app-privacy-notice
+                purpose="gestionar tu solicitud como punto de venta y contactarte con información comercial sobre ella"
+                legalBasis="tu consentimiento y la aplicación de medidas precontractuales a petición tuya" />
+
+              <p class="pt-form__note">Sin compromiso. Te llamamos en 48 horas. Si prefieres probar el producto antes de decidir, te enviamos una muestra gratuita.</p>
 
               @if (submitState() === 'error') {
                 <div class="pt-form-error">
@@ -320,10 +331,9 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
               }
 
               <button type="submit" class="pt-form__submit" [disabled]="form.invalid || submitState() === 'loading'">
-                {{ submitState() === 'loading' ? 'Enviando...' : 'Conocer precios de venta' }}
+                {{ submitState() === 'loading' ? 'Enviando…' : 'Conocer precios de venta' }}
               </button>
 
-              <p class="pt-form__disclaimer">No compartimos tus datos con terceros.</p>
             </form>
           }
         </div>
@@ -331,7 +341,8 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     :host { display: block; }
 
     .pt-page {
@@ -632,6 +643,9 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
       color: #7B1716;
     }
 
+    .pt-form__consent { display: flex; gap: 0.6rem; align-items: flex-start; margin-top: 1rem; font-family: 'Poppins', sans-serif; font-size: 0.8rem; line-height: 1.5; cursor: pointer;
+      input { margin-top: 0.2rem; width: 18px; height: 18px; flex-shrink: 0; } }
+
     .pt-form__note {
       font-family: 'Lora', serif;
       font-style: italic;
@@ -733,6 +747,9 @@ export class ParaTiendasComponent {
   private paraTiendasService = inject(ParaTiendasService);
   private seo = inject(SeoService);
 
+  /** Bloque «Lo que dicen nuestros puntos de venta»: oculto hasta tener testimonios reales. */
+  readonly showTestimonials = false;
+
   readonly submitState = signal<SubmitState>('idle');
 
   constructor() {
@@ -750,6 +767,7 @@ export class ParaTiendasComponent {
     establishmentType: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     phone: ['', [Validators.required, Validators.pattern(/^[+]?[\d\s()-]{9,15}$/)]],
+    acceptPrivacy: [false, Validators.requiredTrue],
   });
 
   scrollToForm(): void {
@@ -772,6 +790,7 @@ export class ParaTiendasComponent {
       establishment_type: value.establishmentType!,
       email: value.email!,
       phone: value.phone!,
+      accept_privacy: !!value.acceptPrivacy,
     }).subscribe({
       next: () => this.submitState.set('success'),
       error: () => this.submitState.set('error'),

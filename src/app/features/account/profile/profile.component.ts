@@ -1,16 +1,40 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
+
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
+import { saveBlob } from '../../../core/utils/save-blob';
+import { PersonalCoupon } from '../../../core/models';
+import { Router } from '@angular/router';
+
+import { PhoneInputComponent } from '../../../shared/components/phone-input/phone-input.component';
 
 @Component({
-  selector: 'app-account-profile',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  template: `
+    selector: 'app-account-profile',
+    imports: [ReactiveFormsModule, PhoneInputComponent, DecimalPipe],
+    template: `
     <div class="profile-page">
       <h1>Mi perfil</h1>
+
+      <!-- Cliente histórico (web antigua): su código personal del 20 % -->
+      @if (legacyCoupon(); as c) {
+        <section class="profile-section legacy-coupon" aria-labelledby="legacy-coupon-title">
+          <h2 id="legacy-coupon-title">Tu {{ c.discount_value | number:'1.0-0' }}% de cliente de siempre</h2>
+          <p>Ya nos compraste en nuestra web anterior. Con este código tienes un {{ c.discount_value | number:'1.0-0' }}% de descuento
+            en todos tus pedidos.
+            @if (c.valid_from && c.valid_until) {
+              Válido del {{ esDate(c.valid_from) }} al {{ esDate(c.valid_until) }}.
+            }
+          </p>
+          <div class="legacy-coupon__code">
+            <code>{{ c.code }}</code>
+            <button type="button" class="btn btn--secondary" (click)="copyCoupon(c.code)">Copiar código</button>
+          </div>
+          <small>Aplícalo en el carrito con la sesión iniciada. Solo funciona en tu cuenta y no se acumula con otros códigos.</small>
+        </section>
+      }
 
       <!-- Profile form -->
       <div class="profile-section">
@@ -45,7 +69,11 @@ import { AuthService } from '../../../core/services/auth.service';
 
             <div class="form-group">
               <label for="phone">Teléfono</label>
-              <input type="tel" id="phone" formControlName="phone">
+              <app-phone-input formControlName="phone" inputId="phone"
+                [invalid]="!!profileForm.get('phone')?.invalid && !!profileForm.get('phone')?.touched" />
+              @if (profileForm.get('phone')?.hasError('phone') && profileForm.get('phone')?.touched) {
+                <span class="error-text">Teléfono no válido: 9 dígitos para España</span>
+              }
             </div>
 
             @if (profileSuccess()) {
@@ -110,9 +138,70 @@ import { AuthService } from '../../../core/services/auth.service';
           </button>
         </form>
       </div>
+
+      <!-- Privacidad (RGPD) -->
+      <div class="profile-section" id="privacidad">
+        <h2>Privacidad y datos</h2>
+
+        <label class="privacy-toggle">
+          <input type="checkbox" [checked]="marketingOptIn()" [disabled]="savingMarketing()" (change)="toggleMarketing($any($event.target).checked)">
+          <span>Quiero recibir recetas, novedades y ofertas por email. Puedes cambiarlo cuando quieras.</span>
+        </label>
+
+        <div class="privacy-actions">
+          <button type="button" class="btn btn--secondary" [disabled]="exporting()" (click)="exportData()">
+            {{ exporting() ? 'Preparando…' : 'Descargar mis datos (JSON)' }}
+          </button>
+        </div>
+
+        <div class="danger-zone">
+          <h3>Eliminar mi cuenta</h3>
+          <p>Borraremos tus direcciones, carritos y solicitudes y anonimizaremos tu perfil. Por obligación legal
+            conservaremos bloqueados tus pedidos y facturas durante los plazos fiscales. Esta acción no se puede deshacer.</p>
+          @if (!confirmDelete()) {
+            <button type="button" class="btn btn--danger" (click)="confirmDelete.set(true)">Eliminar mi cuenta</button>
+          } @else {
+            <p class="danger-confirm" role="alert">¿Seguro? Se cerrará tu sesión y no podrás recuperar la cuenta.</p>
+            <div class="privacy-actions">
+              <button type="button" class="btn btn--secondary" (click)="confirmDelete.set(false)">Cancelar</button>
+              <button type="button" class="btn btn--danger" [disabled]="deleting()" (click)="deleteAccount()">
+                {{ deleting() ? 'Eliminando…' : 'Sí, eliminar definitivamente' }}
+              </button>
+            </div>
+          }
+        </div>
+      </div>
     </div>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
+
+    /* app-phone-input: mismo aspecto que el resto de campos de este formulario */
+    app-phone-input {
+      --field-height: 0;
+      --field-border: 1px solid #ddd;
+      --field-radius: 4px;
+      --field-bg: #fff;
+      --field-focus-color: #4a7c4e;
+    }
+    .legacy-coupon { border: 1.5px dashed var(--color-granate, #7B1716);
+      h2 { color: var(--color-granate, #7B1716); }
+      p { margin: 0 0 1rem; line-height: 1.6; }
+      small { display: block; margin-top: 0.75rem; color: var(--color-muted, #6B6456); font-size: 0.85rem; } }
+    .legacy-coupon__code { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+      code { font-family: ui-monospace, Consolas, monospace; font-size: 1.25rem; font-weight: 700; letter-spacing: 2px;
+        color: var(--color-granate, #7B1716); background: var(--color-bg, #F4F1E9); padding: 0.6rem 1rem; border-radius: 4px; }
+      .btn { min-height: 48px; } }
+    .privacy-toggle { display: flex; gap: 0.6rem; align-items: flex-start; margin-bottom: 1.25rem; cursor: pointer; line-height: 1.5;
+      input { margin-top: 0.25rem; width: 18px; height: 18px; flex-shrink: 0; } }
+    .privacy-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .danger-zone { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee;
+      h3 { margin: 0 0 0.5rem; font-size: 1rem; color: #a3261f; }
+      p { font-size: 0.9rem; color: #555; line-height: 1.6; } }
+    .danger-confirm { font-weight: 600; color: #a3261f !important; }
+    .btn--danger { min-height: 48px; padding: 0 1.25rem; border-radius: 20px; border: 1.5px solid #a3261f;
+      background: #fff; color: #a3261f; font-weight: 600; cursor: pointer;
+      &:hover:not(:disabled) { background: #a3261f; color: #fff; } }
     .profile-page {
       h1 {
         margin: 0 0 2rem;
@@ -236,6 +325,7 @@ export class AccountProfileComponent implements OnInit {
   private fb = inject(FormBuilder);
   private userService = inject(UserService);
   private authService = inject(AuthService);
+  private router = inject(Router);
 
   profileForm!: FormGroup;
   passwordForm!: FormGroup;
@@ -245,13 +335,36 @@ export class AccountProfileComponent implements OnInit {
   profileSuccess = signal(false);
   profileError = signal<string | null>(null);
 
+  marketingOptIn = signal(false);
+  savingMarketing = signal(false);
+  exporting = signal(false);
+  confirmDelete = signal(false);
+  deleting = signal(false);
+  private toastService = inject(ToastService);
+
   savingPassword = signal(false);
   passwordSuccess = signal(false);
   passwordError = signal<string | null>(null);
 
+  legacyCoupon = signal<PersonalCoupon | null>(null);
+
   ngOnInit(): void {
     this.initForms();
     this.loadProfile();
+    this.userService.getLegacyCoupon().subscribe({ next: c => this.legacyCoupon.set(c), error: () => {} });
+  }
+
+  /** 'AAAA-MM-DD' (día peninsular que envía el backend) → 'DD/MM/AAAA', sin pasar por la zona horaria del navegador. */
+  esDate(day: string): string {
+    const [y, m, d] = day.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  copyCoupon(code: string): void {
+    navigator.clipboard?.writeText(code).then(
+      () => this.toastService.success('Código copiado'),
+      () => this.toastService.error('No se pudo copiar el código'),
+    );
   }
 
   initForms(): void {
@@ -287,11 +400,56 @@ export class AccountProfileComponent implements OnInit {
           email: user.email,
           phone: user.phone ?? ''
         });
+        this.marketingOptIn.set(!!user.marketing_opt_in);
         this.loadingProfile.set(false);
       },
       error: () => {
         this.loadingProfile.set(false);
       }
+    });
+  }
+
+  toggleMarketing(optIn: boolean): void {
+    this.savingMarketing.set(true);
+    this.userService.setMarketing(optIn).subscribe({
+      next: () => {
+        this.marketingOptIn.set(optIn);
+        this.savingMarketing.set(false);
+        this.toastService.success(optIn ? 'Te has suscrito a nuestras comunicaciones' : 'No volverás a recibir comunicaciones comerciales');
+      },
+      error: () => {
+        this.savingMarketing.set(false);
+        this.toastService.error('No se pudo guardar la preferencia');
+      },
+    });
+  }
+
+  exportData(): void {
+    this.exporting.set(true);
+    this.userService.exportMyData().subscribe({
+      next: blob => {
+        saveBlob(blob, 'mis-datos-cremacuadrado.json');
+        this.exporting.set(false);
+      },
+      error: () => {
+        this.exporting.set(false);
+        this.toastService.error('No se pudieron exportar tus datos');
+      },
+    });
+  }
+
+  deleteAccount(): void {
+    this.deleting.set(true);
+    this.userService.deleteMyAccount().subscribe({
+      next: () => {
+        this.toastService.success('Hemos eliminado tu cuenta');
+        this.authService.logoutLocal();
+        this.router.navigate(['/']);
+      },
+      error: () => {
+        this.deleting.set(false);
+        this.toastService.error('No se pudo eliminar la cuenta. Escríbenos a info@cremacuadrado.com');
+      },
     });
   }
 

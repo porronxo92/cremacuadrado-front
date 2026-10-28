@@ -24,4 +24,7 @@ export const environment = {
   googleClientId: '295611820895-lufk6h45v7b3afsq9j2bntui4459lu59.apps.googleusercontent.com',  // Fill with your Google OAuth 2.0 Client ID for production domain
   // Número de WhatsApp de contacto, en formato internacional sin '+' ni espacios (ej. 34623924886)
   whatsappPhoneNumber: '34623924886',
+  // Clave pública de CARTO Basemaps (teselas del mapa de /puntos-de-venta). Viaja
+  // en la URL de cada tesela: restringirla por dominio en el panel de CARTO.
+  cartoApiKey: 'cb1_4eez_1_f3e91d736a66662fab05a3b1',
 };

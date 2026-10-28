@@ -10,6 +10,7 @@ export interface PosLeadPayload {
   establishment_type: string;
   email: string;
   phone: string;
+  accept_privacy: boolean;
 }
 
 @Injectable({

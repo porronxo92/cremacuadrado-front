@@ -5,8 +5,16 @@ import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
 import {
   Order, OrderListItem, CheckoutData, CheckoutValidation,
-  PaymentIntent, ApiMessage, PaginatedResponse
+  PaymentIntent, ApiMessage, PaginatedResponse, InvoiceSummary, BillingDetails
 } from '../models';
+
+export interface ResumePaymentResponse {
+  order_number: string;
+  items_added: number;
+  /** Líneas que no se pudieron añadir (sin stock, retiradas…). */
+  skipped: string[];
+  message: string;
+}
 
 const CART_SESSION_KEY = 'cc_cart_session';
 
@@ -34,13 +42,17 @@ export class OrderService {
   /**
    * Get shipping cost calculation
    */
-  getShippingCost(): Observable<{
-    cost: number;
+  getShippingCost(postalCode?: string): Observable<{
+    /** Decimal: puede llegar como texto. */
+    cost: number | string;
+    shipping_zone?: 'peninsula' | 'baleares' | 'quote';
     free_shipping_threshold: number;
     amount_for_free_shipping: number | null;
     message: string | null;
   }> {
-    return this.http.get<any>(`${this.checkoutUrl}/shipping-cost`, { headers: this.getCartSessionHeader() });
+    const params: Record<string, string> = {};
+    if (postalCode) params['postal_code'] = postalCode;
+    return this.http.get<any>(`${this.checkoutUrl}/shipping-cost`, { headers: this.getCartSessionHeader(), params });
   }
 
   /**
@@ -95,6 +107,16 @@ export class OrderService {
   }
   
   /**
+   * Retoma el pago de un pedido pendiente: el backend vacía el carrito, mete las
+   * líneas del pedido (y su cupón) y cancela el pedido viejo. El checkout crea
+   * uno nuevo con los precios actuales.
+   */
+  resumePayment(orderNumber: string): Observable<ResumePaymentResponse> {
+    return this.http.post<ResumePaymentResponse>(
+      `${this.ordersUrl}/${encodeURIComponent(orderNumber)}/resume-payment`, {});
+  }
+
+  /**
    * Get order by number (authenticated users)
    */
   getOrder(orderNumber: string): Observable<Order> {
@@ -127,5 +149,37 @@ export class OrderService {
    */
   requestInvoice(orderNumber: string): Observable<ApiMessage> {
     return this.http.post<ApiMessage>(`${this.ordersUrl}/${orderNumber}/request-invoice`, {});
+  }
+
+  /** Invoices (regular + corrective) issued for an order. */
+  getInvoices(orderNumber: string): Observable<InvoiceSummary[]> {
+    return this.http.get<InvoiceSummary[]>(`${this.ordersUrl}/${orderNumber}/invoices`);
+  }
+
+  /** Stored invoice PDF; pass `invoiceNumber` for a corrective invoice. */
+  downloadInvoice(orderNumber: string, invoiceNumber?: string): Observable<Blob> {
+    const params: Record<string, string> = {};
+    if (invoiceNumber) params['number'] = invoiceNumber;
+    return this.http.get(`${this.ordersUrl}/${orderNumber}/invoice`, { params, responseType: 'blob' });
+  }
+
+  /**
+   * Last step before charging: records the explicit acceptance of the sales
+   * conditions and the tax details (null = simplified invoice) on the pending
+   * order. The PaymentIntent id proves ownership.
+   */
+  preConfirm(orderNumber: string, paymentIntentId: string, termsVersion: string,
+             billing: BillingDetails | null, shippingAddress?: unknown, guestEmail?: string): Observable<ApiMessage> {
+    return this.http.post<ApiMessage>(`${this.checkoutUrl}/pre-confirm`, {
+      order_number: orderNumber,
+      payment_intent_id: paymentIntentId,
+      accept_terms: true,
+      terms_version: termsVersion,
+      billing,
+      // Datos finales del formulario: el pedido se creó al preparar Stripe y el
+      // cliente puede haber corregido la dirección o el teléfono después.
+      shipping_address: shippingAddress,
+      guest_email: guestEmail,
+    });
   }
 }

@@ -11,7 +11,16 @@ export class NewsletterService {
 
   constructor(private http: HttpClient) {}
 
-  subscribe(email: string): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/subscribe`, { email });
+  /** Alta con doble opt-in: `consent` es la casilla de comunicaciones comerciales. */
+  subscribe(email: string, consent: boolean, source = 'homepage_popup'): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/subscribe`, { email, consent, source });
+  }
+
+  confirm(token: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/confirm`, { token });
+  }
+
+  unsubscribe(token: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/unsubscribe`, { token });
   }
 }

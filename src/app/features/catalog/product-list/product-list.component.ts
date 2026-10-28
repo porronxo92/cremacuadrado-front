@@ -1,22 +1,24 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { ProductService } from '../../../core/services/product.service';
 import { SeoService } from '../../../core/services/seo.service';
+import { CartService } from '../../../core/services/cart.service';
+import { MiniCartService } from '../../../core/services/mini-cart.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { ProductListItem, ProductVariant } from '../../../core/models';
 
 const PRODUCT_SLUGS = ['crema-pistacho-pura', 'crema-pistacho-crunchy'];
 
 const TAGLINES: Record<string, string> = {
   'crema-pistacho-pura': 'Pistacho manchego tostado, repelado y molido en piedra.',
-  'crema-pistacho-crunchy': 'Con trozos crujientes. El topping perfecto.',
+  'crema-pistacho-crunchy': 'Con trozos crujientes de pistacho. Va bien de topping.',
 };
 
 @Component({
-  selector: 'app-product-list',
-  standalone: true,
-  imports: [CommonModule, NgOptimizedImage, RouterModule],
-  template: `
+    selector: 'app-product-list',
+    imports: [CommonModule, NgOptimizedImage, RouterModule],
+    template: `
     <section class="tienda">
       <div class="tienda__hero">
         <p class="tienda__eyebrow">La tienda</p>
@@ -49,10 +51,10 @@ const TAGLINES: Record<string, string> = {
 
               <div class="prod-card__body">
                 <div class="prod-card__line-indicator"></div>
-                <h2 class="prod-card__name">{{ p.name | uppercase }}</h2>
+                <h2 class="prod-card__name"><a [routerLink]="['/tienda', p.slug]" class="prod-card__name-link">{{ p.name | uppercase }}</a></h2>
                 <p class="prod-card__tagline">{{ tagline(p.slug) }}</p>
 
-                @if ((p.variants?.length || 0) > 0) {
+                @if ((p.variants?.length || 0) > 1) {
                   <div class="prod-card__formats" role="group" [attr.aria-label]="'Selecciona formato para ' + p.name">
                     @for (variant of p.variants || []; track variant.id) {
                       <button
@@ -61,6 +63,7 @@ const TAGLINES: Record<string, string> = {
                         [class.is-active]="selectedVariantId(p) === variant.id"
                         [class.is-disabled]="!variant.is_in_stock"
                         [disabled]="!variant.is_in_stock"
+                        [attr.aria-pressed]="selectedVariantId(p) === variant.id"
                         (click)="selectVariant(p, variant)">
                         {{ variant.format }}
                       </button>
@@ -72,9 +75,39 @@ const TAGLINES: Record<string, string> = {
                   <span class="prod-card__price">{{ (selectedVariant(p)?.price ?? 0) | currency:'EUR':'symbol':'1.2-2':'es' }}</span>
                   <span class="prod-card__per100">{{ selectedVariant(p)?.format || 'Formato' }}</span>
                 </div>
-                <a [routerLink]="['/tienda', p.slug]" class="prod-card__btn">
-                  Elegir formato
-                </a>
+                @if (selectedVariant(p); as sv) {
+                  <div class="prod-card__buy">
+                    @if (sv.is_in_stock) {
+                      @if (sv.is_low_stock) {
+                        <p class="prod-card__stock">Solo quedan {{ sv.stock }} unidades</p>
+                      }
+                      <div class="prod-card__qty" role="group" [attr.aria-label]="'Cantidad de ' + p.name">
+                        <button type="button" class="prod-card__qty-btn"
+                          (click)="changeQty(p, sv, -1)"
+                          [disabled]="quantity(p) <= 1"
+                          [attr.aria-label]="'Quitar una unidad de ' + p.name + ' ' + sv.format">−</button>
+                        <span class="prod-card__qty-val" aria-live="polite" aria-atomic="true">
+                          <span class="sr-only">Cantidad: </span>{{ quantity(p) }}
+                        </span>
+                        <button type="button" class="prod-card__qty-btn"
+                          (click)="changeQty(p, sv, 1)"
+                          [disabled]="quantity(p) >= maxQty(sv)"
+                          [attr.aria-label]="'Añadir una unidad de ' + p.name + ' ' + sv.format">+</button>
+                      </div>
+                    }
+                    <button type="button" class="prod-card__btn"
+                      (click)="addToCart(p, sv)"
+                      [disabled]="!sv.is_in_stock || addingId() === p.id"
+                      [attr.aria-busy]="addingId() === p.id">
+                      @if (!sv.is_in_stock) { Agotado }
+                      @else if (addingId() === p.id) { Añadiendo… }
+                      @else { Añadir al carrito }
+                    </button>
+                    @if (errors()[p.id]; as err) {
+                      <p class="prod-card__error" role="alert">{{ err }}</p>
+                    }
+                  </div>
+                }
               </div>
             </article>
           }
@@ -82,7 +115,8 @@ const TAGLINES: Record<string, string> = {
       }
     </section>
   `,
-  styles: [`
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styles: [`
     $brand:  #7B1716;
     $accent: #E6C15A;
     $bg:     #F4F1E9;
@@ -265,25 +299,40 @@ const TAGLINES: Record<string, string> = {
     }
 
     .prod-card__format-btn {
-      border: 1px solid $border;
-      border-radius: 20px;
+      min-height: 48px;
+      border: 1.5px solid $border;
+      border-radius: 24px;
       background: $bg;
       color: $ink;
       padding: 0.35rem 0.4rem;
       font-family: 'Poppins', sans-serif;
-      font-size: 0.72rem;
-      font-weight: 500;
+      font-size: 0.8rem;
+      font-weight: 600;
       cursor: pointer;
       transition: border-color 150ms, background 150ms, color 150ms;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
 
-      &.is-active {
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled):not(.is-active) {
+          border-color: $brand;
+          color: $brand;
+        }
+      }
+
+      &.is-active,
+      &.is-active:hover,
+      &.is-active:focus,
+      &.is-active:active {
         border-color: $brand;
-        background: rgba(123, 23, 22, 0.08);
-        color: $brand;
+        background: $brand;
+        color: $bg;
       }
 
       &.is-disabled {
-        opacity: 0.45;
+        color: $muted;
+        opacity: 0.6;
+        text-decoration: line-through;
         cursor: not-allowed;
       }
     }
@@ -310,39 +359,115 @@ const TAGLINES: Record<string, string> = {
       color: $muted;
     }
 
-    .prod-card__btn {
+    .prod-card__name-link {
+      color: inherit;
+      text-decoration: none;
+      @media (hover: hover) and (pointer: fine) {
+        &:hover { color: $brand; }
+      }
+    }
+
+    .prod-card__buy {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .prod-card__stock {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.8rem;
+      color: #8A5A00;
+    }
+
+    .prod-card__qty {
       display: inline-flex;
       align-items: center;
+      align-self: flex-start;
+      border: 1.5px solid $brand;
+      border-radius: 24px;
+      background: $bg;
+      overflow: hidden;
+    }
+
+    .prod-card__qty-btn {
+      width: 48px;
+      height: 48px;
+      border: none;
+      background: $bg;
+      color: $brand;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled) { background: $brand; color: $bg; }
+      }
+      &:disabled { opacity: 0.35; cursor: default; }
+    }
+
+    .prod-card__qty-val {
+      min-width: 2.5rem;
+      text-align: center;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      color: $ink;
+    }
+
+    .prod-card__btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 48px;
       padding: 0.65rem 1.5rem;
       background: $bg;
       color: $brand;
       border: 1.5px solid $brand;
       border-radius: 20px;
       font-family: 'Poppins', sans-serif;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 600;
-      text-decoration: none;
+      cursor: pointer;
+      touch-action: manipulation;
       transition: background 150ms, color 150ms;
 
-      &:hover {
-        background: $brand;
-        color: $bg;
+      @media (hover: hover) and (pointer: fine) {
+        &:hover:not(:disabled) { background: $brand; color: $bg; }
       }
+      &:disabled { opacity: 0.6; cursor: not-allowed; }
+    }
+
+    .prod-card__error {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.85rem;
+      color: #9A1E1E;
     }
   `]
 })
 export class ProductListComponent implements OnInit {
   private productService = inject(ProductService);
   private seo = inject(SeoService);
+  private cartService = inject(CartService);
+  private miniCartService = inject(MiniCartService);
+  private toastService = inject(ToastService);
 
   products = signal<ProductListItem[]>([]);
   loading = signal(true);
   selectedVariants = signal<Record<number, number>>({});
+  quantities = signal<Record<number, number>>({});
+  addingId = signal<number | null>(null);
+  errors = signal<Record<number, string>>({});
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Tienda — Crema de Pistacho Pura y Crunchy',
-      description: 'Compra online crema de pistacho manchego: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envío a toda España.',
+      title: 'Tienda: Crema de Pistacho Pura y Crunchy',
+      description: 'Compra online crema de pistacho manchego: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envíos a península y Baleares.',
       path: '/tienda',
     });
 
@@ -388,5 +513,48 @@ export class ProductListComponent implements OnInit {
       ...current,
       [product.id]: variant.id,
     }));
+    this.clearError(product.id);
+    // La cantidad nunca supera el stock de la variante elegida
+    const max = this.maxQty(variant);
+    if (this.quantity(product) > max) this.quantities.update(c => ({ ...c, [product.id]: max }));
+  }
+
+  quantity(product: ProductListItem): number {
+    return this.quantities()[product.id] ?? 1;
+  }
+
+  maxQty(variant: ProductVariant): number {
+    return Math.max(1, variant.stock ?? 1);
+  }
+
+  changeQty(product: ProductListItem, variant: ProductVariant, delta: number): void {
+    const next = Math.min(this.maxQty(variant), Math.max(1, this.quantity(product) + delta));
+    this.quantities.update(c => ({ ...c, [product.id]: next }));
+  }
+
+  addToCart(product: ProductListItem, variant: ProductVariant): void {
+    if (!variant.is_in_stock || this.addingId() !== null) return;
+    this.clearError(product.id);
+    const opener = document.activeElement;
+    this.addingId.set(product.id);
+    this.cartService.addItem(variant.id, this.quantity(product)).subscribe({
+      next: () => {
+        this.addingId.set(null);
+        this.quantities.update(c => ({ ...c, [product.id]: 1 }));
+        this.miniCartService.open(opener);
+      },
+      error: (err) => {
+        this.addingId.set(null);
+        const msg = err?.message || 'No hemos podido añadir el producto. Inténtalo de nuevo.';
+        this.errors.update(c => ({ ...c, [product.id]: msg }));
+        this.toastService.error(msg);
+      },
+    });
+  }
+
+  private clearError(productId: number): void {
+    if (this.errors()[productId]) {
+      this.errors.update(c => { const n = { ...c }; delete n[productId]; return n; });
+    }
   }
 }
