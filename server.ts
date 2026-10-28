@@ -146,8 +146,8 @@ export function app(): express.Express {
   // Host — and CommonEngine doesn't look at Host / X-Forwarded-* at all —
   // so this only needs the siteUrl hostname of each environment
   // (environment*.ts) — previews on *.vercel.app render with the staging
-  // origin and need no entry. cremacuadrado.com / www. are here ahead of the
-  // domain cutover (CUTOVER note in environment.prod.ts). Adding a new
+  // origin and need no entry. cremacuadrado.com is the production siteUrl;
+  // www. and prd. only redirect to it but stay listed. Adding a new
   // environment = add its siteUrl hostname here, or every SSR route 500s.
   // NG_ALLOWED_HOSTS, if set, REPLACES this list (it doesn't extend it);
   // AngularNodeAppEngine (phase 6) has the opposite precedence.
@@ -167,8 +167,8 @@ export function app(): express.Express {
   server.set('views', browserDistFolder);
 
   // Preview/staging must never be indexed, and neither must a production
-  // deployment that isn't the public site yet (environment.allowIndexing is
-  // false while it is served from prd.cremacuadrado.com). VERCEL_ENV is unset
+  // deployment that isn't the public site (environment.allowIndexing is false
+  // outside environment.prod.ts). VERCEL_ENV is unset
   // locally, which also resolves to "not production" — correct, since there's
   // no case where localhost should be crawled either.
   const indexable = process.env['VERCEL_ENV'] === 'production' && environment.allowIndexing;
