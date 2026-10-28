@@ -3,6 +3,168 @@
   "buildCommand": "npm run build:vercel",
   "installCommand": "npm install",
   "framework": null,
+  "redirects": [
+    {
+      "source": "/producto/crema-pistacho-pura-100-gr",
+      "destination": "/tienda/crema-pistacho-pura",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-pura-100-gr/",
+      "destination": "/tienda/crema-pistacho-pura",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-pura",
+      "destination": "/tienda/crema-pistacho-pura",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-pura/",
+      "destination": "/tienda/crema-pistacho-pura",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-crunchy-100-gr",
+      "destination": "/tienda/crema-pistacho-crunchy",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-crunchy-100-gr/",
+      "destination": "/tienda/crema-pistacho-crunchy",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-crunchy",
+      "destination": "/tienda/crema-pistacho-crunchy",
+      "permanent": true
+    },
+    {
+      "source": "/producto/crema-pistacho-crunchy/",
+      "destination": "/tienda/crema-pistacho-crunchy",
+      "permanent": true
+    },
+    {
+      "source": "/producto/:path*",
+      "destination": "/tienda",
+      "permanent": true
+    },
+    {
+      "source": "/categoria-producto/:path*",
+      "destination": "/tienda",
+      "permanent": true
+    },
+    {
+      "source": "/que-es-realmente-el-pistacho",
+      "destination": "/el-archivo/que-es-realmente-el-pistacho",
+      "permanent": true
+    },
+    {
+      "source": "/que-es-realmente-el-pistacho/",
+      "destination": "/el-archivo/que-es-realmente-el-pistacho",
+      "permanent": true
+    },
+    {
+      "source": "/pistachos-y-rendimiento-sexual",
+      "destination": "/el-archivo",
+      "permanent": true
+    },
+    {
+      "source": "/pistachos-y-rendimiento-sexual/",
+      "destination": "/el-archivo",
+      "permanent": true
+    },
+    {
+      "source": "/blog",
+      "destination": "/el-archivo",
+      "permanent": true
+    },
+    {
+      "source": "/blog/",
+      "destination": "/el-archivo",
+      "permanent": true
+    },
+    {
+      "source": "/quienes-somos",
+      "destination": "/nuestro-metodo",
+      "permanent": true
+    },
+    {
+      "source": "/quienes-somos/",
+      "destination": "/nuestro-metodo",
+      "permanent": true
+    },
+    {
+      "source": "/nosotros",
+      "destination": "/nuestro-metodo",
+      "permanent": true
+    },
+    {
+      "source": "/nosotros/",
+      "destination": "/nuestro-metodo",
+      "permanent": true
+    },
+    {
+      "source": "/politica-de-privacidad",
+      "destination": "/privacidad",
+      "permanent": true
+    },
+    {
+      "source": "/politica-de-privacidad/",
+      "destination": "/privacidad",
+      "permanent": true
+    },
+    {
+      "source": "/politica-de-cookies",
+      "destination": "/cookies",
+      "permanent": true
+    },
+    {
+      "source": "/politica-de-cookies/",
+      "destination": "/cookies",
+      "permanent": true
+    },
+    {
+      "source": "/finalizar-compra",
+      "destination": "/checkout",
+      "permanent": true
+    },
+    {
+      "source": "/finalizar-compra/",
+      "destination": "/checkout",
+      "permanent": true
+    },
+    {
+      "source": "/mi-cuenta",
+      "destination": "/account",
+      "permanent": true
+    },
+    {
+      "source": "/mi-cuenta/",
+      "destination": "/account",
+      "permanent": true
+    },
+    {
+      "source": "/aviso-legal/",
+      "destination": "/aviso-legal",
+      "permanent": true
+    },
+    {
+      "source": "/contacto/",
+      "destination": "/contacto",
+      "permanent": true
+    },
+    {
+      "source": "/tienda/",
+      "destination": "/tienda",
+      "permanent": true
+    },
+    {
+      "source": "/carrito/",
+      "destination": "/carrito",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/",
