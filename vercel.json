@@ -50,7 +50,17 @@
       "permanent": true
     },
     {
+      "source": "/producto/:path*/",
+      "destination": "/tienda",
+      "permanent": true
+    },
+    {
       "source": "/categoria-producto/:path*",
+      "destination": "/tienda",
+      "permanent": true
+    },
+    {
+      "source": "/categoria-producto/:path*/",
       "destination": "/tienda",
       "permanent": true
     },
