@@ -20,7 +20,7 @@ export const environment = {
   mediaUrl: '',
   siteName: 'CremaCuadrado',
   siteDescription: 'Cremas de pistacho artesanales de La Mancha',
-  stripePublishableKey: 'pk_test_51POchb09uLgLqkCFajhnuOff2EjdXrZWqm8fVEiOUE7xT109Dywxg0SdrlMAyJIJ0Ns3Opm5weJ9BaiCyB2pHSMa002AuMIHly',  // Fill with your pk_live_... from Stripe Dashboard
+  stripePublishableKey: 'pk_live_51POchb09uLgLqkCFOC2srA4KLQZVUA4QrdwkwKGQm2e5aRd8cdDvf6z5TtooVS42ygWJ2eSj50km1bKJ0vdKvsCE00job7zjW0',  // Clave publicable de producción (modo live): debe ir con la sk_live del backend
   googleClientId: '295611820895-lufk6h45v7b3afsq9j2bntui4459lu59.apps.googleusercontent.com',  // Fill with your Google OAuth 2.0 Client ID for production domain
   // Número de WhatsApp de contacto, en formato internacional sin '+' ni espacios (ej. 34623924886)
   whatsappPhoneNumber: '34623924886',
