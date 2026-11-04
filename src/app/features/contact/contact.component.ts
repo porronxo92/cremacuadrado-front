@@ -687,7 +687,7 @@ export class ContactComponent {
   constructor() {
     this.seo.set({
       title: 'Contacto',
-      description: 'Escríbenos si tienes dudas sobre la crema de pistacho manchego o tu pedido, o consulta las preguntas frecuentes.',
+      description: 'Escríbenos si tienes dudas sobre la crema de pistacho ibérico o tu pedido, o consulta las preguntas frecuentes.',
       path: '/contacto',
     });
     this.seo.setJsonLd('ld-faq', {

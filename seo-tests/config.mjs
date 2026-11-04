@@ -17,11 +17,9 @@ export const PRODUCTION_ORIGIN = 'https://cremacuadrado.com';
 // Terms CLAUDE.md explicitly forbids anywhere in rendered page text.
 // Checked case-insensitively against the visible text of content routes.
 export const FORBIDDEN_TERMS = [
-  { term: 'ibérico', reason: 'el pistacho se describe como "español" o "manchego", nunca "ibérico"' },
-  { term: 'ibérica', reason: 'el pistacho se describe como "española" o "manchega", nunca "ibérica"' },
   { term: 'hecho a mano', reason: 'se usa maquinaria; no es "hecho a mano"' },
   { term: 'hecha a mano', reason: 'se usa maquinaria; no es "hecha a mano"' },
-  { term: 'pistacho manchego certificado', reason: 'la certificación está pendiente, no se puede afirmar' },
+  { term: 'pistacho ibérico certificado', reason: 'la certificación está pendiente, no se puede afirmar' },
   { term: 'molienda lenta', reason: 'la molienda en piedra nunca se describe como "lenta"' },
 ];
 

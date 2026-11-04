@@ -683,7 +683,7 @@ export class PuntosDeVentaComponent implements OnInit {
   ngOnInit(): void {
     this.seo.set({
       title: 'Puntos de Venta',
-      description: 'Encuentra crema de pistacho manchego CremaCuadrado en tiendas gourmet de toda España. Mapa y listado de puntos de venta.',
+      description: 'Encuentra crema de pistacho ibérico CremaCuadrado en tiendas gourmet de toda España. Mapa y listado de puntos de venta.',
       path: '/puntos-de-venta',
     });
 

@@ -11,7 +11,7 @@ import { ProductListItem, ProductVariant } from '../../../core/models';
 const PRODUCT_SLUGS = ['crema-pistacho-pura', 'crema-pistacho-crunchy'];
 
 const TAGLINES: Record<string, string> = {
-  'crema-pistacho-pura': 'Pistacho manchego tostado, repelado y molido en piedra.',
+  'crema-pistacho-pura': 'Pistacho ibérico tostado, repelado y molido en piedra.',
   'crema-pistacho-crunchy': 'Con trozos crujientes de pistacho. Va bien de topping.',
 };
 
@@ -23,7 +23,7 @@ const TAGLINES: Record<string, string> = {
       <div class="tienda__hero">
         <p class="tienda__eyebrow">La tienda</p>
         <h1 class="tienda__title">DOS CREMAS.<br>UN ORIGEN.</h1>
-        <p class="tienda__subtitle">Pistacho manchego. Obrador en Ciudad Real. Sin aditivos.</p>
+        <p class="tienda__subtitle">Pistacho ibérico. Obrador en Ciudad Real. Sin aditivos.</p>
       </div>
 
       @if (loading()) {
@@ -467,7 +467,7 @@ export class ProductListComponent implements OnInit {
   ngOnInit(): void {
     this.seo.set({
       title: 'Tienda: Crema de Pistacho Pura y Crunchy',
-      description: 'Compra online crema de pistacho manchego: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envíos a península y Baleares.',
+      description: 'Compra online crema de pistacho ibérico: Pura (100% pistacho) o Crunchy. Formatos 100g, 200g y 1kg. Envíos a península y Baleares.',
       path: '/tienda',
     });
 

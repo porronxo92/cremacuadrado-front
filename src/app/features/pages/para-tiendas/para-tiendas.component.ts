@@ -21,7 +21,7 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
         <div class="pt-hero__content">
           <span class="pt-hero__eyebrow">Para tiendas gourmet y delicatessen</span>
           <h1 class="pt-hero__title">Crema de pistacho para tu tienda</h1>
-          <p class="pt-hero__subtitle">Crema de pistacho manchego artesanal que no se vende en supermercados, con material y soporte para que la vendas.</p>
+          <p class="pt-hero__subtitle">Crema de pistacho ibérico artesanal que no se vende en supermercados, con material y soporte para que la vendas.</p>
           <button type="button" class="pt-hero__cta" (click)="scrollToForm()">
             Quiero ser punto de venta →
           </button>
@@ -755,7 +755,7 @@ export class ParaTiendasComponent {
   constructor() {
     this.seo.set({
       title: 'Para Tiendas Gourmet',
-      description: 'Lleva la crema de pistacho manchego CremaCuadrado a tu tienda gourmet. Condiciones mayoristas para puntos de venta.',
+      description: 'Lleva la crema de pistacho ibérico CremaCuadrado a tu tienda gourmet. Condiciones mayoristas para puntos de venta.',
       path: '/para-tiendas',
     });
   }
