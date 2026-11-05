@@ -19,7 +19,7 @@ import { RouterModule } from '@angular/router';
 
       <div class="hero__content">
         <h1 class="hero__h1">CREMAS DE<br>PISTACHO</h1>
-        <p class="hero__tagline">Pistacho manchego · Sin refinar · Artesanal</p>
+        <p class="hero__tagline">Pistacho ibérico · Sin refinar · Artesanal</p>
         <div class="hero__ctas">
           <a href="/#productos" class="hero__btn-primary" (click)="goToProducts($event)">Comprar ahora</a>
           <a routerLink="/nuestro-metodo" class="hero__btn-secondary">

@@ -1,6 +1,6 @@
 # CremaCuadrado - Frontend
 
-> Tienda online de crema de pistacho manchego artesanal. Angular 22 con SSR + API REST (Python/FastAPI en Vercel).
+> Tienda online de crema de pistacho ibérico artesanal. Angular 22 con SSR + API REST (Python/FastAPI en Vercel).
 
 ---
 

@@ -1,11 +1,11 @@
 # CLAUDE.md — Frontend
-## CremaCuadrado · Ecommerce de crema de pistacho manchego artesanal
+## CremaCuadrado · Ecommerce de crema de pistacho ibérico artesanal
 
 ---
 
 ## Resumen del Proyecto
 
-CremaCuadrado es un ecommerce D2C de crema de pistacho manchego artesanal. La interfaz sirve a tres perfiles con embudos completamente distintos: consumidor final B2C (llega de TikTok/Instagram), tiendas gourmet B2B punto de venta, y restaurantes/pastelerías/cafés B2B ingrediente profesional.
+CremaCuadrado es un ecommerce D2C de crema de pistacho ibérico artesanal. La interfaz sirve a tres perfiles con embudos completamente distintos: consumidor final B2C (llega de TikTok/Instagram), tiendas gourmet B2B punto de venta, y restaurantes/pastelerías/cafés B2B ingrediente profesional.
 
 **Principio rector de UX**: un solo dominio, tres embudos distintos. La homepage convierte al B2C. Los perfiles B2B tienen sus propias landings. No mezclar argumentos en la misma página.
 
@@ -121,7 +121,7 @@ border-radius: 20px;
 
 **`Header`**
 - Sticky con reducción de altura al hacer scroll (56px → 44px, transición CSS)
-- Logo + tagline "pistacho manchego artesanal" (tagline desaparece en móvil)
+- Logo + tagline "pistacho ibérico artesanal" (tagline desaparece en móvil)
 - Navegación con 2 dropdowns: LA TIENDA y PROFESIONALES
 - Mini-carrito lateral (slide-in desde la derecha) al hacer clic en icono carrito
 - En móvil: hamburguesa → overlay full-screen en fondo granate con botón "Comprar ahora" fijo al fondo
@@ -401,11 +401,10 @@ Reglas tomadas de la skill instalada en `.claude/skills/ui-ux-pro-max` (WCAG 2.2
 
 ### Identidad de marca y textos
 - ❌ No usar "hecha a mano" — se usa maquinaria (molino eléctrico, repeladora mecánica)
-- ❌ No usar "pistacho manchego certificado" — el origen es principalmente manchego pero no está certificado
+- ❌ No usar "pistacho ibérico certificado" — el origen es principalmente manchego pero no está certificado
 - ❌ No usar "artesanal" para la cuchara — es una cuchara con el logo, no un producto artesanal
 - ❌ No usar "consistencia lote a lote" — es artesanal, hay variaciones naturales entre lotes
 - ❌ No usar "la única" o "la primera" sin certeza absoluta — claim legal, riesgo de reclamación
-- ❌ No usar "ibérico" para el pistacho — usar "español" o "manchego"
 
 ### UX y conversión
 - ❌ No añadir pop-ups promocionales (el de cupón se eliminó). La única modal permitida al cargar es la de consentimiento de cookies (obligación legal, exenta de la penalización de Google), y en móvil va como hoja inferior, nunca a pantalla completa.

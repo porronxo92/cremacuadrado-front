@@ -26,7 +26,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
 
       <section id="productos">
         <h2>2. Productos</h2>
-        <p>Vendemos crema de pistacho manchego artesanal en distintos formatos. En la ficha de cada producto
+        <p>Vendemos crema de pistacho ibérico artesanal en distintos formatos. En la ficha de cada producto
           encontrarás sus características esenciales: ingredientes, <strong>alérgenos</strong> (contiene frutos
           de cáscara: pistacho), información nutricional, cantidad neta, modo de conservación y precio.</p>
         <p>Las imágenes son orientativas. Al tratarse de un producto artesanal puede haber ligeras diferencias

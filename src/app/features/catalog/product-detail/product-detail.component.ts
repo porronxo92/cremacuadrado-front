@@ -92,7 +92,7 @@ function formatToSelector(variant: ProductVariant): ProductFormat {
             <!-- Desktop -->
             <div class="pd__gallery-desktop">
               <div class="pd__main-img">
-                <img [ngSrc]="selectedImage() || firstImage()" [alt]="product()!.name + ', crema de pistacho manchego'" fill priority>
+                <img [ngSrc]="selectedImage() || firstImage()" [alt]="product()!.name + ', crema de pistacho ibérico'" fill priority>
               </div>
               @if (currentImages().length > 1) {
                 <div class="pd__thumbs">
@@ -1139,7 +1139,7 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
 
     this.seo.set({
       title: product.name,
-      description: description || `${product.name}, crema de pistacho manchego artesanal elaborada en Ciudad Real. CremaCuadrado.`,
+      description: description || `${product.name}, crema de pistacho ibérico artesanal elaborada en Ciudad Real. CremaCuadrado.`,
       path,
       image: images[0],
       type: 'product',

@@ -28,7 +28,7 @@ import { environment } from '@env/environment';
       <div class="container">
         <div class="products__header">
           <h2 class="products__title" tabindex="-1">LAS CREMAS</h2>
-          <p class="products__sub">Dos cremas de pistacho manchego: Pura y Crunchy.</p>
+          <p class="products__sub">Dos cremas de pistacho ibérico: Pura y Crunchy.</p>
         </div>
 
         @if (loadingProducts()) {
@@ -42,7 +42,7 @@ import { environment } from '@env/environment';
                 <a [routerLink]="['/tienda', product.slug]" class="product-card__img-wrap">
                   <img
                     [ngSrc]="product.primary_image || '/assets/images/placeholder.jpg'"
-                    [alt]="product.name + ', crema de pistacho manchego'"
+                    [alt]="product.name + ', crema de pistacho ibérico'"
                     fill>
                   @if (getSelectedVariant(product)?.compare_price; as prior) {
                     <span class="product-card__badge">Antes {{ prior | currency:'EUR' }}</span>
@@ -718,8 +718,8 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     this.seo.set({
-      title: 'Crema de Pistacho Manchego Artesanal',
-      description: 'Crema de pistacho manchego artesanal elaborada en Ciudad Real. Pura, con 100% pistacho, y Crunchy. Envíos a península y Baleares.',
+      title: 'Crema de Pistacho Ibérico Artesanal',
+      description: 'Crema de pistacho ibérico artesanal elaborada en Ciudad Real. Pura, con 100% pistacho, y Crunchy. Envíos a península y Baleares.',
       path: '/',
     });
     this.seo.setJsonLd('ld-organization', {

@@ -468,7 +468,7 @@ export class BlogListComponent implements OnInit {
 
   readonly pageSubtitle = computed(() => {
     const slug = this.categorySlug();
-    return slug ? (CATEGORY_META[slug]?.subtitle ?? '') : 'Descubre todo sobre el pistacho manchego';
+    return slug ? (CATEGORY_META[slug]?.subtitle ?? '') : 'Descubre todo sobre el pistacho ibérico';
   });
 
   ngOnInit(): void {
@@ -477,7 +477,7 @@ export class BlogListComponent implements OnInit {
       this.categorySlug.set(categorySlug);
       this.seo.set({
         title: this.pageTitle(),
-        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho manchego en El Archivo de CremaCuadrado.',
+        description: this.pageSubtitle() || 'Recetas, cultivo y elaboración del pistacho ibérico en El Archivo de CremaCuadrado.',
         path: categorySlug ? `/el-archivo/categoria/${categorySlug}` : '/el-archivo',
       });
       this.loadPosts();

@@ -71,7 +71,7 @@ interface TimelineEvent {
       <!-- CTA -->
       <section class="about-cta">
         <div class="container">
-          <h2>Prueba el pistacho manchego</h2>
+          <h2>Prueba el pistacho ibérico</h2>
           <div class="about-cta__divider"></div>
           <p>Crema de pistacho 100% natural, elaborada en Ciudad Real.</p>
           <a routerLink="/tienda" class="btn btn--cta">Ver productos</a>
@@ -489,7 +489,7 @@ export class AboutComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.seo.set({
       title: 'Nuestro Método',
-      description: 'Tostado, repelado mecánico y molino de piedra: así elaboramos la crema de pistacho manchego en nuestro obrador de Ciudad Real.',
+      description: 'Tostado, repelado mecánico y molino de piedra: así elaboramos la crema de pistacho ibérico en nuestro obrador de Ciudad Real.',
       path: '/nuestro-metodo',
     });
 
