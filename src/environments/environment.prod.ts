@@ -25,4 +25,6 @@ export const environment = {
   // Clave pública de CARTO Basemaps (teselas del mapa de /puntos-de-venta). Viaja
   // en la URL de cada tesela: restringirla por dominio en el panel de CARTO.
   cartoApiKey: 'cb1_4eez_1_f3e91d736a66662fab05a3b1',
+  // Cloudflare Turnstile (antispam de /contacto). Va en pareja con TURNSTILE_SECRET_KEY del backend.
+  turnstileSiteKey: '0x4AAAAAAF8n2nH5_0vvKCZr',
 };

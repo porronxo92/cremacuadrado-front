@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -12,10 +12,11 @@ interface FaqItem {
 }
 
 import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
+import { BOT_CHECK_PENDING, BotCheckComponent } from '../../shared/components/bot-check/bot-check.component';
 
 @Component({
     selector: 'app-contact',
-    imports: [RouterModule, FormsModule, PrivacyNoticeComponent],
+    imports: [RouterModule, FormsModule, PrivacyNoticeComponent, BotCheckComponent],
     template: `
     <div class="contact-page">
 
@@ -187,6 +188,12 @@ import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/p
                   <app-privacy-notice
                     purpose="responder a tu consulta y, solo si marcas la casilla, enviarte comunicaciones comerciales"
                     legalBasis="tu consentimiento" />
+
+                  <app-bot-check />
+
+                  @if (errorMsg()) {
+                    <p class="form-error" role="alert">{{ errorMsg() }}</p>
+                  }
 
                   <button
                     type="submit"
@@ -472,6 +479,13 @@ import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/p
       margin-bottom: 0.85rem;
     }
 
+    .form-error {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.8rem;
+      color: #A01C1C;
+      margin: 1rem 0 0;
+    }
+
     .checkbox-label {
       display: flex;
       align-items: flex-start;
@@ -679,10 +693,12 @@ import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/p
 export class ContactComponent {
   private contactService = inject(ContactService);
   private seo = inject(SeoService);
+  private botCheck = viewChild(BotCheckComponent);
 
   formData = { name: '', email: '', message: '', privacy: false, marketing: false };
   sent = signal(false);
   sending = signal(false);
+  errorMsg = signal('');
 
   constructor() {
     this.seo.set({
@@ -749,6 +765,12 @@ export class ContactComponent {
   }
 
   sendForm(): void {
+    const bot = this.botCheck()?.payload();
+    if (!bot) {
+      this.errorMsg.set(BOT_CHECK_PENDING);
+      return;
+    }
+    this.errorMsg.set('');
     this.sending.set(true);
     this.contactService.submit({
       name: this.formData.name,
@@ -756,19 +778,24 @@ export class ContactComponent {
       message: this.formData.message,
       accepts_marketing: this.formData.marketing,
       accept_privacy: this.formData.privacy,
+      ...bot,
     }).subscribe({
       next: () => {
         this.sending.set(false);
         this.sent.set(true);
       },
-      error: () => {
+      error: (err: { message?: string }) => {
         this.sending.set(false);
+        this.errorMsg.set(err.message || 'No se ha podido enviar el mensaje. Inténtalo de nuevo.');
+        this.botCheck()?.reset();
       },
     });
   }
 
   resetForm(): void {
     this.formData = { name: '', email: '', message: '', privacy: false, marketing: false };
+    this.errorMsg.set('');
     this.sent.set(false);
   }
 }
+

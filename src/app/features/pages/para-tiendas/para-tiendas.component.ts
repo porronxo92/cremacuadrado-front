@@ -1,16 +1,17 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CollapsibleBlockComponent } from '../../../shared/components/collapsible-block/collapsible-block.component';
 import { ParaTiendasService } from '../../../core/services/para-tiendas.service';
 import { SeoService } from '../../../core/services/seo.service';
 import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notice/privacy-notice.component';
+import { BOT_CHECK_PENDING, BotCheckComponent } from '../../../shared/components/bot-check/bot-check.component';
 
 type SubmitState = 'idle' | 'loading' | 'success' | 'error';
 
 @Component({
     selector: 'app-para-tiendas',
-    imports: [ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent],
+    imports: [ReactiveFormsModule, CollapsibleBlockComponent, PrivacyNoticeComponent, BotCheckComponent],
     template: `
     <div class="pt-page">
 
@@ -321,11 +322,13 @@ type SubmitState = 'idle' | 'loading' | 'success' | 'error';
                 purpose="gestionar tu solicitud como punto de venta y contactarte con información comercial sobre ella"
                 legalBasis="tu consentimiento y la aplicación de medidas precontractuales a petición tuya" />
 
+              <app-bot-check />
+
               <p class="pt-form__note">Sin compromiso. Te llamamos en 48 horas. Si prefieres probar el producto antes de decidir, te enviamos una muestra gratuita.</p>
 
               @if (submitState() === 'error') {
                 <div class="pt-form-error">
-                  <span>No hemos podido enviar tu solicitud. Inténtalo de nuevo.</span>
+                  <span role="alert">{{ errorMsg() }}</span>
                   <button type="button" class="pt-form-error__retry" (click)="submitState.set('idle')">Reintentar</button>
                 </div>
               }
@@ -751,6 +754,8 @@ export class ParaTiendasComponent {
   readonly showTestimonials = false;
 
   readonly submitState = signal<SubmitState>('idle');
+  readonly errorMsg = signal('');
+  private botCheck = viewChild(BotCheckComponent);
 
   constructor() {
     this.seo.set({
@@ -780,6 +785,12 @@ export class ParaTiendasComponent {
       return;
     }
 
+    const bot = this.botCheck()?.payload();
+    if (!bot) {
+      this.errorMsg.set(BOT_CHECK_PENDING);
+      this.submitState.set('error');
+      return;
+    }
     this.submitState.set('loading');
     const value = this.form.getRawValue();
 
@@ -791,9 +802,14 @@ export class ParaTiendasComponent {
       email: value.email!,
       phone: value.phone!,
       accept_privacy: !!value.acceptPrivacy,
+      ...bot,
     }).subscribe({
       next: () => this.submitState.set('success'),
-      error: () => this.submitState.set('error'),
+      error: (err: { message?: string }) => {
+        this.botCheck()?.reset();
+        this.errorMsg.set(err.message || 'No hemos podido enviar tu solicitud. Inténtalo de nuevo.');
+        this.submitState.set('error');
+      },
     });
   }
 }

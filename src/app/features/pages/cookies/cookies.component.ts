@@ -15,7 +15,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
     selector: 'app-cookies-page',
     imports: [RouterModule, LegalLayoutComponent],
     template: `
-    <app-legal-layout title="Política de cookies" [version]="version" updated="octubre de 2026" [toc]="toc">
+    <app-legal-layout title="Política de cookies" [version]="version" updated="noviembre de 2026" [toc]="toc">
       <section id="que-son">
         <h2>1. Qué son</h2>
         <p>Las cookies y tecnologías similares (como el almacenamiento local del navegador) son pequeños archivos o
@@ -44,6 +44,7 @@ import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/l
               <tr><td>cc_access_token, cc_refresh_token, cc_user (almacenamiento local)</td><td>CremaCuadrado</td><td>Mantener la sesión iniciada</td><td>Hasta cerrar sesión (token de 7 días)</td></tr>
               <tr><td>cc_cookie_consent (almacenamiento local)</td><td>CremaCuadrado</td><td>Recordar tu elección sobre cookies</td><td>13 meses</td></tr>
               <tr><td>__stripe_mid, __stripe_sid</td><td>Stripe</td><td>Pago seguro y prevención del fraude (solo en el pago)</td><td>1 año / 30 minutos</td></tr>
+              <tr><td>Cloudflare Turnstile (no instala cookies; recibe tu IP y datos técnicos del navegador)</td><td>Cloudflare, Inc.</td><td>Distinguir personas de robots en los formularios de contacto, newsletter, puntos de venta y desistimiento</td><td>Durante la comprobación</td></tr>
               <tr><td>sqladmin_session</td><td>CremaCuadrado</td><td>Sesión del panel de administración (solo personal)</td><td>8 horas</td></tr>
             </tbody>
           </table>

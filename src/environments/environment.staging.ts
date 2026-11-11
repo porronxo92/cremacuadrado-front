@@ -17,4 +17,6 @@ export const environment = {
   whatsappPhoneNumber: '34623924886',
   // Clave pública de CARTO Basemaps (ver environment.prod.ts).
   cartoApiKey: 'cb1_4eez_1_f3e91d736a66662fab05a3b1',
+  // Cloudflare Turnstile (antispam de /contacto). Va en pareja con TURNSTILE_SECRET_KEY del backend.
+  turnstileSiteKey: '0x4AAAAAAF8n2nH5_0vvKCZr',
 };
