@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '@env/environment';
+import { BotCheckPayload } from '../../shared/components/bot-check/bot-check.component';
 
-export interface PosLeadPayload {
+export interface PosLeadPayload extends BotCheckPayload {
   name: string;
   establishment_name: string;
   city: string;

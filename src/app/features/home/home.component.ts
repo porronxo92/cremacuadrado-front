@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
@@ -8,6 +8,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { SeoService } from '../../core/services/seo.service';
 import { NewsletterService } from '../../core/services/newsletter.service';
 import { PrivacyNoticeComponent } from '../../shared/components/privacy-notice/privacy-notice.component';
+import { BOT_CHECK_PENDING, BotCheckComponent } from '../../shared/components/bot-check/bot-check.component';
 import { FormsModule } from '@angular/forms';
 import { ProductListItem, ProductVariant } from '../../core/models';
 import { HeroBlockComponent } from './components/hero-block/hero-block.component';
@@ -17,7 +18,7 @@ import { environment } from '@env/environment';
 
 @Component({
     selector: 'app-home',
-    imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, StoresBlockComponent, PrivacyNoticeComponent],
+    imports: [CommonModule, NgOptimizedImage, RouterModule, FormsModule, HeroBlockComponent, TrilogiaBlockComponent, StoresBlockComponent, PrivacyNoticeComponent, BotCheckComponent],
     template: `
     <!-- Bloque 1: Hero + método («¿Por qué sabe así CremaCuadrado?») -->
     <app-hero-block videoSrc="assets/videos/crema-pistacho-artesanal-hero.mp4" />
@@ -138,6 +139,8 @@ import { environment } from '@env/environment';
               <span>Acepto recibir recetas, novedades y ofertas por email. Puedo darme de baja cuando quiera.</span>
             </label>
             <app-privacy-notice purpose="enviarte comunicaciones comerciales" legalBasis="tu consentimiento" />
+            <!-- Diferido: el script de Turnstile solo se carga al acercarse al bloque -->
+            @defer (on viewport) { <app-bot-check /> } @placeholder { <span></span> }
           </form>
         </div>
       </div>
@@ -644,7 +647,7 @@ import { environment } from '@env/environment';
 
     .newsletter__consent { flex-basis: 100%; display: flex; gap: 0.5rem; align-items: flex-start; font-family: 'Poppins', sans-serif; font-size: 0.75rem; line-height: 1.45; cursor: pointer;
       input { margin-top: 0.15rem; width: 16px; height: 16px; flex-shrink: 0; } }
-    .newsletter__form app-privacy-notice { flex-basis: 100%; }
+    .newsletter__form app-privacy-notice, .newsletter__form app-bot-check { flex-basis: 100%; }
 
     .newsletter__form {
       display: flex;
@@ -712,6 +715,7 @@ export class HomeComponent implements OnInit {
   newsletterEmail = '';
   newsletterConsent = false;
   private newsletterService = inject(NewsletterService);
+  private botCheck = viewChild(BotCheckComponent);
   readonly selectedVariants = new Map<number, ProductVariant>();
   readonly quantities = signal<Record<number, number>>({});
   readonly addingId = signal<number | null>(null);
@@ -805,8 +809,13 @@ export class HomeComponent implements OnInit {
   subscribeNewsletter(event: Event): void {
     event.preventDefault();
     if (!this.newsletterEmail || !this.newsletterConsent || this.newsletterSending()) return;
+    const bot = this.botCheck()?.payload();
+    if (!bot) {
+      this.toastService.error(BOT_CHECK_PENDING);
+      return;
+    }
     this.newsletterSending.set(true);
-    this.newsletterService.subscribe(this.newsletterEmail, true, 'homepage_footer').subscribe({
+    this.newsletterService.subscribe(this.newsletterEmail, true, 'homepage_footer', bot).subscribe({
       next: (res) => {
         this.newsletterSending.set(false);
         this.toastService.success(res.message);
@@ -815,6 +824,7 @@ export class HomeComponent implements OnInit {
       },
       error: (err) => {
         this.newsletterSending.set(false);
+        this.botCheck()?.reset();
         this.toastService.error(err?.message || 'No hemos podido completar la suscripción');
       },
     });

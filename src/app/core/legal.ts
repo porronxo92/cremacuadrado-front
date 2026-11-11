@@ -5,7 +5,7 @@
  */
 export const TERMS_VERSION = '2026-11a';
 export const PRIVACY_VERSION = '2026-10b';
-export const COOKIES_VERSION = '2026-10';
+export const COOKIES_VERSION = '2026-11';
 
 /** Datos del titular (LSSI art. 10). Única fuente para las páginas legales. */
 export const COMPANY = {

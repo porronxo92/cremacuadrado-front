@@ -1,4 +1,4 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, RouterModule } from '@angular/router';
@@ -9,6 +9,7 @@ import { SeoService } from '../../../core/services/seo.service';
 import { COMPANY } from '../../../core/legal';
 import { LegalLayoutComponent, LegalTocItem } from '../../../shared/components/legal-layout/legal-layout.component';
 import { PrivacyNoticeComponent } from '../../../shared/components/privacy-notice/privacy-notice.component';
+import { BOT_CHECK_PENDING, BotCheckComponent } from '../../../shared/components/bot-check/bot-check.component';
 
 interface WithdrawalReceipt {
   reference: string;
@@ -25,7 +26,7 @@ interface WithdrawalReceipt {
  */
 @Component({
     selector: 'app-withdrawal',
-    imports: [CommonModule, RouterModule, ReactiveFormsModule, LegalLayoutComponent, PrivacyNoticeComponent],
+    imports: [CommonModule, RouterModule, ReactiveFormsModule, LegalLayoutComponent, PrivacyNoticeComponent, BotCheckComponent],
     template: `
     <app-legal-layout title="Desistir de un pedido" [toc]="toc">
       <section id="derecho">
@@ -69,6 +70,7 @@ interface WithdrawalReceipt {
                 <textarea formControlName="reason" rows="2"></textarea>
               </label>
             </div>
+            <app-bot-check />
             @if (error()) { <p class="wd-error" role="alert">{{ error() }}</p> }
             <button type="submit" class="wd-submit" [disabled]="form.invalid || sending()">
               {{ sending() ? 'Enviando…' : 'Confirmar desistimiento' }}
@@ -126,6 +128,7 @@ export class WithdrawalComponent {
   readonly sending = signal(false);
   readonly error = signal<string | null>(null);
   readonly receipt = signal<WithdrawalReceipt | null>(null);
+  private botCheck = viewChild(BotCheckComponent);
 
   readonly form = this.fb.group({
     order_number: [this.route.snapshot.queryParamMap.get('pedido') ?? '', [Validators.required, Validators.minLength(5)]],
@@ -150,11 +153,20 @@ export class WithdrawalComponent {
 
   submit(): void {
     if (this.form.invalid || this.sending()) return;
+    const bot = this.botCheck()?.payload();
+    if (!bot) {
+      this.error.set(BOT_CHECK_PENDING);
+      return;
+    }
     this.sending.set(true);
     this.error.set(null);
-    this.http.post<WithdrawalReceipt>(`${environment.apiUrl}/withdrawals`, this.form.value).subscribe({
+    this.http.post<WithdrawalReceipt>(`${environment.apiUrl}/withdrawals`, { ...this.form.value, ...bot }).subscribe({
       next: r => { this.sending.set(false); this.receipt.set(r); },
-      error: err => { this.sending.set(false); this.error.set(err?.message || 'No hemos podido registrar la solicitud.'); },
+      error: err => {
+        this.sending.set(false);
+        this.botCheck()?.reset();
+        this.error.set(err?.message || 'No hemos podido registrar la solicitud.');
+      },
     });
   }
 }
